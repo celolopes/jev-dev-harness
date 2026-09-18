@@ -66,17 +66,18 @@ export class SafeJevClient {
   public readonly timeoutMs: number;
   public readonly provider: JevProvider;
   private readonly apiKey?: string;
-  private readonly modelName: string;
+  public readonly modelName: string;
   private statusReason: string;
 
   constructor(options: SafeJevClientOptions = {}) {
     this.disabled = options.disabled ?? false;
-    this.timeoutMs = options.timeoutMs ?? 4500;
+    this.timeoutMs = options.timeoutMs ?? 5000;
 
     // Detect keys: either native TYPESAFE_API_KEY, OPENROUTER_API_KEY, or explicit apiKey option
-    const openRouterKey = options.apiKey?.startsWith("sk-or-")
-      ? options.apiKey
-      : process.env.OPENROUTER_API_KEY;
+    const openRouterKey =
+      options.apiKey?.startsWith("sk-or-")
+        ? options.apiKey
+        : process.env.OPENROUTER_API_KEY;
     const typeSafeKey = options.apiKey || process.env.TYPESAFE_API_KEY;
 
     // Detect provider
@@ -99,8 +100,9 @@ export class SafeJevClient {
     if (this.provider === "openrouter") {
       this.modelName =
         options.defaultModel ||
+        process.env.OPENROUTER_MODEL ||
         process.env.TYPESAFE_DEFAULT_MODEL ||
-        "typesafe/jev-latest";
+        "openai/gpt-4o-mini";
     } else {
       this.modelName =
         options.defaultModel ||
@@ -146,7 +148,7 @@ export class SafeJevClient {
   /**
    * Calls OpenRouter's Decisions API (POST /api/alpha/decisions).
    */
-  private async executeOpenRouter<const Q extends Questions>(
+  private async executeOpenRouterDecisions<const Q extends Questions>(
     sanitizedState: unknown,
     questions: Q,
     timeoutMs: number
@@ -192,6 +194,140 @@ export class SafeJevClient {
     } finally {
       clearTimeout(timeoutId);
     }
+  }
+
+  /**
+   * Emulates Jev's System One decision engine via OpenRouter Chat Completions.
+   * Enables structured Noul, Score and Choice decisions using any fast model (e.g. gpt-4o-mini).
+   */
+  private async executeOpenRouterChat<const Q extends Questions>(
+    sanitizedState: unknown,
+    questions: Q,
+    model: string,
+    timeoutMs: number
+  ): Promise<SystemOneResult<Q>> {
+    const url = "https://openrouter.ai/api/v1/chat/completions";
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+    const systemPrompt = [
+      "You are a calibrated System One decision engine conforming to the TypeSafe Jev API contract.",
+      "Evaluate the provided state against the typed questions.",
+      "Do NOT output conversational text, explanations, markdown, or chat.",
+      "Return ONLY a valid JSON object matching this structure:",
+      "{",
+      '  "answers": {',
+      '    "<question_name>": {',
+      '      // If question type is "noul":',
+      '      "type": "noul",',
+      '      "noul": <float between 0.0 and 1.0 indicating probability of yes>',
+      "    },",
+      '    "<question_name>": {',
+      '      // If question type is "score":',
+      '      "type": "score",',
+      '      "score": <float between 0.0 and N based on criteria index>,',
+      '      "confidence": <float between 0.0 and 1.0>',
+      "    },",
+      '    "<question_name>": {',
+      '      // If question type is "choice":',
+      '      "type": "choice",',
+      '      "choice": "<selected option key from criteria>",',
+      '      "confidence": <float between 0.0 and 1.0>',
+      "    }",
+      "  }",
+      "}",
+    ].join("\n");
+
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${this.apiKey}`,
+          "Content-Type": "application/json",
+          "HTTP-Referer": "https://github.com/marcelo/jev-dev-harness",
+          "X-OpenRouter-Title": "Jev Developer Harness",
+        },
+        body: JSON.stringify({
+          model,
+          messages: [
+            { role: "system", content: systemPrompt },
+            {
+              role: "user",
+              content: JSON.stringify({
+                state: sanitizedState,
+                questions,
+              }),
+            },
+          ],
+          response_format: { type: "json_object" },
+          temperature: 0.1,
+        }),
+        signal: controller.signal,
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`OpenRouter HTTP ${res.status}: ${errorText}`);
+      }
+
+      const json = (await res.json()) as any;
+      const rawContent = json.choices?.[0]?.message?.content || "{}";
+      const parsed = JSON.parse(rawContent);
+
+      return {
+        model: `${json.model || model}`,
+        answers: parsed.answers || parsed,
+        usage: {
+          input_tokens: json.usage?.prompt_tokens ?? 0,
+          output_tokens: json.usage?.completion_tokens ?? 0,
+        },
+      } as SystemOneResult<Q>;
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  }
+
+  /**
+   * Router for OpenRouter calls: attempts Decisions API if requested, otherwise uses structured chat completions.
+   */
+  private async executeOpenRouter<const Q extends Questions>(
+    sanitizedState: unknown,
+    questions: Q,
+    timeoutMs: number
+  ): Promise<SystemOneResult<Q>> {
+    if (
+      this.modelName.startsWith("typesafe/") ||
+      this.modelName.startsWith("~typesafe/")
+    ) {
+      try {
+        return await this.executeOpenRouterDecisions(
+          sanitizedState,
+          questions,
+          timeoutMs
+        );
+      } catch (err) {
+        const msg = (err as Error).message;
+        // If OpenRouter rejects the typesafe model slug, fall back to fast gpt-4o-mini emulator
+        if (msg.includes("does not exist") || msg.includes("400")) {
+          const fallbackModel =
+            process.env.OPENROUTER_MODEL || "openai/gpt-4o-mini";
+          return await this.executeOpenRouterChat(
+            sanitizedState,
+            questions,
+            fallbackModel,
+            timeoutMs
+          );
+        }
+        throw err;
+      }
+    }
+
+    return await this.executeOpenRouterChat(
+      sanitizedState,
+      questions,
+      this.modelName,
+      timeoutMs
+    );
   }
 
   /**

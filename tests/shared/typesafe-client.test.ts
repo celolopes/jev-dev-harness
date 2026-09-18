@@ -81,7 +81,10 @@ describe("SafeJevClient Module", () => {
         );
       };
 
-      const client = new SafeJevClient({ apiKey: "sk-or-v1-mock-openrouter-key" });
+      const client = new SafeJevClient({
+        apiKey: "sk-or-v1-mock-openrouter-key",
+        defaultModel: "typesafe/jev-latest",
+      });
       expect(client.provider).toBe("openrouter");
       expect(client.isConfigured).toBe(true);
 
@@ -95,6 +98,53 @@ describe("SafeJevClient Module", () => {
         expect(response.provider).toBe("openrouter");
         expect(response.result.answers.auth_check.noul).toBe(0.96);
         expect(response.inputTokens).toBe(42);
+      }
+    } finally {
+      globalThis.fetch = origFetch;
+    }
+  });
+
+  it("emulates Jev System One via OpenRouter chat completions (e.g. gpt-4o-mini)", async () => {
+    const origFetch = globalThis.fetch;
+    try {
+      globalThis.fetch = async (url, init) => {
+        expect(url.toString()).toBe("https://openrouter.ai/api/v1/chat/completions");
+        const body = JSON.parse(init?.body as string);
+        expect(body.model).toBe("openai/gpt-4o-mini");
+
+        return new Response(
+          JSON.stringify({
+            model: "openai/gpt-4o-mini",
+            choices: [
+              {
+                message: {
+                  content: JSON.stringify({
+                    answers: {
+                      auth_check: { type: "noul", noul: 0.93 },
+                    },
+                  }),
+                },
+              },
+            ],
+            usage: { prompt_tokens: 65, completion_tokens: 15 },
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } }
+        );
+      };
+
+      const client = new SafeJevClient({ apiKey: "sk-or-v1-mock-openrouter-key" });
+      expect(client.provider).toBe("openrouter");
+      expect(client.modelName).toBe("openai/gpt-4o-mini");
+
+      const response = await client.systemOne(
+        { task: "auth" },
+        { auth_check: noul("Is it auth?") }
+      );
+
+      expect(response.ok).toBe(true);
+      if (response.ok) {
+        expect(response.result.answers.auth_check.noul).toBe(0.93);
+        expect(response.inputTokens).toBe(65);
       }
     } finally {
       globalThis.fetch = origFetch;
