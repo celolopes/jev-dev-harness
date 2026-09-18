@@ -1,0 +1,55 @@
+{
+  "name": "jev-dev-harness",
+  "version": "0.1.0",
+  "description": "Developer Harness with TypeSafe AI / Jev for AI Coding Agents",
+  "type": "module",
+  "bin": {
+    "jev-dev": "./bin/jev-dev.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./context-ranker": {
+      "types": "./dist/context-ranker/index.d.ts",
+      "import": "./dist/context-ranker/index.js"
+    },
+    "./shared": {
+      "types": "./dist/shared/index.d.ts",
+      "import": "./dist/shared/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/cli/index.ts",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "bench": "vitest run tests/benchmark/",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "typesafe",
+    "jev",
+    "developer-harness",
+    "context-ranker",
+    "coding-agents",
+    "codex",
+    "antigravity"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@typesafe-ai/sdk": "^0.6.0",
+    "commander": "^13.1.0",
+    "ignore": "^7.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.9",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2",
+    "vitest": "^3.0.8"
+  }
+}

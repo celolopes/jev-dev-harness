@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.worktrees/
+.jev-cache.json
+.env
+.env.*
+*.log
+npm-debug.log*
+coverage/
+.DS_Store
+Thumbs.db
