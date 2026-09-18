@@ -239,15 +239,8 @@ export class SafeJevClient {
     ].join("\n");
 
     try {
-      const res = await fetch(url, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${this.apiKey}`,
-          "Content-Type": "application/json",
-          "HTTP-Referer": "https://github.com/marcelo/jev-dev-harness",
-          "X-OpenRouter-Title": "Jev Developer Harness",
-        },
-        body: JSON.stringify({
+        const effort = process.env.OPENROUTER_EFFORT || "low";
+        const requestPayload: Record<string, unknown> = {
           model,
           messages: [
             { role: "system", content: systemPrompt },
@@ -261,9 +254,29 @@ export class SafeJevClient {
           ],
           response_format: { type: "json_object" },
           temperature: 0.1,
-        }),
-        signal: controller.signal,
-      });
+        };
+
+        if (
+          model.includes("astra") ||
+          model.includes("gpt-6") ||
+          model.includes("o1") ||
+          model.includes("o3")
+        ) {
+          requestPayload.reasoning = { effort };
+          requestPayload.reasoning_effort = effort;
+        }
+
+        const res = await fetch(url, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${this.apiKey}`,
+            "Content-Type": "application/json",
+            "HTTP-Referer": "https://github.com/marcelo/jev-dev-harness",
+            "X-OpenRouter-Title": "Jev Developer Harness",
+          },
+          body: JSON.stringify(requestPayload),
+          signal: controller.signal,
+        });
 
       if (!res.ok) {
         const errorText = await res.text();
