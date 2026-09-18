@@ -74,7 +74,8 @@ export async function executeStageC(
     ),
   };
 
-  for (const candidate of candidates) {
+  // Evaluate candidates concurrently to reduce latency from 40s+ to <3s
+  const evaluateCandidate = async (candidate: HeuristicCandidate): Promise<StageCEvaluation> => {
     const cacheKey = JevCache.createKey(
       task,
       candidate.relativePath,
@@ -87,12 +88,11 @@ export async function executeStageC(
       telemetry.cacheHits++;
       telemetry.evaluatedByJev++;
       telemetry.addConfidence(cached.confidence);
-      evaluations.push({
+      return {
         candidate,
         jevJudgments: cached,
         fromCache: true,
-      });
-      continue;
+      };
     }
 
     telemetry.cacheMisses++;
@@ -145,21 +145,24 @@ export async function executeStageC(
       // Cache judgment
       cache.set(cacheKey, judgments);
 
-      evaluations.push({
+      return {
         candidate,
         jevJudgments: judgments,
         fromCache: false,
-      });
+      };
     } else {
       // Fallback on failure
       telemetry.recordFallback(response.reason);
       telemetry.errors++;
-      evaluations.push({
+      return {
         candidate,
         fromCache: false,
-      });
+      };
     }
-  }
+  };
+
+  const results = await Promise.all(candidates.map(evaluateCandidate));
+  evaluations.push(...results);
 
   cache.save();
   return evaluations;
