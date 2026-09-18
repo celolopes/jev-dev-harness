@@ -12,6 +12,7 @@ export interface TelemetryMetrics {
   errors: number;
   fallbackUsed: boolean;
   fallbackReason?: string;
+  provider?: string;
 }
 
 export class TelemetryCollector {
@@ -30,6 +31,7 @@ export class TelemetryCollector {
   errors = 0;
   fallbackUsed = false;
   fallbackReason?: string;
+  provider?: string;
 
   start(): void {
     this.startTime = Date.now();
@@ -77,6 +79,7 @@ export class TelemetryCollector {
       errors: this.errors,
       fallbackUsed: this.fallbackUsed,
       fallbackReason: this.fallbackReason,
+      provider: this.provider,
     };
   }
 

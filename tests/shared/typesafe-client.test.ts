@@ -59,4 +59,46 @@ describe("SafeJevClient Module", () => {
     expect(c.type).toBe("choice");
     expect(c.criteria.opt1).toBe("Option 1");
   });
+
+  it("detects OpenRouter provider from sk-or- key and calls decisions API", async () => {
+    const origFetch = globalThis.fetch;
+    try {
+      globalThis.fetch = async (url, init) => {
+        expect(url.toString()).toBe("https://openrouter.ai/api/alpha/decisions");
+        const body = JSON.parse(init?.body as string);
+        expect(body.model).toBe("typesafe/jev-latest");
+        expect(body.questions.auth_check).toBeDefined();
+
+        return new Response(
+          JSON.stringify({
+            model: "typesafe/jev-latest",
+            answers: {
+              auth_check: { type: "noul", noul: 0.96 },
+            },
+            usage: { input_tokens: 42, output_tokens: 0 },
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } }
+        );
+      };
+
+      const client = new SafeJevClient({ apiKey: "sk-or-v1-mock-openrouter-key" });
+      expect(client.provider).toBe("openrouter");
+      expect(client.isConfigured).toBe(true);
+
+      const response = await client.systemOne(
+        { task: "auth" },
+        { auth_check: noul("Is it auth?") }
+      );
+
+      expect(response.ok).toBe(true);
+      if (response.ok) {
+        expect(response.provider).toBe("openrouter");
+        expect(response.result.answers.auth_check.noul).toBe(0.96);
+        expect(response.inputTokens).toBe(42);
+      }
+    } finally {
+      globalThis.fetch = origFetch;
+    }
+  });
 });
+

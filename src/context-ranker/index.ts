@@ -44,6 +44,7 @@ export async function rankContext(
     apiKey: options.apiKey,
     disabled: options.useJev === false,
   });
+  telemetry.provider = client.provider;
 
   // Stage A: Deterministic Filter
   const candidateFiles = executeStageA(

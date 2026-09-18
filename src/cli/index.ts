@@ -52,7 +52,7 @@ export function createCli(): Command {
           `Mode:        ${
             result.fallbackUsed
               ? `[FALLBACK] Deterministic (${result.metrics.fallbackReason || "Active"})`
-              : "[ACTIVE] TypeSafe Jev System One"
+              : `[ACTIVE] ${result.metrics.provider === "openrouter" ? "OpenRouter (typesafe/jev-latest)" : "TypeSafe Jev System One"}`
           }`
         );
         console.log(`Selected:    ${result.selected.length} file(s)\n`);
