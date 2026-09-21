@@ -6,6 +6,7 @@ import { reviewPatchPipeline } from "../patch-reviewer/index.js";
 import { lintSemantic } from "../semantic-linter/index.js";
 import { guardCheck } from "../tool-guard/index.js";
 import { startMcpServer } from "../mcp/index.js";
+import { printTerminalComparison } from "./compare.js";
 
 export function createCli(): Command {
   const program = new Command();
@@ -366,6 +367,17 @@ export function createCli(): Command {
         console.error("Failed to start MCP server:", (err as Error).message);
         process.exit(1);
       }
+    });
+
+  // ==========================================
+  // COMMAND: compare (Benchmark & ROI Showcase)
+  // ==========================================
+  program
+    .command("compare")
+    .description("Showcase benchmark and cost/token comparison with vs without Jev")
+    .option("--json", "Output machine-readable stable JSON format", false)
+    .action((options) => {
+      printTerminalComparison(options.json);
     });
 
   return program;
