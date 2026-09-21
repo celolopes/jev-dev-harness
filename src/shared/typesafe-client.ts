@@ -110,11 +110,13 @@ export class SafeJevClient {
         : process.env.TYPESAFE_API_KEY || process.env.JEV_API_KEY;
 
     // Detect provider:
-    // 1. Explicit override if provided
-    // 2. Explicit apiKey option (sk-or- -> openrouter, else typesafe)
-    // 3. Environment: native TYPESAFE_API_KEY / JEV_API_KEY has priority over OPENROUTER_API_KEY
-    if (providerOverride) {
-      this.provider = providerOverride;
+    // 1. Explicit options.provider
+    // 2. Explicit options.apiKey starting with sk-or- -> openrouter
+    // 3. Explicit options.apiKey -> typesafe
+    // 4. Ambient JEV_PROVIDER env override
+    // 5. Ambient TYPESAFE_API_KEY / OPENROUTER_API_KEY
+    if (options.provider) {
+      this.provider = options.provider;
     } else if (
       options.apiKey?.startsWith("sk-or-") ||
       options.baseURL?.includes("openrouter.ai")
@@ -122,6 +124,8 @@ export class SafeJevClient {
       this.provider = "openrouter";
     } else if (options.apiKey) {
       this.provider = "typesafe";
+    } else if (providerOverride) {
+      this.provider = providerOverride;
     } else if (process.env.TYPESAFE_API_KEY || process.env.JEV_API_KEY) {
       this.provider = "typesafe";
     } else if (process.env.OPENROUTER_API_KEY) {
