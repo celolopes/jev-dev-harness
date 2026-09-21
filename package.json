@@ -17,6 +17,14 @@
       "types": "./dist/context-ranker/index.d.ts",
       "import": "./dist/context-ranker/index.js"
     },
+    "./patch-reviewer": {
+      "types": "./dist/patch-reviewer/index.d.ts",
+      "import": "./dist/patch-reviewer/index.js"
+    },
+    "./tool-guard": {
+      "types": "./dist/tool-guard/index.d.ts",
+      "import": "./dist/tool-guard/index.js"
+    },
     "./shared": {
       "types": "./dist/shared/index.d.ts",
       "import": "./dist/shared/index.js"

@@ -10,7 +10,9 @@ describe("SafeJevClient Module", () => {
   it("initializes in fallback mode when no API key is provided", async () => {
     // Ensure no env key
     const origKey = process.env.TYPESAFE_API_KEY;
+    const origOrKey = process.env.OPENROUTER_API_KEY;
     delete process.env.TYPESAFE_API_KEY;
+    delete process.env.OPENROUTER_API_KEY;
 
     try {
       const client = new SafeJevClient();
@@ -29,6 +31,7 @@ describe("SafeJevClient Module", () => {
       }
     } finally {
       if (origKey) process.env.TYPESAFE_API_KEY = origKey;
+      if (origOrKey) process.env.OPENROUTER_API_KEY = origOrKey;
     }
   });
 

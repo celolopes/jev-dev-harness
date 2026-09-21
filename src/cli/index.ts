@@ -1,6 +1,8 @@
 import { Command } from "commander";
 import path from "node:path";
 import { rankContext } from "../context-ranker/index.js";
+import { reviewPatchPipeline } from "../patch-reviewer/index.js";
+import { guardCheck } from "../tool-guard/index.js";
 
 export function createCli(): Command {
   const program = new Command();
@@ -10,6 +12,9 @@ export function createCli(): Command {
     .description("Developer Harness with TypeSafe AI / Jev for AI Coding Agents")
     .version("0.1.0");
 
+  // ==========================================
+  // COMMAND: context rank (Phase 2)
+  // ==========================================
   const contextCommand = program
     .command("context")
     .description("Context management and intelligent selection");
@@ -42,7 +47,6 @@ export function createCli(): Command {
           return;
         }
 
-        // Human-readable formatted output
         console.log("\n=======================================================");
         console.log("             JEV CONTEXT RANKER (PHASE 2)             ");
         console.log("=======================================================\n");
@@ -82,6 +86,163 @@ export function createCli(): Command {
         console.log("=======================================================\n");
       } catch (err) {
         console.error("Error executing context ranker:", (err as Error).message);
+        process.exit(1);
+      }
+    });
+
+  // ==========================================
+  // COMMAND: patch review (Phase 3)
+  // ==========================================
+  const patchCommand = program
+    .command("patch")
+    .description("Patch and diff audit before commits or pull requests");
+
+  patchCommand
+    .command("review")
+    .description("Audit a git diff against a task description for scope, regression risk, and secrets")
+    .requiredOption("-t, --task <task>", "Task description or objective")
+    .option("-p, --path <path>", "Repository path", ".")
+    .option("--diff <string>", "Raw unified diff string")
+    .option("--diff-file <path>", "Path to diff file")
+    .option("--staged", "Audit staged changes (git diff --staged)", false)
+    .option("--commit-range <range>", "Git commit range (e.g. HEAD~1)")
+    .option("--json", "Output machine-readable stable JSON format", false)
+    .option("--no-jev", "Disable Jev semantic evaluation (force deterministic fallback)")
+    .action(async (options) => {
+      try {
+        const repoPath = path.resolve(options.path);
+
+        const result = await reviewPatchPipeline({
+          task: options.task,
+          repoPath,
+          diff: options.diff,
+          diffPath: options.diffFile,
+          staged: options.staged,
+          commitRange: options.commitRange,
+          useJev: options.jev !== false,
+        });
+
+        if (options.json) {
+          console.log(JSON.stringify(result, null, 2));
+          return;
+        }
+
+        console.log("\n=======================================================");
+        console.log("             JEV PATCH REVIEWER (PHASE 3)             ");
+        console.log("=======================================================\n");
+        console.log(`Task:        ${result.task}`);
+        console.log(`Status:      [${result.status}] (Risk Score: ${result.riskScore.toFixed(1)}/100)`);
+        console.log(
+          `Mode:        ${
+            result.fallbackUsed
+              ? `[FALLBACK] Deterministic (${result.fallbackReason || "Offline"})`
+              : `[ACTIVE] ${result.provider === "openrouter" ? "OpenRouter" : "TypeSafe Jev System One"}`
+          }`
+        );
+        console.log(
+          `Diff Stats:  ${result.filesChanged.length} file(s), +${result.additions} / -${result.deletions} lines\n`
+        );
+
+        console.log("--- JUDGMENTS BREAKDOWN ---");
+        const j = result.judgments;
+        console.log(`  Regression Risk:   ${j.regressionRisk.toFixed(1)} / 4.0`);
+        console.log(`  Out Of Scope:      ${(j.isOutOfScope * 100).toFixed(0)}%`);
+        console.log(`  Modifies Auth:     ${(j.modifiesAuth * 100).toFixed(0)}%`);
+        console.log(`  Modifies Database: ${(j.modifiesDatabase * 100).toFixed(0)}%`);
+        console.log(`  Missing Tests:     ${(j.missingTests * 100).toFixed(0)}%`);
+        console.log(`  Exposes Secrets:   ${(j.exposesSecrets * 100).toFixed(0)}%`);
+        console.log(`  Confidence:        ${(j.confidence * 100).toFixed(0)}%\n`);
+
+        if (result.warnings.length > 0) {
+          console.log("--- WARNINGS & ADVISORIES ---");
+          for (const w of result.warnings) {
+            console.log(`  [!] ${w}`);
+          }
+          console.log("");
+        }
+
+        if (result.filesChanged.length > 0) {
+          console.log("--- FILES EVALUATED ---");
+          for (const f of result.filesChanged) {
+            console.log(`  * ${f}`);
+          }
+          console.log("");
+        }
+
+        console.log(`Total Latency: ${result.latencyMs}ms`);
+        console.log("=======================================================\n");
+
+        if (result.status === "BLOCK_HUMAN_REQUIRED") {
+          process.exit(2);
+        }
+      } catch (err) {
+        console.error("Error executing patch reviewer:", (err as Error).message);
+        process.exit(1);
+      }
+    });
+
+  // ==========================================
+  // COMMAND: guard check (Phase 3)
+  // ==========================================
+  const guardCommand = program
+    .command("guard")
+    .description("Tool call and command security interceptor");
+
+  guardCommand
+    .command("check")
+    .description("Verify safety of a shell command before executing")
+    .requiredOption("-c, --command <command>", "The command string to evaluate")
+    .option("-t, --task <task>", "Task context")
+    .option("--allow-network", "Authorize network commands", false)
+    .option("--allow-production", "Authorize production/cloud commands", false)
+    .option("--json", "Output machine-readable stable JSON format", false)
+    .option("--no-jev", "Disable Jev semantic evaluation (force deterministic fallback)")
+    .action(async (options) => {
+      try {
+        const result = await guardCheck({
+          command: options.command,
+          task: options.task,
+          allowNetwork: options.allowNetwork,
+          allowProduction: options.allowProduction,
+          useJev: options.jev !== false,
+        });
+
+        if (options.json) {
+          console.log(JSON.stringify(result, null, 2));
+          return;
+        }
+
+        console.log("\n=======================================================");
+        console.log("             JEV TOOL CALL GUARD (PHASE 3)            ");
+        console.log("=======================================================\n");
+        console.log(`Command:     ${result.command}`);
+        console.log(
+          `Decision:    ${result.allowed ? "[ALLOWED]" : "[BLOCKED / CONFIRMATION REQUIRED]"}`
+        );
+        console.log(`Category:    ${result.category}`);
+        console.log(`Risk Level:  ${result.riskLevel.toUpperCase()}`);
+        console.log(`Requires Confirmation: ${result.requiresConfirmation ? "YES" : "NO"}`);
+        console.log(`Reason:      ${result.reason}`);
+        if (result.matchedRule) {
+          console.log(`Rule:        ${result.matchedRule}`);
+        }
+        console.log(
+          `Mode:        ${
+            result.fallbackUsed
+              ? `[FALLBACK] (${result.fallbackReason || "Offline"})`
+              : result.provider
+              ? `[ACTIVE] ${result.provider}`
+              : "[DETERMINISTIC RULE]"
+          }`
+        );
+        console.log(`Latency:     ${result.latencyMs}ms`);
+        console.log("=======================================================\n");
+
+        if (!result.allowed && result.requiresConfirmation) {
+          process.exit(1);
+        }
+      } catch (err) {
+        console.error("Error executing tool guard:", (err as Error).message);
         process.exit(1);
       }
     });
