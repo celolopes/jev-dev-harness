@@ -14,6 +14,13 @@ import {
 } from "@typesafe-ai/sdk";
 import { redactState } from "./redaction.js";
 
+// Automatically load .env if present in current working directory
+try {
+  process.loadEnvFile?.();
+} catch {
+  // Ignore if .env is missing or invalid
+}
+
 export { choice, noul, score };
 export type {
   ChoiceCriteria,
@@ -104,14 +111,20 @@ export class SafeJevClient {
 
     // Detect provider:
     // 1. Explicit override if provided
-    // 2. Native TypeSafe if TYPESAFE_API_KEY / JEV_API_KEY is available
-    // 3. OpenRouter if OPENROUTER_API_KEY or sk-or- key is present
-    // 4. Default to typesafe
+    // 2. Explicit apiKey option (sk-or- -> openrouter, else typesafe)
+    // 3. Environment: native TYPESAFE_API_KEY / JEV_API_KEY has priority over OPENROUTER_API_KEY
     if (providerOverride) {
       this.provider = providerOverride;
-    } else if (typeSafeKey && !typeSafeKey.startsWith("sk-or-")) {
+    } else if (
+      options.apiKey?.startsWith("sk-or-") ||
+      options.baseURL?.includes("openrouter.ai")
+    ) {
+      this.provider = "openrouter";
+    } else if (options.apiKey) {
       this.provider = "typesafe";
-    } else if (openRouterKey || options.baseURL?.includes("openrouter.ai")) {
+    } else if (process.env.TYPESAFE_API_KEY || process.env.JEV_API_KEY) {
+      this.provider = "typesafe";
+    } else if (process.env.OPENROUTER_API_KEY) {
       this.provider = "openrouter";
     } else {
       this.provider = "typesafe";
@@ -119,8 +132,8 @@ export class SafeJevClient {
 
     const effectiveKey =
       this.provider === "openrouter"
-        ? openRouterKey || typeSafeKey
-        : typeSafeKey || openRouterKey;
+        ? (options.apiKey?.startsWith("sk-or-") ? options.apiKey : process.env.OPENROUTER_API_KEY || options.apiKey)
+        : (options.apiKey || process.env.TYPESAFE_API_KEY || process.env.JEV_API_KEY);
     this.apiKey = effectiveKey;
 
     if (this.provider === "openrouter") {

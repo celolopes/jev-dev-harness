@@ -1,6 +1,6 @@
 # Jev Developer Harness (`jev-dev-harness`)
 
-[![Tests](https://img.shields.io/badge/tests-102%20passing-brightgreen.svg)]()
+[![Tests](https://img.shields.io/badge/tests-106%20passing-brightgreen.svg)]()
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue.svg)]()
 [![Node](https://img.shields.io/badge/Node.js-22+-green.svg)]()
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -45,6 +45,7 @@ Large Language Models (LLMs) are exceptional at generative synthesis and reasoni
 | **Patch Reviewer** | `jev-dev patch review` | Fast triage of git diffs before commit/PR. Detects scope creep, credential exposure, database mutations, and missing tests. |
 | **Semantic Linter** | `jev-dev lint semantic` | Automated architectural drift detection in GitHub Actions CI (prevents UI/database mixing, dangerous migrations, etc.). |
 | **Git Hook Automation** | `jev-dev hooks install` | 1-click installer for git pre-commit safety gate. Blocks commits containing leaked credentials or critical regression risk. |
+| **MCP Server** | `jev-dev mcp` | Standard Model Context Protocol (stdio) exposing all 4 tools to Cursor, Claude Desktop, Antigravity. |
 
 ---
 
@@ -253,6 +254,80 @@ Built-in rules:
 
 ---
 
+## 🔌 Model Context Protocol (MCP) Server
+
+`jev-dev-harness` includes an official Model Context Protocol (MCP) server running over stdio (`@modelcontextprotocol/sdk`). This allows **Cursor**, **Claude Desktop**, **Antigravity**, and any MCP-compatible agent to natively invoke Jev capabilities as first-class tools.
+
+### Available MCP Tools
+
+1. **`jev_rank_context`**: Intelligent context selector that ranks codebase files by relevance for a given task, cutting prompt tokens by up to 94%.
+2. **`jev_guard_check`**: Pre-execution security filter that classifies shell commands (`read-only`, `modify-local`, `destructive-local`, `network`, `production-sensitive`) and blocks risky execution.
+3. **`jev_review_patch`**: Fast patch auditor that checks git diffs for regressions, scope creep, auth/database modifications, and exposed secrets.
+4. **`jev_lint_semantic`**: Semantic architectural linter that tests diffs against modularity, security, and migration rules.
+
+### Running the MCP Server
+
+```bash
+# Via global CLI:
+jev-dev mcp
+
+# Via npx / node:
+node dist/cli/index.js mcp
+```
+
+### Configuration Examples
+
+#### 1. Claude Desktop (`claude_desktop_config.json`)
+Add to your Claude Desktop configuration (`%APPDATA%\Claude\claude_desktop_config.json` on Windows or `~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
+
+```json
+{
+  "mcpServers": {
+    "jev-dev": {
+      "command": "node",
+      "args": ["<path-to-repo>/dist/cli/index.js", "mcp"],
+      "env": {
+        "TYPESAFE_API_KEY": "your-typesafe-or-openrouter-key"
+      }
+    }
+  }
+}
+```
+
+#### 2. Cursor (`.cursor/mcp.json`)
+Add to `.cursor/mcp.json` in your project root:
+
+```json
+{
+  "mcpServers": {
+    "jev-dev": {
+      "command": "node",
+      "args": ["dist/cli/index.js", "mcp"],
+      "env": {
+        "TYPESAFE_API_KEY": "${env:TYPESAFE_API_KEY}"
+      }
+    }
+  }
+}
+```
+
+#### 3. Antigravity / Agent MCP Config
+Configure in your agent's MCP settings:
+
+```json
+{
+  "jev-dev": {
+    "command": "node",
+    "args": ["<path-to-repo>/dist/cli/index.js", "mcp"],
+    "env": {
+      "TYPESAFE_API_KEY": "your-typesafe-or-openrouter-key"
+    }
+  }
+}
+```
+
+---
+
 ## 🤖 Integration with AI Coding Agents
 
 `jev-dev-harness` ships with official agent skills located in `.agents/skills/`:
@@ -283,7 +358,7 @@ Create a `.env` file or export environment variables:
 The repository features comprehensive integration and unit test suites:
 
 ```bash
-# Run full Vitest test suite (102 tests)
+# Run full Vitest test suite (106 tests)
 npm test
 
 # Run benchmark suite (precision, recall, token reduction)

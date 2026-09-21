@@ -5,6 +5,7 @@ import { installGitHook, uninstallGitHook } from "../hooks/index.js";
 import { reviewPatchPipeline } from "../patch-reviewer/index.js";
 import { lintSemantic } from "../semantic-linter/index.js";
 import { guardCheck } from "../tool-guard/index.js";
+import { startMcpServer } from "../mcp/index.js";
 
 export function createCli(): Command {
   const program = new Command();
@@ -349,6 +350,20 @@ export function createCli(): Command {
         console.log(`[Jev Hook] ${res.message}`);
       } catch (err) {
         console.error("[Jev Hook Error]:", (err as Error).message);
+        process.exit(1);
+      }
+    });
+  // ==========================================
+  // COMMAND: mcp (Model Context Protocol Server)
+  // ==========================================
+  program
+    .command("mcp")
+    .description("Start the Model Context Protocol (MCP) server over stdio")
+    .action(async () => {
+      try {
+        await startMcpServer();
+      } catch (err) {
+        console.error("Failed to start MCP server:", (err as Error).message);
         process.exit(1);
       }
     });

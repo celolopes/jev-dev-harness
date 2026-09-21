@@ -4,7 +4,8 @@
   "description": "Developer Harness with TypeSafe AI / Jev for AI Coding Agents",
   "type": "module",
   "bin": {
-    "jev-dev": "./bin/jev-dev.js"
+    "jev-dev": "./bin/jev-dev.js",
+    "jev-mcp": "./bin/jev-mcp.js"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -33,6 +34,10 @@
       "types": "./dist/semantic-linter/index.d.ts",
       "import": "./dist/semantic-linter/index.js"
     },
+    "./mcp": {
+      "types": "./dist/mcp/index.d.ts",
+      "import": "./dist/mcp/index.js"
+    },
     "./shared": {
       "types": "./dist/shared/index.d.ts",
       "import": "./dist/shared/index.js"
@@ -58,6 +63,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
     "@typesafe-ai/sdk": "^0.6.0",
     "commander": "^13.1.0",
     "ignore": "^7.0.3"
