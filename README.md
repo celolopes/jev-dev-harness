@@ -1,5 +1,6 @@
 # Jev Developer Harness (`jev-dev-harness`)
 
+[![npm version](https://img.shields.io/npm/v/jev-dev-harness.svg?color=cb3837)](https://www.npmjs.com/package/jev-dev-harness)
 [![Tests](https://img.shields.io/badge/tests-106%20passing-brightgreen.svg)]()
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue.svg)]()
 [![Node](https://img.shields.io/badge/Node.js-22+-green.svg)]()
@@ -67,27 +68,33 @@ Large Language Models (LLMs) are exceptional at generative synthesis and reasoni
 
 ## 📦 Installation
 
-### Option 1: Global CLI (Recommended)
+### Option 1: Run instantly with npx (No install needed)
 
 ```bash
-# Clone the repository
-git clone https://github.com/celolopes/jev-dev-harness.git
-cd jev-dev-harness
-
-# Install dependencies and build
-npm install
-npm run build
-
-# Link globally to use `jev-dev` anywhere
-npm link
+# Run CLI commands directly
+npx jev-dev context rank --task "My task"
+npx jev-dev guard check --command "git status"
+npx jev-dev mcp
 ```
 
-### Option 2: Run via npx / local script
+### Option 2: Global CLI via npm
 
 ```bash
-node dist/cli/index.js --help
-# Or if linked:
-npx jev-dev --help
+npm install -g jev-dev-harness
+
+# Now available anywhere:
+jev-dev --help
+jev-mcp
+```
+
+### Option 3: From Source (Developers & Contributors)
+
+```bash
+git clone https://github.com/celolopes/jev-dev-harness.git
+cd jev-dev-harness
+npm install
+npm run build
+npm link
 ```
 
 ---
