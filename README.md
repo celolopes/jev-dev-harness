@@ -57,7 +57,7 @@ Large Language Models (LLMs) are exceptional at generative synthesis and reasoni
    * Calibrated probabilities, native discrete choices, and extreme low-latency evaluation.
    * Automatically activated when `TYPESAFE_API_KEY` (or `JEV_API_KEY`) is set.
 2. **OpenRouter Emulator (Community & Multi-Model)**:
-   * Emulates Jev's structured System One contract (`noul`, `score`, `choice`) using fast reasoning models (e.g., `openai/gpt-4o-mini`, `anthropic/claude-3.5-haiku`).
+   * Emulates Jev's structured System One contract (`noul`, `score`, `choice`) using fast reasoning models (defaults to `deepseek/deepseek-v4-flash`, also supports `openai/gpt-4o-mini`, `anthropic/claude-3.5-haiku`).
    * Automatically activated when `OPENROUTER_API_KEY` (or keys starting with `sk-or-`) is configured.
 3. **Deterministic Offline Fallback**:
    * If offline or no API keys are provided, the harness automatically falls back to regex and heuristic analysis. **Your coding agents are never blocked by API downtime.**
@@ -271,9 +271,9 @@ Create a `.env` file or export environment variables:
 | Variable | Description |
 | :--- | :--- |
 | `TYPESAFE_API_KEY` or `JEV_API_KEY` | Official TypeSafe AI API key (enables native Jev System One). |
-| `OPENROUTER_API_KEY` | OpenRouter API key (enables LLM emulation mode, e.g. `gpt-4o-mini`). |
+| `OPENROUTER_API_KEY` | OpenRouter API key (enables LLM emulation mode, e.g. `deepseek/deepseek-v4-flash`). |
 | `JEV_PROVIDER` | Force provider: `typesafe` or `openrouter`. |
-| `OPENROUTER_MODEL` | Custom OpenRouter model slug (default: `openai/gpt-4o-mini`). |
+| `OPENROUTER_MODEL` | Custom OpenRouter model slug (default: `deepseek/deepseek-v4-flash`). |
 | `OPENROUTER_EFFORT` | Reasoning effort for supported models (`low`, `medium`, `high`). |
 
 ---

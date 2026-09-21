@@ -110,17 +110,17 @@ describe("SafeJevClient Module", () => {
     }
   });
 
-  it("emulates Jev System One via OpenRouter chat completions (e.g. gpt-4o-mini)", async () => {
+  it("emulates Jev System One via OpenRouter chat completions (e.g. deepseek/deepseek-v4-flash)", async () => {
     const origFetch = globalThis.fetch;
     try {
       globalThis.fetch = async (url, init) => {
         expect(url.toString()).toBe("https://openrouter.ai/api/v1/chat/completions");
         const body = JSON.parse(init?.body as string);
-        expect(body.model).toBe("openai/gpt-4o-mini");
+        expect(body.model).toBe("deepseek/deepseek-v4-flash");
 
         return new Response(
           JSON.stringify({
-            model: "openai/gpt-4o-mini",
+            model: "deepseek/deepseek-v4-flash",
             choices: [
               {
                 message: {
@@ -140,7 +140,7 @@ describe("SafeJevClient Module", () => {
 
       const client = new SafeJevClient({ apiKey: "sk-or-v1-mock-openrouter-key" });
       expect(client.provider).toBe("openrouter");
-      expect(client.modelName).toBe("openai/gpt-4o-mini");
+      expect(client.modelName).toBe("deepseek/deepseek-v4-flash");
 
       const response = await client.systemOne(
         { task: "auth" },

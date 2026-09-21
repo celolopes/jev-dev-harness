@@ -59,6 +59,18 @@ export type JevExecutionResponse<Q extends Questions> =
   | JevExecutionSuccess<Q>
   | JevExecutionFallback;
 
+export function normalizeOpenRouterModel(model: string): string {
+  const trimmed = model.trim();
+  if (
+    trimmed === "deepseek-4-flash" ||
+    trimmed === "deepseek-v4-flash" ||
+    trimmed === "deepseek/deepseek-4-flash"
+  ) {
+    return "deepseek/deepseek-v4-flash";
+  }
+  return trimmed;
+}
+
 export class SafeJevClient {
   private client: TypeSafeClient | null = null;
   public readonly isConfigured: boolean;
@@ -71,7 +83,9 @@ export class SafeJevClient {
 
   constructor(options: SafeJevClientOptions = {}) {
     this.disabled = options.disabled ?? false;
-    this.timeoutMs = options.timeoutMs ?? 5000;
+    this.timeoutMs =
+      options.timeoutMs ??
+      (parseInt(process.env.JEV_TIMEOUT_MS || "", 10) || 15000);
 
     // Detect explicit environment or option overrides
     const providerOverride =
@@ -110,11 +124,14 @@ export class SafeJevClient {
     this.apiKey = effectiveKey;
 
     if (this.provider === "openrouter") {
-      this.modelName =
+      const rawModel =
         options.defaultModel ||
         process.env.OPENROUTER_MODEL ||
         process.env.TYPESAFE_DEFAULT_MODEL ||
-        "openai/gpt-4o-mini";
+        "deepseek/deepseek-v4-flash";
+
+      // Normalize user-friendly DeepSeek slugs (e.g. deepseek-4-flash -> deepseek/deepseek-v4-flash)
+      this.modelName = normalizeOpenRouterModel(rawModel);
     } else {
       this.modelName =
         options.defaultModel ||
@@ -332,10 +349,11 @@ export class SafeJevClient {
         );
       } catch (err) {
         const msg = (err as Error).message;
-        // If OpenRouter rejects the typesafe model slug, fall back to fast gpt-4o-mini emulator
+        // If OpenRouter rejects the typesafe model slug, fall back to fast deepseek-4-flash emulator
         if (msg.includes("does not exist") || msg.includes("400")) {
-          const fallbackModel =
-            process.env.OPENROUTER_MODEL || "openai/gpt-4o-mini";
+          const fallbackModel = normalizeOpenRouterModel(
+            process.env.OPENROUTER_MODEL || "deepseek/deepseek-v4-flash"
+          );
           return await this.executeOpenRouterChat(
             sanitizedState,
             questions,
