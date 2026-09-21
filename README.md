@@ -275,11 +275,11 @@ Built-in rules:
 ### Running the MCP Server
 
 ```bash
-# Via global CLI:
-jev-dev mcp
+# Instant zero-install run via npx:
+npx -y jev-dev-harness
 
-# Via npx / node:
-node dist/cli/index.js mcp
+# Or if installed globally (`npm i -g jev-dev-harness`):
+jev-mcp
 ```
 
 ### Configuration Examples
@@ -291,8 +291,8 @@ Add to your Claude Desktop configuration (`%APPDATA%\Claude\claude_desktop_confi
 {
   "mcpServers": {
     "jev-dev": {
-      "command": "node",
-      "args": ["<path-to-repo>/dist/cli/index.js", "mcp"],
+      "command": "npx",
+      "args": ["-y", "jev-dev-harness"],
       "env": {
         "TYPESAFE_API_KEY": "your-typesafe-or-openrouter-key"
       }
@@ -302,14 +302,14 @@ Add to your Claude Desktop configuration (`%APPDATA%\Claude\claude_desktop_confi
 ```
 
 #### 2. Cursor (`.cursor/mcp.json`)
-Add to `.cursor/mcp.json` in your project root:
+Add to `.cursor/mcp.json` in your project root or global Cursor settings:
 
 ```json
 {
   "mcpServers": {
     "jev-dev": {
-      "command": "node",
-      "args": ["dist/cli/index.js", "mcp"],
+      "command": "npx",
+      "args": ["-y", "jev-dev-harness"],
       "env": {
         "TYPESAFE_API_KEY": "${env:TYPESAFE_API_KEY}"
       }
@@ -318,16 +318,43 @@ Add to `.cursor/mcp.json` in your project root:
 }
 ```
 
-#### 3. Antigravity / Agent MCP Config
-Configure in your agent's MCP settings:
+#### 3. Codex Desktop (`config.toml`)
+Add to `~/.codex/config.toml` (e.g. `C:\Users\<user>\.codex\config.toml` on Windows):
+
+```toml
+[mcp_servers.jev_dev]
+command = "npx"
+args = ["-y", "jev-dev-harness"]
+startup_timeout_sec = 60.0
+
+[mcp_servers.jev_dev.env]
+TYPESAFE_API_KEY = "your-typesafe-or-openrouter-key"
+
+[mcp_servers.jev_dev.tools.jev_rank_context]
+approval_mode = "approve"
+
+[mcp_servers.jev_dev.tools.jev_guard_check]
+approval_mode = "approve"
+
+[mcp_servers.jev_dev.tools.jev_review_patch]
+approval_mode = "approve"
+
+[mcp_servers.jev_dev.tools.jev_lint_semantic]
+approval_mode = "approve"
+```
+
+#### 4. Antigravity Desktop (`mcp_config.json`)
+Add to `~/.gemini/antigravity/mcp_config.json`:
 
 ```json
 {
-  "jev-dev": {
-    "command": "node",
-    "args": ["<path-to-repo>/dist/cli/index.js", "mcp"],
-    "env": {
-      "TYPESAFE_API_KEY": "your-typesafe-or-openrouter-key"
+  "mcpServers": {
+    "jev-dev": {
+      "command": "npx",
+      "args": ["-y", "jev-dev-harness"],
+      "env": {
+        "TYPESAFE_API_KEY": "your-typesafe-or-openrouter-key"
+      }
     }
   }
 }
