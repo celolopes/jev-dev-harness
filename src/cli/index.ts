@@ -1,7 +1,9 @@
 import { Command } from "commander";
 import path from "node:path";
 import { rankContext } from "../context-ranker/index.js";
+import { installGitHook, uninstallGitHook } from "../hooks/index.js";
 import { reviewPatchPipeline } from "../patch-reviewer/index.js";
+import { lintSemantic } from "../semantic-linter/index.js";
 import { guardCheck } from "../tool-guard/index.js";
 
 export function createCli(): Command {
@@ -243,6 +245,110 @@ export function createCli(): Command {
         }
       } catch (err) {
         console.error("Error executing tool guard:", (err as Error).message);
+        process.exit(1);
+      }
+    });
+
+  // ==========================================
+  // COMMAND: lint semantic (Phase 8)
+  // ==========================================
+  const lintCommand = program
+    .command("lint")
+    .description("Semantic linting against architectural and security drift (Phase 8)");
+
+  lintCommand
+    .command("semantic")
+    .description("Run semantic checks over git diff or commit range")
+    .option("-p, --path <path>", "Repository path", ".")
+    .option("--diff <string>", "Raw unified diff string")
+    .option("--diff-file <path>", "Path to diff file")
+    .option("--staged", "Lint staged changes (git diff --staged)", false)
+    .option("--commit-range <range>", "Git commit range (e.g. HEAD~1)")
+    .option("--advisory", "Advisory mode (does not fail CI process exit code)", false)
+    .option("--json", "Output machine-readable stable JSON format", false)
+    .option("--no-jev", "Disable Jev semantic evaluation (force deterministic fallback)")
+    .action(async (options) => {
+      try {
+        const repoPath = path.resolve(options.path);
+
+        const result = await lintSemantic({
+          repoPath,
+          diff: options.diff,
+          diffPath: options.diffFile,
+          staged: options.staged,
+          commitRange: options.commitRange,
+          advisoryOnly: options.advisory,
+          useJev: options.jev !== false,
+        });
+
+        if (options.json) {
+          console.log(JSON.stringify(result, null, 2));
+          return;
+        }
+
+        console.log("\n=======================================================");
+        console.log("             JEV SEMANTIC LINTER (PHASE 8)            ");
+        console.log("=======================================================\n");
+        console.log(`Status:      ${result.passed ? "[PASSED]" : "[FAILED]"}`);
+        console.log(`Summary:     ${result.passedRules}/${result.totalRules} passed (${result.failedRules} violations, ${result.advisoriesCount} advisories)`);
+        console.log(`Evaluated:   ${result.filesEvaluated.length} file(s)`);
+        console.log(
+          `Mode:        ${
+            result.fallbackUsed
+              ? "[FALLBACK] Deterministic"
+              : `[ACTIVE] ${result.provider || "TypeSafe Jev"}`
+          }`
+        );
+        console.log(`Latency:     ${result.latencyMs}ms\n`);
+
+        console.log("--- EVALUATED SEMANTIC RULES ---");
+        for (const ev of result.evaluations) {
+          const icon = ev.passed ? "✓ PASS" : `✗ ${ev.severity.toUpperCase()}`;
+          console.log(`  [${icon}] ${ev.ruleName}`);
+          console.log(`      ${ev.message}`);
+        }
+        console.log("\n=======================================================\n");
+
+        if (!result.passed && !options.advisory) {
+          process.exit(1);
+        }
+      } catch (err) {
+        console.error("Error executing semantic linter:", (err as Error).message);
+        process.exit(1);
+      }
+    });
+
+  // ==========================================
+  // COMMAND: hooks (Automation)
+  // ==========================================
+  const hooksCommand = program
+    .command("hooks")
+    .description("Manage git hooks automation");
+
+  hooksCommand
+    .command("install")
+    .description("Install pre-commit safety hook in target repository")
+    .option("-p, --path <path>", "Repository path", ".")
+    .action((options) => {
+      try {
+        const res = installGitHook(options.path);
+        console.log(`[Jev Hook] ${res.message}`);
+      } catch (err) {
+        console.error("[Jev Hook Error]:", (err as Error).message);
+        process.exit(1);
+      }
+    });
+
+  hooksCommand
+    .command("uninstall")
+    .description("Remove pre-commit safety hook from target repository")
+    .option("-p, --path <path>", "Repository path", ".")
+    .action((options) => {
+      try {
+        const res = uninstallGitHook(options.path);
+        console.log(`[Jev Hook] ${res.message}`);
+      } catch (err) {
+        console.error("[Jev Hook Error]:", (err as Error).message);
         process.exit(1);
       }
     });

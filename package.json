@@ -25,6 +25,14 @@
       "types": "./dist/tool-guard/index.d.ts",
       "import": "./dist/tool-guard/index.js"
     },
+    "./hooks": {
+      "types": "./dist/hooks/index.d.ts",
+      "import": "./dist/hooks/index.js"
+    },
+    "./semantic-linter": {
+      "types": "./dist/semantic-linter/index.d.ts",
+      "import": "./dist/semantic-linter/index.js"
+    },
     "./shared": {
       "types": "./dist/shared/index.d.ts",
       "import": "./dist/shared/index.js"
