@@ -1,9 +1,10 @@
 {
   "name": "jev-dev-harness",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Developer Harness with TypeSafe AI / Jev for AI Coding Agents",
   "type": "module",
   "bin": {
+    "jev-dev-harness": "bin/jev-mcp.js",
     "jev-dev": "bin/jev-dev.js",
     "jev-mcp": "bin/jev-mcp.js"
   },
