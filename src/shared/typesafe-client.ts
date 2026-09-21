@@ -73,28 +73,40 @@ export class SafeJevClient {
     this.disabled = options.disabled ?? false;
     this.timeoutMs = options.timeoutMs ?? 5000;
 
-    // Detect keys: either native TYPESAFE_API_KEY, OPENROUTER_API_KEY, or explicit apiKey option
+    // Detect explicit environment or option overrides
+    const providerOverride =
+      options.provider ||
+      (process.env.JEV_PROVIDER as JevProvider | undefined);
+
     const openRouterKey =
       options.apiKey?.startsWith("sk-or-")
         ? options.apiKey
         : process.env.OPENROUTER_API_KEY;
-    const typeSafeKey = options.apiKey || process.env.TYPESAFE_API_KEY;
 
-    // Detect provider
-    if (options.provider) {
-      this.provider = options.provider;
-    } else if (
-      openRouterKey ||
-      typeSafeKey?.startsWith("sk-or-") ||
-      options.baseURL?.includes("openrouter.ai")
-    ) {
+    const typeSafeKey =
+      options.apiKey && !options.apiKey.startsWith("sk-or-")
+        ? options.apiKey
+        : process.env.TYPESAFE_API_KEY || process.env.JEV_API_KEY;
+
+    // Detect provider:
+    // 1. Explicit override if provided
+    // 2. Native TypeSafe if TYPESAFE_API_KEY / JEV_API_KEY is available
+    // 3. OpenRouter if OPENROUTER_API_KEY or sk-or- key is present
+    // 4. Default to typesafe
+    if (providerOverride) {
+      this.provider = providerOverride;
+    } else if (typeSafeKey && !typeSafeKey.startsWith("sk-or-")) {
+      this.provider = "typesafe";
+    } else if (openRouterKey || options.baseURL?.includes("openrouter.ai")) {
       this.provider = "openrouter";
     } else {
       this.provider = "typesafe";
     }
 
     const effectiveKey =
-      this.provider === "openrouter" ? openRouterKey || typeSafeKey : typeSafeKey;
+      this.provider === "openrouter"
+        ? openRouterKey || typeSafeKey
+        : typeSafeKey || openRouterKey;
     this.apiKey = effectiveKey;
 
     if (this.provider === "openrouter") {

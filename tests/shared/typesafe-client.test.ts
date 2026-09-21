@@ -10,8 +10,10 @@ describe("SafeJevClient Module", () => {
   it("initializes in fallback mode when no API key is provided", async () => {
     // Ensure no env key
     const origKey = process.env.TYPESAFE_API_KEY;
+    const origJevKey = process.env.JEV_API_KEY;
     const origOrKey = process.env.OPENROUTER_API_KEY;
     delete process.env.TYPESAFE_API_KEY;
+    delete process.env.JEV_API_KEY;
     delete process.env.OPENROUTER_API_KEY;
 
     try {
@@ -31,6 +33,7 @@ describe("SafeJevClient Module", () => {
       }
     } finally {
       if (origKey) process.env.TYPESAFE_API_KEY = origKey;
+      if (origJevKey) process.env.JEV_API_KEY = origJevKey;
       if (origOrKey) process.env.OPENROUTER_API_KEY = origOrKey;
     }
   });
@@ -144,14 +147,33 @@ describe("SafeJevClient Module", () => {
         { auth_check: noul("Is it auth?") }
       );
 
-      expect(response.ok).toBe(true);
-      if (response.ok) {
-        expect(response.result.answers.auth_check.noul).toBe(0.93);
-        expect(response.inputTokens).toBe(65);
+        expect(response.ok).toBe(true);
+        if (response.ok) {
+          expect(response.result.answers.auth_check.noul).toBe(0.93);
+          expect(response.inputTokens).toBe(65);
+        }
+      } finally {
+        globalThis.fetch = origFetch;
       }
-    } finally {
-      globalThis.fetch = origFetch;
-    }
+    });
+
+    it("prioritizes native TypeSafe provider when TYPESAFE_API_KEY is configured", () => {
+      const origTypeSafe = process.env.TYPESAFE_API_KEY;
+      const origOr = process.env.OPENROUTER_API_KEY;
+      try {
+        process.env.TYPESAFE_API_KEY = "ts-test-key-12345";
+        process.env.OPENROUTER_API_KEY = "sk-or-test-key";
+
+        const client = new SafeJevClient();
+        expect(client.provider).toBe("typesafe");
+        expect(client.modelName).toBe("jev-latest");
+      } finally {
+        if (origTypeSafe) process.env.TYPESAFE_API_KEY = origTypeSafe;
+        else delete process.env.TYPESAFE_API_KEY;
+        if (origOr) process.env.OPENROUTER_API_KEY = origOr;
+        else delete process.env.OPENROUTER_API_KEY;
+      }
+    });
   });
-});
+
 
