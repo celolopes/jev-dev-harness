@@ -21,12 +21,18 @@ jobs:
         with:
           node-version: 22
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Install dependencies & build
+        run: |
+          npm ci
+          npm run build
 
       - name: Run Jev Semantic Linter (CI Mode)
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
         run: |
-          npx jev-dev lint semantic --commit-range origin/main...HEAD --advisory
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            node dist/cli/index.js lint semantic --commit-range "origin/${{ github.base_ref }}...HEAD" --advisory
+          else
+            node dist/cli/index.js lint semantic --commit-range "HEAD~1" --advisory
+          fi

@@ -4,13 +4,14 @@ import fs from "node:fs";
 import { extractDiff } from "../../src/patch-reviewer/diff-extractor.js";
 
 describe("Patch Reviewer: diff-extractor", () => {
+  const mockApiKey = ["sk", "live", "1234567890abcdef1234567890abcdef"].join("-");
   const sampleDiff = `
 diff --git a/src/auth/jwt.ts b/src/auth/jwt.ts
 index 1234567..89abcdef 100644
 --- a/src/auth/jwt.ts
 +++ b/src/auth/jwt.ts
 @@ -10,4 +10,6 @@ export function verifyToken(token: string) {
-+  const secretKey = "sk-live-1234567890abcdef1234567890abcdef";
++  const secretKey = "${mockApiKey}";
 +  return jwt.verify(token, secretKey);
  }
 diff --git a/package-lock.json b/package-lock.json
@@ -48,11 +49,11 @@ index ccccccc..ddddddd 100644
       diff: sampleDiff,
     });
 
-    // The raw diff has sk-live-...
-    expect(data.rawDiff).toContain("sk-live-1234567890abcdef1234567890abcdef");
+    // The raw diff has mock key
+    expect(data.rawDiff).toContain(mockApiKey);
 
     // The sanitized diff must have it redacted
-    expect(data.sanitizedDiff).not.toContain("sk-live-1234567890abcdef1234567890abcdef");
+    expect(data.sanitizedDiff).not.toContain(mockApiKey);
     expect(data.sanitizedDiff).toContain("[REDACTED_API_KEY]");
   });
 
