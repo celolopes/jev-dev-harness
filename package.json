@@ -43,8 +43,15 @@
       "import": "./dist/shared/index.js"
     }
   },
+  "files": [
+    "dist",
+    "bin",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc",
+    "prepublishOnly": "npm run build && vitest run",
     "dev": "tsx src/cli/index.ts",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
@@ -57,10 +64,20 @@
     "developer-harness",
     "context-ranker",
     "coding-agents",
+    "mcp",
+    "modelcontextprotocol",
     "codex",
     "antigravity"
   ],
-  "author": "",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/celolopes/jev-dev-harness.git"
+  },
+  "bugs": {
+    "url": "https://github.com/celolopes/jev-dev-harness/issues"
+  },
+  "homepage": "https://github.com/celolopes/jev-dev-harness#readme",
+  "author": "celolopes",
   "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.30.0",
