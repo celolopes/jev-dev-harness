@@ -7,6 +7,7 @@ import { lintSemantic } from "../semantic-linter/index.js";
 import { guardCheck } from "../tool-guard/index.js";
 import { startMcpServer } from "../mcp/index.js";
 import { printTerminalComparison } from "./compare.js";
+import { runSetupWizard } from "./setup.js";
 
 export function createCli(): Command {
   const program = new Command();
@@ -378,6 +379,26 @@ export function createCli(): Command {
     .option("--json", "Output machine-readable stable JSON format", false)
     .action((options) => {
       printTerminalComparison(options.json);
+    });
+
+  // ==========================================
+  // COMMAND: setup / init (Interactive Wizard)
+  // ==========================================
+  program
+    .command("setup")
+    .alias("init")
+    .description("Interactive setup wizard to configure API keys (TypeSafe/OpenRouter) and agent integrations")
+    .option("--provider <provider>", "Preset provider (typesafe, openrouter, offline)")
+    .option("--key <key>", "Preset API key")
+    .option("--model <model>", "Preset model")
+    .option("-y, --yes", "Run in non-interactive mode", false)
+    .action(async (options) => {
+      await runSetupWizard({
+        provider: options.provider,
+        key: options.key,
+        model: options.model,
+        nonInteractive: options.yes,
+      });
     });
 
   return program;
