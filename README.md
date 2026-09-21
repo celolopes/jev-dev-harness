@@ -81,6 +81,7 @@ npx -y jev-dev compare
 | **Git Hook Automation** | `jev-dev hooks install` | 1-click installer for git pre-commit safety gate. Blocks commits containing leaked credentials or critical regression risk. |
 | **MCP Server** | `jev-dev mcp` | Standard Model Context Protocol (stdio) exposing all 4 tools to Cursor, Claude Desktop, Antigravity. |
 | **Benchmark & ROI** | `jev-dev compare` | Live comparison of agent speed, token reduction, and dollar savings with vs. without Jev. |
+| **Setup Wizard** | `jev-dev setup` | 1-minute interactive CLI to configure API keys (TypeSafe/OpenRouter) and auto-register agents. |
 
 ---
 
@@ -100,15 +101,43 @@ npx -y jev-dev compare
 
 ---
 
-## 📦 Installation
+## 📦 Installation & Quickstart
+
+### 🚀 1-Minute Interactive Setup Wizard (Recommended)
+
+Configure your API keys (TypeSafe AI or OpenRouter) and automatically register the MCP server with your coding agent (Codex, Antigravity, Claude, Cursor) with a single command:
+
+```bash
+# Zero-install interactive wizard:
+npx -y jev-dev setup
+
+# Or if installed globally:
+npm install -g jev-dev-harness
+jev-dev setup
+```
+
+The wizard guides you through:
+1. **Provider Selection:** Native TypeSafe AI (Recommended), OpenRouter (DeepSeek / Claude / GPT), or Offline mode.
+2. **API Key Input:** Securely paste your key (automatically validated with a live connection ping).
+3. **Agent Auto-Configuration:** Automatically saves to `.env`, `~/.jev-dev/config.json`, and registers the MCP server in **Codex Desktop** (`~/.codex/config.toml`).
+
+---
 
 ### Option 1: Run instantly with npx (No install needed)
 
 ```bash
+# Interactive setup wizard
+npx -y jev-dev setup
+
+# Live ROI & benchmark comparison
+npx -y jev-dev compare
+
 # Run CLI commands directly
-npx jev-dev context rank --task "My task"
-npx jev-dev guard check --command "git status"
-npx jev-dev mcp
+npx -y jev-dev context rank --task "My task"
+npx -y jev-dev guard check --command "git status"
+
+# Run stdio MCP server directly for agents
+npx -y jev-dev-harness
 ```
 
 ### Option 2: Global CLI via npm
@@ -116,9 +145,11 @@ npx jev-dev mcp
 ```bash
 npm install -g jev-dev-harness
 
-# Now available anywhere:
-jev-dev --help
-jev-mcp
+# Now available globally anywhere on your system:
+jev-dev setup     # Run the setup wizard
+jev-dev compare   # View ROI and benchmarks
+jev-dev --help    # View all commands
+jev-mcp           # Launch the MCP server
 ```
 
 ### Option 3: From Source (Developers & Contributors)
@@ -404,6 +435,19 @@ Add to `~/.gemini/antigravity/mcp_config.json`:
 * `jev-patch-reviewer`: Instructs agents to audit git diffs before completing tasks.
 
 These are natively discovered by **Antigravity**, **Codex**, and any agent adhering to standard skill conventions.
+
+### ⚡ Post-Task Savings & Efficiency Telemetry
+
+When an AI coding agent (such as **Codex Desktop**, **Antigravity**, **Claude Code**, or **Cursor**) invokes `jev_rank_context` or `jev_review_patch`, the MCP server automatically returns real-time efficiency metrics (`efficiencyReport`). 
+
+Agents can present this summary at the conclusion of each completed task, giving developers immediate feedback on resource savings:
+
+```markdown
+### ⚡ Eficiência Jev
+- **Contexto Otimizado:** 4 arquivos selecionados cirurgicamente de 84 analisados (~95% de redução).
+- **Economia Estimada:** ~68.000 tokens economizados nesta tarefa (~$0.20).
+- **Segurança & Velocidade:** Comandos e diffs auditados em tempo real pelo Jev System One (<1s).
+```
 
 ---
 
