@@ -4,8 +4,8 @@
   "description": "Developer Harness with TypeSafe AI / Jev for AI Coding Agents",
   "type": "module",
   "bin": {
-    "jev-dev": "./bin/jev-dev.js",
-    "jev-mcp": "./bin/jev-mcp.js"
+    "jev-dev": "bin/jev-dev.js",
+    "jev-mcp": "bin/jev-mcp.js"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
