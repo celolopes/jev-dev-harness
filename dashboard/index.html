@@ -655,63 +655,102 @@
     let eventsList = [];
 
     function updateTelemetryUi(summary, events) {
-      if (summary) {
-        currentSummary = summary;
-        document.getElementById('liveDecidedCount').innerText = summary.totalEvents;
-        document.getElementById('liveStatusSubtext').innerHTML = currentLang === 'pt'
-          ? `O Jev otimizou <strong class="text-emerald-300">${summary.totalEvents}</strong> requisições em todos os seus agentes de codificação.`
-          : `Jev optimized <strong class="text-emerald-300">${summary.totalEvents}</strong> requests across your coding agents.`;
-        document.getElementById('metricTotalEvents').innerText = summary.totalEvents;
-        document.getElementById('metricTokensSaved').innerText = `${summary.totalTokensSaved.toLocaleString(currentLang === 'pt' ? 'pt-BR' : 'en-US')}`;
-        document.getElementById('metricDollarsSaved').innerText = `$${summary.estimatedDollarsSaved.toFixed(2)}`;
-        document.getElementById('metricLatency').innerText = summary.avgLatencyMs ? `${summary.avgLatencyMs} ms` : '-- ms';
-        document.getElementById('metricLatencySub').innerText = summary.p95LatencyMs ? `p95: ${summary.p95LatencyMs} ms` : 'p95: -- ms';
-        document.getElementById('metricGuardCount').innerText = summary.guardStats?.totalChecked || 0;
-        document.getElementById('metricGuardSub').innerText = currentLang === 'pt'
-          ? `${summary.guardStats?.blocked || 0} bloqueados`
-          : `${summary.guardStats?.blocked || 0} blocked`;
-        document.getElementById('metricPatchCount').innerText = summary.patchStats?.totalAudited || 0;
-        document.getElementById('metricPatchSub').innerText = currentLang === 'pt'
-          ? `Risco médio: ${summary.patchStats?.avgRiskScore || 0}/100`
-          : `Avg risk: ${summary.patchStats?.avgRiskScore || 0}/100`;
+      try {
+        if (summary) {
+          currentSummary = summary;
+          const subtextEl = document.getElementById('liveStatusSubtext');
+          if (subtextEl) {
+            subtextEl.innerHTML = currentLang === 'pt'
+              ? `O Jev otimizou <strong id="liveDecidedCount" class="text-emerald-300">${summary.totalEvents}</strong> requisições em todos os seus agentes de codificação.`
+              : `Jev optimized <strong id="liveDecidedCount" class="text-emerald-300">${summary.totalEvents}</strong> requests across your coding agents.`;
+          }
 
-        document.getElementById('gateBlockedVal').innerText = currentLang === 'pt'
-          ? `${summary.guardStats?.blocked || 0} bloqueados (${summary.guardStats?.allowed || 0} seguros)`
-          : `${summary.guardStats?.blocked || 0} blocked (${summary.guardStats?.allowed || 0} safe)`;
-        document.getElementById('gateEscalatedVal').innerText = currentLang === 'pt'
-          ? `${summary.patchStats?.escalated || 0} escalados (${summary.patchStats?.approved || 0} aprovados)`
-          : `${summary.patchStats?.escalated || 0} escalated (${summary.patchStats?.approved || 0} approved)`;
-        document.getElementById('gateAvgReductionVal').innerText = summary.contextStats?.avgReductionPct ? `${summary.contextStats.avgReductionPct}%` : '92.4%';
+          const totalEl = document.getElementById('metricTotalEvents');
+          if (totalEl) totalEl.innerText = summary.totalEvents;
 
-        // Stacked Bar
-        const total = summary.totalEvents || 1;
-        const rankCount = summary.byType?.context_rank || 0;
-        const guardCount = summary.byType?.guard_check || 0;
-        const patchCount = summary.byType?.patch_review || 0;
-        const lintCount = summary.byType?.lint_semantic || 0;
+          const tokensEl = document.getElementById('metricTokensSaved');
+          if (tokensEl) tokensEl.innerText = `${(summary.totalTokensSaved || 0).toLocaleString(currentLang === 'pt' ? 'pt-BR' : 'en-US')}`;
 
-        const pRank = Math.round((rankCount / total) * 100);
-        const pGuard = Math.round((guardCount / total) * 100);
-        const pPatch = Math.round((patchCount / total) * 100);
-        const pLint = Math.max(0, 100 - pRank - pGuard - pPatch);
+          const dollarsEl = document.getElementById('metricDollarsSaved');
+          if (dollarsEl) dollarsEl.innerText = `$${(summary.estimatedDollarsSaved || 0).toFixed(2)}`;
 
-        document.getElementById('barRank').style.width = `${pRank}%`;
-        document.getElementById('barGuard').style.width = `${pGuard}%`;
-        document.getElementById('barPatch').style.width = `${pPatch}%`;
-        document.getElementById('barLint').style.width = `${pLint}%`;
+          const latEl = document.getElementById('metricLatency');
+          if (latEl) latEl.innerText = summary.avgLatencyMs ? `${summary.avgLatencyMs} ms` : '-- ms';
 
-        document.getElementById('pctRank').innerText = `${pRank}%`;
-        document.getElementById('pctGuard').innerText = `${pGuard}%`;
-        document.getElementById('pctPatch').innerText = `${pPatch}%`;
-        document.getElementById('pctLint').innerText = `${pLint}%`;
-        document.getElementById('distSummaryText').innerText = currentLang === 'pt'
-          ? `${summary.totalEvents} requisições totais registradas`
-          : `${summary.totalEvents} total requests logged`;
-      }
+          const latSubEl = document.getElementById('metricLatencySub');
+          if (latSubEl) latSubEl.innerText = summary.p95LatencyMs ? `p95: ${summary.p95LatencyMs} ms` : 'p95: -- ms';
 
-      if (events && Array.isArray(events)) {
-        eventsList = events;
-        renderEventsTable(events);
+          const guardEl = document.getElementById('metricGuardCount');
+          if (guardEl) guardEl.innerText = summary.guardStats?.totalChecked || 0;
+
+          const guardSubEl = document.getElementById('metricGuardSub');
+          if (guardSubEl) guardSubEl.innerText = currentLang === 'pt'
+            ? `${summary.guardStats?.blocked || 0} bloqueados`
+            : `${summary.guardStats?.blocked || 0} blocked`;
+
+          const patchEl = document.getElementById('metricPatchCount');
+          if (patchEl) patchEl.innerText = summary.patchStats?.totalAudited || 0;
+
+          const patchSubEl = document.getElementById('metricPatchSub');
+          if (patchSubEl) patchSubEl.innerText = currentLang === 'pt'
+            ? `Risco médio: ${summary.patchStats?.avgRiskScore || 0}/100`
+            : `Avg risk: ${summary.patchStats?.avgRiskScore || 0}/100`;
+
+          const gateBlockedEl = document.getElementById('gateBlockedVal');
+          if (gateBlockedEl) gateBlockedEl.innerText = currentLang === 'pt'
+            ? `${summary.guardStats?.blocked || 0} bloqueados (${summary.guardStats?.allowed || 0} seguros)`
+            : `${summary.guardStats?.blocked || 0} blocked (${summary.guardStats?.allowed || 0} safe)`;
+
+          const gateEscalatedEl = document.getElementById('gateEscalatedVal');
+          if (gateEscalatedEl) gateEscalatedEl.innerText = currentLang === 'pt'
+            ? `${summary.patchStats?.escalated || 0} escalados (${summary.patchStats?.approved || 0} aprovados)`
+            : `${summary.patchStats?.escalated || 0} escalated (${summary.patchStats?.approved || 0} approved)`;
+
+          const gateRedEl = document.getElementById('gateAvgReductionVal');
+          if (gateRedEl) gateRedEl.innerText = summary.contextStats?.avgReductionPct ? `${summary.contextStats.avgReductionPct}%` : '92.4%';
+
+          // Stacked Bar
+          const total = summary.totalEvents || 1;
+          const rankCount = summary.byType?.context_rank || 0;
+          const guardCount = summary.byType?.guard_check || 0;
+          const patchCount = summary.byType?.patch_review || 0;
+          const lintCount = summary.byType?.lint_semantic || 0;
+
+          const pRank = Math.round((rankCount / total) * 100);
+          const pGuard = Math.round((guardCount / total) * 100);
+          const pPatch = Math.round((patchCount / total) * 100);
+          const pLint = Math.max(0, 100 - pRank - pGuard - pPatch);
+
+          const barRank = document.getElementById('barRank');
+          if (barRank) barRank.style.width = `${pRank}%`;
+          const barGuard = document.getElementById('barGuard');
+          if (barGuard) barGuard.style.width = `${pGuard}%`;
+          const barPatch = document.getElementById('barPatch');
+          if (barPatch) barPatch.style.width = `${pPatch}%`;
+          const barLint = document.getElementById('barLint');
+          if (barLint) barLint.style.width = `${pLint}%`;
+
+          const pctRank = document.getElementById('pctRank');
+          if (pctRank) pctRank.innerText = `${pRank}%`;
+          const pctGuard = document.getElementById('pctGuard');
+          if (pctGuard) pctGuard.innerText = `${pGuard}%`;
+          const pctPatch = document.getElementById('pctPatch');
+          if (pctPatch) pctPatch.innerText = `${pPatch}%`;
+          const pctLint = document.getElementById('pctLint');
+          if (pctLint) pctLint.innerText = `${pLint}%`;
+
+          const distSummary = document.getElementById('distSummaryText');
+          if (distSummary) distSummary.innerText = currentLang === 'pt'
+            ? `${summary.totalEvents} requisições totais registradas`
+            : `${summary.totalEvents} total requests logged`;
+        }
+
+        if (events && Array.isArray(events)) {
+          eventsList = events;
+          renderEventsTable(events);
+        }
+      } catch (err) {
+        console.error('Error updating telemetry UI:', err);
       }
     }
 

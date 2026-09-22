@@ -112,24 +112,13 @@ export async function startDashboardServer(options: DashboardOptions = {}): Prom
       if (!fs.existsSync(telemetryFilePath)) return;
       const stat = fs.statSync(telemetryFilePath);
       if (stat.size > lastKnownSize) {
-        const newBytes = stat.size - lastKnownSize;
-        const buffer = Buffer.alloc(newBytes);
-        const fd = fs.openSync(telemetryFilePath, "r");
-        try {
-          fs.readSync(fd, buffer, 0, newBytes, lastKnownSize);
-        } finally {
-          fs.closeSync(fd);
-        }
         lastKnownSize = stat.size;
-
-        const lines = buffer.toString("utf8").split(/\r?\n/).filter((l) => l.trim().length > 0);
-        for (const line of lines) {
-          try {
-            const ev = JSON.parse(line);
-            if (ev && ev.type && ev.id) {
-              broadcastEvent(ev as TelemetryEvent);
-            }
-          } catch {}
+        const recent = getTelemetryEvents(25);
+        for (let i = recent.length - 1; i >= 0; i--) {
+          const ev = recent[i];
+          if (ev && ev.id && !processedEventIds.has(ev.id)) {
+            broadcastEvent(ev);
+          }
         }
       } else if (stat.size < lastKnownSize) {
         lastKnownSize = stat.size;
@@ -215,6 +204,9 @@ export async function startDashboardServer(options: DashboardOptions = {}): Prom
         "Cache-Control": "no-cache, no-transform",
         Connection: "keep-alive",
       });
+      if (typeof (res as any).flushHeaders === "function") {
+        (res as any).flushHeaders();
+      }
 
       // Send initial state
       const initialPayload = JSON.stringify({
