@@ -138,7 +138,7 @@ jev-dev setup
 ```
 
 The wizard guides you through:
-1. **Provider Selection:** Native TypeSafe AI (Recommended), OpenRouter (DeepSeek / Claude / GPT), or Offline mode.
+1. **Provider Selection:** Native TypeSafe AI (Recommended), Vercel AI Gateway (Free Tier), OpenRouter (DeepSeek / Claude / GPT), or Offline mode.
 2. **API Key Input:** Securely paste your key (automatically validated with a live connection ping).
 3. **Global CLI Availability:** Automatically saves to `.env` and `~/.jev-dev/config.json`, making `jev-dev` commands available in **any directory on your system**.
 4. **Multi-Agent Auto-Configuration:** Automatically detects and registers the Jev MCP server across all installed coding agents on your machine:
@@ -148,6 +148,30 @@ The wizard guides you through:
    * **Cursor** (`~/.cursor/mcp.json`)
    * **Windsurf** (`~/.codeium/windsurf/mcp_config.json`)
    * **Trae** (`~/.trae/mcp.json`)
+
+---
+
+### 🔀 Switching AI Providers on the Fly
+
+You can inspect or switch your active provider at any time without losing your saved keys:
+
+```bash
+# Check current active provider & live latency:
+npx -y jev-dev provider
+
+# Switch instantly to Vercel AI Gateway (Free Tier):
+npx -y jev-dev provider vercel
+
+# Switch back to native TypeSafe AI:
+npx -y jev-dev provider typesafe
+
+# Switch to OpenRouter or Offline:
+npx -y jev-dev provider openrouter
+npx -y jev-dev provider offline
+
+# Or run the full interactive wizard:
+npx -y jev-dev setup
+```
 
 ---
 

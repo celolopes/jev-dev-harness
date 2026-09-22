@@ -9,6 +9,7 @@ import { guardCheck } from "../tool-guard/index.js";
 import { startMcpServer } from "../mcp/index.js";
 import { printTerminalComparison } from "./compare.js";
 import { runSetupWizard } from "./setup.js";
+import { runProviderCommand } from "./provider.js";
 import { startDashboardServer } from "./dashboard.js";
 import { runDoctorCommand } from "./doctor.js";
 import { runUninstallCommand } from "./uninstall.js";
@@ -439,8 +440,8 @@ export function createCli(): Command {
   program
     .command("setup")
     .alias("init")
-    .description("Interactive setup wizard to configure API keys (TypeSafe/OpenRouter) and agent integrations")
-    .option("--provider <provider>", "Preset provider (typesafe, openrouter, offline)")
+    .description("Interactive setup wizard to configure AI providers (TypeSafe/Vercel/OpenRouter) and agent integrations")
+    .option("--provider <provider>", "Preset provider (typesafe, vercel, openrouter, offline)")
     .option("--key <key>", "Preset API key")
     .option("--model <model>", "Preset model")
     .option("-y, --yes", "Run in non-interactive mode", false)
@@ -451,6 +452,16 @@ export function createCli(): Command {
         model: options.model,
         nonInteractive: options.yes,
       });
+    });
+
+  // ==========================================
+  // COMMAND: provider (Inspect or Switch Active AI Provider)
+  // ==========================================
+  program
+    .command("provider [target]")
+    .description("Inspect or switch active AI provider (typesafe, vercel, openrouter, offline)")
+    .action(async (target) => {
+      await runProviderCommand(target);
     });
 
   // ==========================================

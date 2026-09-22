@@ -90,6 +90,51 @@ export async function runSetupWizard(options: SetupOptions = {}): Promise<void> 
       provider = "typesafe";
     }
 
+    // Detect existing keys across global config, current .env, and process.env
+    const globalConfigFile = path.join(os.homedir(), ".jev-dev", "config.json");
+    let existingGlobal: any = {};
+    if (fs.existsSync(globalConfigFile)) {
+      try {
+        existingGlobal = JSON.parse(fs.readFileSync(globalConfigFile, "utf8")) || {};
+      } catch {}
+    }
+
+    const envPath = path.resolve(".env");
+    const existingEnvVars: Record<string, string> = {};
+    if (fs.existsSync(envPath)) {
+      try {
+        const lines = fs.readFileSync(envPath, "utf8").split(/\r?\n/);
+        for (const line of lines) {
+          const match = line.match(/^([A-Z_]+)=(.*)$/);
+          if (match && match[1] && match[2] !== undefined) {
+            existingEnvVars[match[1]] = match[2].trim();
+          }
+        }
+      } catch {}
+    }
+
+    const existingTypeSafeKey =
+      existingGlobal.keys?.typesafe ||
+      (existingGlobal.provider === "typesafe" ? existingGlobal.apiKey : undefined) ||
+      existingEnvVars["TYPESAFE_API_KEY"] ||
+      existingEnvVars["JEV_API_KEY"] ||
+      process.env.TYPESAFE_API_KEY ||
+      process.env.JEV_API_KEY;
+
+    const existingVercelKey =
+      existingGlobal.keys?.vercel ||
+      (existingGlobal.provider === "vercel" ? existingGlobal.apiKey : undefined) ||
+      existingEnvVars["AI_GATEWAY_API_KEY"] ||
+      existingEnvVars["VERCEL_AI_GATEWAY_KEY"] ||
+      process.env.AI_GATEWAY_API_KEY ||
+      process.env.VERCEL_AI_GATEWAY_KEY;
+
+    const existingOpenRouterKey =
+      existingGlobal.keys?.openrouter ||
+      (existingGlobal.provider === "openrouter" ? existingGlobal.apiKey : undefined) ||
+      existingEnvVars["OPENROUTER_API_KEY"] ||
+      process.env.OPENROUTER_API_KEY;
+
     let apiKey = options.key;
     let model = options.model;
 
@@ -99,8 +144,16 @@ export async function runSetupWizard(options: SetupOptions = {}): Promise<void> 
         console.log("  📌 How to generate your API key:");
         console.log("     1. Visit:     👉 https://typesafe.ai");
         console.log("     2. Dashboard: 👉 https://typesafe.ai/dashboard");
-        console.log("     3. Copy your key and paste it below:\n");
-        apiKey = (await ask(rl, "Paste your TYPESAFE_API_KEY (or press Enter to skip): ")).trim();
+        if (existingTypeSafeKey) {
+          const masked = existingTypeSafeKey.slice(0, 4) + "..." + existingTypeSafeKey.slice(-4);
+          const input = (await ask(rl, `     (Existing key: ${masked}) - Press Enter to keep or paste new: `)).trim();
+          apiKey = input || existingTypeSafeKey;
+        } else {
+          console.log("     3. Copy your key and paste it below:\n");
+          apiKey = (await ask(rl, "Paste your TYPESAFE_API_KEY (or press Enter to skip): ")).trim();
+        }
+      } else if (!apiKey && existingTypeSafeKey) {
+        apiKey = existingTypeSafeKey;
       }
     } else if (provider === "vercel") {
       if (!apiKey && !options.nonInteractive) {
@@ -108,8 +161,16 @@ export async function runSetupWizard(options: SetupOptions = {}): Promise<void> 
         console.log("  📌 How to generate your API key:");
         console.log("     1. Visit:     👉 https://vercel.com/d/ai-gateway");
         console.log("     2. Dashboard: 👉 https://vercel.com/dashboard (AI Gateway → API Keys)");
-        console.log("     3. Copy your key and paste it below:\n");
-        apiKey = (await ask(rl, "Paste your AI_GATEWAY_API_KEY (or press Enter to skip): ")).trim();
+        if (existingVercelKey) {
+          const masked = existingVercelKey.slice(0, 4) + "..." + existingVercelKey.slice(-4);
+          const input = (await ask(rl, `     (Existing key: ${masked}) - Press Enter to keep or paste new: `)).trim();
+          apiKey = input || existingVercelKey;
+        } else {
+          console.log("     3. Copy your key and paste it below:\n");
+          apiKey = (await ask(rl, "Paste your AI_GATEWAY_API_KEY (or press Enter to skip): ")).trim();
+        }
+      } else if (!apiKey && existingVercelKey) {
+        apiKey = existingVercelKey;
       }
     } else if (provider === "openrouter") {
       if (!apiKey && !options.nonInteractive) {
@@ -117,67 +178,68 @@ export async function runSetupWizard(options: SetupOptions = {}): Promise<void> 
         console.log("  📌 How to generate your API key:");
         console.log("     1. Visit:     👉 https://openrouter.ai/keys");
         console.log("     2. Website:   👉 https://openrouter.ai");
-        console.log("     3. Click 'Create Key' and paste it below:\n");
-        apiKey = (await ask(rl, "Paste your OPENROUTER_API_KEY (or press Enter to skip): ")).trim();
+        if (existingOpenRouterKey) {
+          const masked = existingOpenRouterKey.slice(0, 4) + "..." + existingOpenRouterKey.slice(-4);
+          const input = (await ask(rl, `     (Existing key: ${masked}) - Press Enter to keep or paste new: `)).trim();
+          apiKey = input || existingOpenRouterKey;
+        } else {
+          console.log("     3. Click 'Create Key' and paste it below:\n");
+          apiKey = (await ask(rl, "Paste your OPENROUTER_API_KEY (or press Enter to skip): ")).trim();
+        }
+      } else if (!apiKey && existingOpenRouterKey) {
+        apiKey = existingOpenRouterKey;
       }
 
       if (!model && !options.nonInteractive) {
-        const defaultModel = "deepseek/deepseek-v4-flash";
+        const defaultModel = existingGlobal.model || "deepseek/deepseek-v4-flash";
         console.log(`\n🤖 Target Model for System One judgments (default: ${defaultModel})`);
         console.log("   Popular choices: deepseek/deepseek-v4-flash, anthropic/claude-3.5-haiku, openai/gpt-4o-mini");
         const modelInput = (
           await ask(rl, `Enter model slug (default: ${defaultModel}): `)
         ).trim();
         model = modelInput || defaultModel;
+      } else if (!model && existingGlobal.model) {
+        model = existingGlobal.model;
       }
     }
 
     // Save configurations
     console.log("\n💾 Saving Configurations...");
 
-    // 1. Save to local .env in current directory
-    const envPath = path.resolve(".env");
-    const envLines: string[] = [];
-
-    if (fs.existsSync(envPath)) {
-      const existingEnv = fs.readFileSync(envPath, "utf8");
-      for (const line of existingEnv.split(/\r?\n/)) {
-        if (
-          !line.startsWith("TYPESAFE_API_KEY=") &&
-          !line.startsWith("AI_GATEWAY_API_KEY=") &&
-          !line.startsWith("VERCEL_AI_GATEWAY_KEY=") &&
-          !line.startsWith("OPENROUTER_API_KEY=") &&
-          !line.startsWith("OPENROUTER_MODEL=") &&
-          !line.startsWith("JEV_PROVIDER=")
-        ) {
-          if (line.trim()) envLines.push(line);
-        }
-      }
-    }
-
-    envLines.push(`JEV_PROVIDER=${provider}`);
+    // 1. Save to local .env in current directory (preserving existing keys of other providers)
+    existingEnvVars["JEV_PROVIDER"] = provider;
     if (provider === "vercel" && apiKey) {
-      envLines.push(`AI_GATEWAY_API_KEY=${apiKey}`);
+      existingEnvVars["AI_GATEWAY_API_KEY"] = apiKey;
     } else if (provider === "typesafe" && apiKey) {
-      envLines.push(`TYPESAFE_API_KEY=${apiKey}`);
+      existingEnvVars["TYPESAFE_API_KEY"] = apiKey;
     } else if (provider === "openrouter" && apiKey) {
-      envLines.push(`OPENROUTER_API_KEY=${apiKey}`);
-      if (model) envLines.push(`OPENROUTER_MODEL=${model}`);
+      existingEnvVars["OPENROUTER_API_KEY"] = apiKey;
+      if (model) existingEnvVars["OPENROUTER_MODEL"] = model;
     }
 
+    const envLines: string[] = [];
+    for (const [k, v] of Object.entries(existingEnvVars)) {
+      envLines.push(`${k}=${v}`);
+    }
     fs.writeFileSync(envPath, envLines.join("\n") + "\n", "utf8");
-    console.log(`  ✓ Updated local .env at ${envPath}`);
+    console.log(`  ✓ Updated local .env at ${envPath} (JEV_PROVIDER=${provider})`);
 
     // 2. Save to global config directory (~/.jev-dev/config.json)
     const globalConfigDir = path.join(os.homedir(), ".jev-dev");
     if (!fs.existsSync(globalConfigDir)) {
       fs.mkdirSync(globalConfigDir, { recursive: true });
     }
-    const globalConfigFile = path.join(globalConfigDir, "config.json");
+    const keysMap = existingGlobal.keys || {};
+    if (existingTypeSafeKey) keysMap.typesafe = existingTypeSafeKey;
+    if (existingVercelKey) keysMap.vercel = existingVercelKey;
+    if (existingOpenRouterKey) keysMap.openrouter = existingOpenRouterKey;
+    if (apiKey) keysMap[provider] = apiKey;
+
     const globalData = {
       provider,
-      apiKey: apiKey || undefined,
-      model: model || undefined,
+      apiKey: apiKey || keysMap[provider] || undefined,
+      model: model || existingGlobal.model || undefined,
+      keys: keysMap,
       updatedAt: new Date().toISOString(),
     };
     fs.writeFileSync(globalConfigFile, JSON.stringify(globalData, null, 2), "utf8");
