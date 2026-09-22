@@ -226,6 +226,34 @@ export async function runSetupWizard(options: SetupOptions = {}): Promise<void> 
       configuredAgentsCount++;
     }
 
+    // Agent G: VSCode (Cline)
+    const clinePath =
+      process.platform === "win32"
+        ? path.join(process.env.APPDATA || path.join(os.homedir(), "AppData", "Roaming"), "Code", "User", "globalStorage", "saoudrizwan.claude-dev", "settings", "cline_mcp_settings.json")
+        : process.platform === "darwin"
+        ? path.join(os.homedir(), "Library", "Application Support", "Code", "User", "globalStorage", "saoudrizwan.claude-dev", "settings", "cline_mcp_settings.json")
+        : path.join(os.homedir(), ".config", "Code", "User", "globalStorage", "saoudrizwan.claude-dev", "settings", "cline_mcp_settings.json");
+    if (configureJsonMcpServer(clinePath, "VSCode (Cline)", mcpEnv)) {
+      configuredAgentsCount++;
+    }
+
+    // Agent H: VSCode (Roo Code)
+    const rooPath =
+      process.platform === "win32"
+        ? path.join(process.env.APPDATA || path.join(os.homedir(), "AppData", "Roaming"), "Code", "User", "globalStorage", "rooveterinaryinc.roo-cline", "settings", "cline_mcp_settings.json")
+        : process.platform === "darwin"
+        ? path.join(os.homedir(), "Library", "Application Support", "Code", "User", "globalStorage", "rooveterinaryinc.roo-cline", "settings", "cline_mcp_settings.json")
+        : path.join(os.homedir(), ".config", "Code", "User", "globalStorage", "rooveterinaryinc.roo-cline", "settings", "cline_mcp_settings.json");
+    if (configureJsonMcpServer(rooPath, "VSCode (Roo Code)", mcpEnv)) {
+      configuredAgentsCount++;
+    }
+
+    // Agent I: VSCode (Continue)
+    const continuePath = path.join(os.homedir(), ".continue", "config.json");
+    if (configureJsonMcpServer(continuePath, "VSCode (Continue)", mcpEnv)) {
+      configuredAgentsCount++;
+    }
+
     if (configuredAgentsCount === 0) {
       console.log("  ℹ No existing agent MCP configs detected. You can easily connect any agent using the instructions in README.md");
     } else {

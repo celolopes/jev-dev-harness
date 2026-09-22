@@ -184,6 +184,53 @@ function checkMcpConfigs(): Array<{ name: string; path: string; configured: bool
   }
   results.push({ name: "Trae", path: traePath, configured: traeOk });
 
+  // 7. VSCode Cline
+  let clinePath = "";
+  if (process.platform === "win32") {
+    clinePath = path.join(process.env.APPDATA || path.join(home, "AppData", "Roaming"), "Code", "User", "globalStorage", "saoudrizwan.claude-dev", "settings", "cline_mcp_settings.json");
+  } else if (process.platform === "darwin") {
+    clinePath = path.join(home, "Library", "Application Support", "Code", "User", "globalStorage", "saoudrizwan.claude-dev", "settings", "cline_mcp_settings.json");
+  } else {
+    clinePath = path.join(home, ".config", "Code", "User", "globalStorage", "saoudrizwan.claude-dev", "settings", "cline_mcp_settings.json");
+  }
+  let clineOk = false;
+  if (fs.existsSync(clinePath)) {
+    try {
+      const content = fs.readFileSync(clinePath, "utf8");
+      clineOk = content.includes("jev-dev");
+    } catch {}
+  }
+  results.push({ name: "VSCode (Cline)", path: clinePath, configured: clineOk });
+
+  // 8. VSCode Roo Code
+  let rooPath = "";
+  if (process.platform === "win32") {
+    rooPath = path.join(process.env.APPDATA || path.join(home, "AppData", "Roaming"), "Code", "User", "globalStorage", "rooveterinaryinc.roo-cline", "settings", "cline_mcp_settings.json");
+  } else if (process.platform === "darwin") {
+    rooPath = path.join(home, "Library", "Application Support", "Code", "User", "globalStorage", "rooveterinaryinc.roo-cline", "settings", "cline_mcp_settings.json");
+  } else {
+    rooPath = path.join(home, ".config", "Code", "User", "globalStorage", "rooveterinaryinc.roo-cline", "settings", "cline_mcp_settings.json");
+  }
+  let rooOk = false;
+  if (fs.existsSync(rooPath)) {
+    try {
+      const content = fs.readFileSync(rooPath, "utf8");
+      rooOk = content.includes("jev-dev");
+    } catch {}
+  }
+  results.push({ name: "VSCode (Roo Code)", path: rooPath, configured: rooOk });
+
+  // 9. Continue.dev
+  const continuePath = path.join(home, ".continue", "config.json");
+  let continueOk = false;
+  if (fs.existsSync(continuePath)) {
+    try {
+      const content = fs.readFileSync(continuePath, "utf8");
+      continueOk = content.includes("jev-dev");
+    } catch {}
+  }
+  results.push({ name: "VSCode (Continue)", path: continuePath, configured: continueOk });
+
   return results;
 }
 
@@ -197,10 +244,15 @@ export async function runDoctorCommand(options: DoctorOptions = {}): Promise<Doc
   // If user requested --init-rules, generate them now
   if (options.initRules) {
     const ruleContent = getAgentRuleContent();
+    const githubDir = path.join(cwd, ".github");
+    if (!fs.existsSync(githubDir)) {
+      try { fs.mkdirSync(githubDir, { recursive: true }); } catch {}
+    }
     const targets = [
       { name: "GEMINI.md (Antigravity)", file: path.join(cwd, "GEMINI.md") },
       { name: "CLAUDE.md (Claude Code)", file: path.join(cwd, "CLAUDE.md") },
       { name: ".cursorrules (Cursor)", file: path.join(cwd, ".cursorrules") },
+      { name: "copilot-instructions.md (GitHub Copilot / VSCode)", file: path.join(githubDir, "copilot-instructions.md") },
     ];
 
     console.log("\n📝 Initializing AI agent rule files in current workspace...\n");
