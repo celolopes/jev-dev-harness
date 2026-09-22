@@ -211,6 +211,44 @@ describe("SafeJevClient Module", () => {
         else delete process.env.OPENROUTER_API_KEY;
       }
     });
+
+    it("detects and configures Vercel AI Gateway provider via AI_GATEWAY_API_KEY", () => {
+      const origVercel = process.env.AI_GATEWAY_API_KEY;
+      const origTypeSafe = process.env.TYPESAFE_API_KEY;
+      const origOr = process.env.OPENROUTER_API_KEY;
+      const origProvider = process.env.JEV_PROVIDER;
+      try {
+        delete process.env.TYPESAFE_API_KEY;
+        delete process.env.OPENROUTER_API_KEY;
+        delete process.env.JEV_PROVIDER;
+        process.env.AI_GATEWAY_API_KEY = "vcl_mock_ai_gateway_key_999";
+
+        const client = new SafeJevClient();
+        expect(client.provider).toBe("vercel");
+        expect(client.isConfigured).toBe(true);
+        expect(client.modelName).toBe("typesafe-ai/jev");
+        expect(client.getReason()).toContain("Vercel AI Gateway");
+      } finally {
+        if (origVercel) process.env.AI_GATEWAY_API_KEY = origVercel;
+        else delete process.env.AI_GATEWAY_API_KEY;
+        if (origTypeSafe) process.env.TYPESAFE_API_KEY = origTypeSafe;
+        if (origOr) process.env.OPENROUTER_API_KEY = origOr;
+        if (origProvider) process.env.JEV_PROVIDER = origProvider;
+        else delete process.env.JEV_PROVIDER;
+      }
+    });
+
+    it("supports explicit provider: 'vercel' with custom options", () => {
+      const client = new SafeJevClient({
+        provider: "vercel",
+        apiKey: "vcl_custom_key",
+        defaultModel: "typesafe-ai/jev",
+      });
+      expect(client.provider).toBe("vercel");
+      expect(client.isConfigured).toBe(true);
+      expect(client.modelName).toBe("typesafe-ai/jev");
+      expect(client.getReason()).toBe("READY (Vercel AI Gateway: typesafe-ai/jev)");
+    });
   });
 
 

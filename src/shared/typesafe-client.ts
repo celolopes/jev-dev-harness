@@ -57,7 +57,7 @@ export type {
   SystemOneResult,
 };
 
-export type JevProvider = "typesafe" | "openrouter";
+export type JevProvider = "typesafe" | "openrouter" | "vercel";
 
 export interface SafeJevClientOptions {
   apiKey?: string;
@@ -125,6 +125,12 @@ export class SafeJevClient {
       options.provider ||
       (process.env.JEV_PROVIDER as JevProvider | undefined);
 
+    const vercelKey =
+      process.env.AI_GATEWAY_API_KEY ||
+      process.env.VERCEL_AI_GATEWAY_KEY ||
+      process.env.VERCEL_OIDC_TOKEN ||
+      (globalConfig.provider === "vercel" ? globalConfig.apiKey : undefined);
+
     const openRouterKey =
       options.apiKey?.startsWith("sk-or-")
         ? options.apiKey
@@ -133,40 +139,64 @@ export class SafeJevClient {
     const typeSafeKey =
       options.apiKey && !options.apiKey.startsWith("sk-or-")
         ? options.apiKey
-        : process.env.TYPESAFE_API_KEY || process.env.JEV_API_KEY || (globalConfig.provider !== "openrouter" ? globalConfig.apiKey : undefined);
+        : process.env.TYPESAFE_API_KEY || process.env.JEV_API_KEY || (globalConfig.provider === "typesafe" ? globalConfig.apiKey : undefined);
 
     // Detect provider:
     // 1. Explicit options.provider
-    // 2. Explicit options.apiKey starting with sk-or- -> openrouter
-    // 3. Explicit options.apiKey -> typesafe
-    // 4. Ambient JEV_PROVIDER env override
-    // 5. Ambient TYPESAFE_API_KEY / OPENROUTER_API_KEY
-    // 6. Global config from ~/.jev-dev/config.json
+    // 2. Explicit options.baseURL containing vercel
+    // 3. Explicit options.apiKey starting with sk-or- -> openrouter
+    // 4. Explicit options.apiKey -> typesafe
+    // 5. Ambient JEV_PROVIDER env override
+    // 6. Ambient AI_GATEWAY_API_KEY / VERCEL_AI_GATEWAY_KEY / VERCEL_OIDC_TOKEN
+    // 7. Ambient TYPESAFE_API_KEY / OPENROUTER_API_KEY
+    // 8. Global config from ~/.jev-dev/config.json
     if (options.provider) {
       this.provider = options.provider;
+    } else if (
+      options.baseURL?.includes("vercel") ||
+      options.apiKey?.startsWith("vcl_") ||
+      options.apiKey?.startsWith("vercel_")
+    ) {
+      this.provider = "vercel";
     } else if (
       options.apiKey?.startsWith("sk-or-") ||
       options.baseURL?.includes("openrouter.ai")
     ) {
       this.provider = "openrouter";
-    } else if (options.apiKey) {
-      this.provider = "typesafe";
     } else if (providerOverride) {
       this.provider = providerOverride;
+    } else if (
+      process.env.AI_GATEWAY_API_KEY ||
+      process.env.VERCEL_AI_GATEWAY_KEY ||
+      process.env.VERCEL_OIDC_TOKEN
+    ) {
+      this.provider = "vercel";
     } else if (process.env.TYPESAFE_API_KEY || process.env.JEV_API_KEY) {
       this.provider = "typesafe";
     } else if (process.env.OPENROUTER_API_KEY) {
       this.provider = "openrouter";
     } else if (globalConfig.provider) {
       this.provider = globalConfig.provider;
+    } else if (options.apiKey) {
+      this.provider = "typesafe";
     } else {
       this.provider = "typesafe";
     }
 
-    const effectiveKey =
-      this.provider === "openrouter"
-        ? (options.apiKey?.startsWith("sk-or-") ? options.apiKey : process.env.OPENROUTER_API_KEY || options.apiKey || (globalConfig.provider === "openrouter" ? globalConfig.apiKey : undefined))
-        : (options.apiKey || process.env.TYPESAFE_API_KEY || process.env.JEV_API_KEY || globalConfig.apiKey);
+    let effectiveKey: string | undefined;
+    if (this.provider === "vercel") {
+      effectiveKey = options.apiKey || vercelKey;
+    } else if (this.provider === "openrouter") {
+      effectiveKey = options.apiKey?.startsWith("sk-or-")
+        ? options.apiKey
+        : process.env.OPENROUTER_API_KEY || options.apiKey || (globalConfig.provider === "openrouter" ? globalConfig.apiKey : undefined);
+    } else {
+      effectiveKey =
+        options.apiKey ||
+        process.env.TYPESAFE_API_KEY ||
+        process.env.JEV_API_KEY ||
+        globalConfig.apiKey;
+    }
     this.apiKey = effectiveKey;
 
     if (this.provider === "openrouter") {
@@ -179,6 +209,13 @@ export class SafeJevClient {
 
       // Normalize user-friendly DeepSeek slugs (e.g. deepseek-4-flash -> deepseek/deepseek-v4-flash)
       this.modelName = normalizeOpenRouterModel(rawModel);
+    } else if (this.provider === "vercel") {
+      this.modelName =
+        options.defaultModel ||
+        process.env.VERCEL_MODEL ||
+        process.env.TYPESAFE_DEFAULT_MODEL ||
+        globalConfig.model ||
+        "typesafe-ai/jev";
     } else {
       this.modelName =
         options.defaultModel ||
@@ -195,6 +232,30 @@ export class SafeJevClient {
     } else if (this.provider === "openrouter") {
       this.isConfigured = true;
       this.statusReason = `READY (OpenRouter: ${this.modelName})`;
+    } else if (this.provider === "vercel") {
+      try {
+        const vercelBaseUrl =
+          options.baseURL ||
+          process.env.VERCEL_AI_GATEWAY_URL ||
+          "https://ai-gateway.vercel.sh/typesafe";
+
+        this.client = new TypeSafeClient({
+          apiKey: effectiveKey,
+          baseURL: vercelBaseUrl,
+          defaultModel: this.modelName,
+          timeout: this.timeoutMs,
+          retry: {
+            maxRetries: options.maxRetries ?? 1,
+            backoffInitialMs: 200,
+            backoffMaxMs: 1000,
+          },
+        });
+        this.isConfigured = true;
+        this.statusReason = `READY (Vercel AI Gateway: ${this.modelName})`;
+      } catch (err) {
+        this.isConfigured = false;
+        this.statusReason = `INIT_ERROR: ${(err as Error).message}`;
+      }
     } else {
       try {
         this.client = new TypeSafeClient({

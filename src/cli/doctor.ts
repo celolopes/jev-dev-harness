@@ -296,12 +296,34 @@ export async function runDoctorCommand(options: DoctorOptions = {}): Promise<Doc
     try {
       const cfg = JSON.parse(fs.readFileSync(globalConfigPath, "utf8"));
       provider = cfg.provider || "typesafe";
-      hasApiKey = Boolean(cfg.apiKey || process.env.TYPESAFE_API_KEY || process.env.OPENROUTER_API_KEY);
+      hasApiKey = Boolean(
+        cfg.apiKey ||
+        process.env.TYPESAFE_API_KEY ||
+        process.env.AI_GATEWAY_API_KEY ||
+        process.env.VERCEL_AI_GATEWAY_KEY ||
+        process.env.VERCEL_OIDC_TOKEN ||
+        process.env.OPENROUTER_API_KEY
+      );
     } catch {}
   } else {
-    hasApiKey = Boolean(process.env.TYPESAFE_API_KEY || process.env.OPENROUTER_API_KEY);
-    if (process.env.OPENROUTER_API_KEY) provider = "openrouter";
-    else if (process.env.TYPESAFE_API_KEY) provider = "typesafe";
+    hasApiKey = Boolean(
+      process.env.TYPESAFE_API_KEY ||
+      process.env.AI_GATEWAY_API_KEY ||
+      process.env.VERCEL_AI_GATEWAY_KEY ||
+      process.env.VERCEL_OIDC_TOKEN ||
+      process.env.OPENROUTER_API_KEY
+    );
+    if (
+      process.env.AI_GATEWAY_API_KEY ||
+      process.env.VERCEL_AI_GATEWAY_KEY ||
+      process.env.VERCEL_OIDC_TOKEN
+    ) {
+      provider = "vercel";
+    } else if (process.env.OPENROUTER_API_KEY) {
+      provider = "openrouter";
+    } else if (process.env.TYPESAFE_API_KEY) {
+      provider = "typesafe";
+    }
   }
 
   // 3. Live Connection Test

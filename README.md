@@ -108,11 +108,16 @@ npx -y jev-dev compare
    * Calibrated probabilities, native discrete choices, and extreme low-latency evaluation.
    * 👉 **Generate API Key:** [https://typesafe.ai](https://typesafe.ai) (Dashboard: [https://typesafe.ai/dashboard](https://typesafe.ai/dashboard))
    * Automatically activated when `TYPESAFE_API_KEY` (or `JEV_API_KEY`) is set.
-2. **OpenRouter Emulator (Community & Multi-Model)**:
+2. **Vercel AI Gateway (Free Tier Credits & Managed)**:
+   * Direct access to TypeSafe AI's Jev model through Vercel's managed AI Gateway (`https://ai-gateway.vercel.sh/typesafe`).
+   * Takes advantage of Vercel's free credit allowance and free output tokens with zero markup.
+   * 👉 **Generate API Key:** [https://vercel.com/d/ai-gateway](https://vercel.com/d/ai-gateway) (Vercel Dashboard → AI Gateway → API Keys)
+   * Automatically activated when `AI_GATEWAY_API_KEY` (or `VERCEL_AI_GATEWAY_KEY` / `VERCEL_OIDC_TOKEN`) is configured.
+3. **OpenRouter Emulator (Community & Multi-Model)**:
    * Emulates Jev's structured System One contract (`noul`, `score`, `choice`) using fast reasoning models (defaults to `deepseek/deepseek-v4-flash`, also supports `openai/gpt-4o-mini`, `anthropic/claude-3.5-haiku`).
    * 👉 **Generate API Key:** [https://openrouter.ai/keys](https://openrouter.ai/keys)
    * Automatically activated when `OPENROUTER_API_KEY` (or keys starting with `sk-or-`) is configured.
-3. **Deterministic Offline Fallback**:
+4. **Deterministic Offline Fallback**:
    * If offline or no API keys are provided, the harness automatically falls back to regex and heuristic analysis. **Your coding agents are never blocked by API downtime.**
 
 ---
@@ -510,8 +515,9 @@ Create a `.env` file or export environment variables:
 | Variable | Description |
 | :--- | :--- |
 | `TYPESAFE_API_KEY` or `JEV_API_KEY` | Official TypeSafe AI API key (enables native Jev System One). |
+| `AI_GATEWAY_API_KEY` | Vercel AI Gateway API key (enables TypeSafe Jev via Vercel AI Gateway). |
 | `OPENROUTER_API_KEY` | OpenRouter API key (enables LLM emulation mode, e.g. `deepseek/deepseek-v4-flash`). |
-| `JEV_PROVIDER` | Force provider: `typesafe` or `openrouter`. |
+| `JEV_PROVIDER` | Force provider: `typesafe`, `vercel`, or `openrouter`. |
 | `OPENROUTER_MODEL` | Custom OpenRouter model slug (default: `deepseek/deepseek-v4-flash`). |
 | `OPENROUTER_EFFORT` | Reasoning effort for supported models (`low`, `medium`, `high`). |
 

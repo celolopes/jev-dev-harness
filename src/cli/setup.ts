@@ -47,7 +47,7 @@ function configureJsonMcpServer(
 }
 
 export interface SetupOptions {
-  provider?: "typesafe" | "openrouter" | "offline";
+  provider?: "typesafe" | "vercel" | "openrouter" | "offline";
   key?: string;
   model?: string;
   nonInteractive?: boolean;
@@ -70,14 +70,18 @@ export async function runSetupWizard(options: SetupOptions = {}): Promise<void> 
       console.log("Select your primary AI Provider for Jev System One:");
       console.log("  [1] Native TypeSafe AI (Recommended — ultra-fast native System One models)");
       console.log("      🔗 Generate key: https://typesafe.ai (Dashboard: https://typesafe.ai/dashboard)");
-      console.log("  [2] OpenRouter / OpenCode (Community — DeepSeek V4, Claude 3.5, GPT-4o-mini)");
+      console.log("  [2] Vercel AI Gateway (Free Tier credits — access TypeSafe Jev via Vercel)");
+      console.log("      🔗 Generate key: https://vercel.com/d/ai-gateway (Dashboard: https://vercel.com/dashboard)");
+      console.log("  [3] OpenRouter / OpenCode (Community — DeepSeek V4, Claude 3.5, GPT-4o-mini)");
       console.log("      🔗 Generate key: https://openrouter.ai/keys (or https://openrouter.ai)");
-      console.log("  [3] Offline / Deterministic Only (Heuristics & regex — no API key needed)\n");
+      console.log("  [4] Offline / Deterministic Only (Heuristics & regex — no API key needed)\n");
 
-      const choice = (await ask(rl, "Enter choice [1-3] (default: 1): ")).trim();
+      const choice = (await ask(rl, "Enter choice [1-4] (default: 1): ")).trim();
       if (choice === "2") {
-        provider = "openrouter";
+        provider = "vercel";
       } else if (choice === "3") {
+        provider = "openrouter";
+      } else if (choice === "4") {
         provider = "offline";
       } else {
         provider = "typesafe";
@@ -97,6 +101,15 @@ export async function runSetupWizard(options: SetupOptions = {}): Promise<void> 
         console.log("     2. Dashboard: 👉 https://typesafe.ai/dashboard");
         console.log("     3. Copy your key and paste it below:\n");
         apiKey = (await ask(rl, "Paste your TYPESAFE_API_KEY (or press Enter to skip): ")).trim();
+      }
+    } else if (provider === "vercel") {
+      if (!apiKey && !options.nonInteractive) {
+        console.log("\n🔑 Vercel AI Gateway Configuration (Free Tier Credits):");
+        console.log("  📌 How to generate your API key:");
+        console.log("     1. Visit:     👉 https://vercel.com/d/ai-gateway");
+        console.log("     2. Dashboard: 👉 https://vercel.com/dashboard (AI Gateway → API Keys)");
+        console.log("     3. Copy your key and paste it below:\n");
+        apiKey = (await ask(rl, "Paste your AI_GATEWAY_API_KEY (or press Enter to skip): ")).trim();
       }
     } else if (provider === "openrouter") {
       if (!apiKey && !options.nonInteractive) {
@@ -131,6 +144,8 @@ export async function runSetupWizard(options: SetupOptions = {}): Promise<void> 
       for (const line of existingEnv.split(/\r?\n/)) {
         if (
           !line.startsWith("TYPESAFE_API_KEY=") &&
+          !line.startsWith("AI_GATEWAY_API_KEY=") &&
+          !line.startsWith("VERCEL_AI_GATEWAY_KEY=") &&
           !line.startsWith("OPENROUTER_API_KEY=") &&
           !line.startsWith("OPENROUTER_MODEL=") &&
           !line.startsWith("JEV_PROVIDER=")
@@ -141,7 +156,9 @@ export async function runSetupWizard(options: SetupOptions = {}): Promise<void> 
     }
 
     envLines.push(`JEV_PROVIDER=${provider}`);
-    if (provider === "typesafe" && apiKey) {
+    if (provider === "vercel" && apiKey) {
+      envLines.push(`AI_GATEWAY_API_KEY=${apiKey}`);
+    } else if (provider === "typesafe" && apiKey) {
       envLines.push(`TYPESAFE_API_KEY=${apiKey}`);
     } else if (provider === "openrouter" && apiKey) {
       envLines.push(`OPENROUTER_API_KEY=${apiKey}`);
@@ -170,8 +187,12 @@ export async function runSetupWizard(options: SetupOptions = {}): Promise<void> 
     console.log("\n🤖 Detecting and Configuring AI Coding Agents...");
     let configuredAgentsCount = 0;
 
-    const mcpEnv: Record<string, string> = {};
-    if (provider === "openrouter" && apiKey) {
+    const mcpEnv: Record<string, string> = {
+      JEV_PROVIDER: provider,
+    };
+    if (provider === "vercel" && apiKey) {
+      mcpEnv["AI_GATEWAY_API_KEY"] = apiKey;
+    } else if (provider === "openrouter" && apiKey) {
       mcpEnv["OPENROUTER_API_KEY"] = apiKey;
       if (model) mcpEnv["OPENROUTER_MODEL"] = model;
     } else if (apiKey) {
@@ -185,9 +206,11 @@ export async function runSetupWizard(options: SetupOptions = {}): Promise<void> 
         const codexContent = fs.readFileSync(codexConfigPath, "utf8");
         if (!codexContent.includes("[mcp_servers.jev_dev]")) {
           const tomlSnippet = `\n[mcp_servers.jev_dev]\ncommand = "npx"\nargs = ["-y", "jev-dev-harness"]\nstartup_timeout_sec = 60.0\n\n[mcp_servers.jev_dev.env]\n${
-            provider === "openrouter"
-              ? `OPENROUTER_API_KEY = "${apiKey || ""}"\nOPENROUTER_MODEL = "${model || "deepseek/deepseek-v4-flash"}"`
-              : `TYPESAFE_API_KEY = "${apiKey || ""}"`
+            provider === "vercel"
+              ? `JEV_PROVIDER = "vercel"\nAI_GATEWAY_API_KEY = "${apiKey || ""}"`
+              : provider === "openrouter"
+              ? `JEV_PROVIDER = "openrouter"\nOPENROUTER_API_KEY = "${apiKey || ""}"\nOPENROUTER_MODEL = "${model || "deepseek/deepseek-v4-flash"}"`
+              : `JEV_PROVIDER = "typesafe"\nTYPESAFE_API_KEY = "${apiKey || ""}"`
           }\n\n[mcp_servers.jev_dev.tools.jev_rank_context]\napproval_mode = "approve"\n\n[mcp_servers.jev_dev.tools.jev_guard_check]\napproval_mode = "approve"\n\n[mcp_servers.jev_dev.tools.jev_review_patch]\napproval_mode = "approve"\n\n[mcp_servers.jev_dev.tools.jev_lint_semantic]\napproval_mode = "approve"\n`;
           fs.appendFileSync(codexConfigPath, tomlSnippet, "utf8");
           console.log(`  ✓ Configured Codex Desktop at ${codexConfigPath}`);
@@ -275,6 +298,7 @@ export async function runSetupWizard(options: SetupOptions = {}): Promise<void> 
       console.log("\n🧪 Testing Live API Connection...");
       try {
         const testClient = new SafeJevClient({
+          provider: provider as any,
           apiKey,
           timeoutMs: 5000,
         });
@@ -296,8 +320,9 @@ export async function runSetupWizard(options: SetupOptions = {}): Promise<void> 
 
     if (!apiKey && provider !== "offline") {
       console.log("\n💡 Skipped entering an API key for now? You can generate one anytime at:");
-      console.log("  • TypeSafe AI: 👉 https://typesafe.ai (Dashboard: https://typesafe.ai/dashboard)");
-      console.log("  • OpenRouter:  👉 https://openrouter.ai/keys (Website: https://openrouter.ai)");
+      console.log("  • TypeSafe AI:       👉 https://typesafe.ai (Dashboard: https://typesafe.ai/dashboard)");
+      console.log("  • Vercel AI Gateway: 👉 https://vercel.com/d/ai-gateway (Free Tier credits)");
+      console.log("  • OpenRouter:        👉 https://openrouter.ai/keys (Website: https://openrouter.ai)");
       console.log("  Then simply re-run: 'npx jev-dev setup' or edit ~/.jev-dev/config.json");
     }
 
