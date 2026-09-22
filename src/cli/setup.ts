@@ -8,6 +8,44 @@ function ask(rl: readline.Interface, query: string): Promise<string> {
   return new Promise((resolve) => rl.question(query, resolve));
 }
 
+function configureJsonMcpServer(
+  configPath: string,
+  agentName: string,
+  envVars: Record<string, string>
+): boolean {
+  try {
+    const dir = path.dirname(configPath);
+    if (!fs.existsSync(dir)) {
+      return false; // Directory doesn't exist, app is not installed
+    }
+
+    let config: any = {};
+    if (fs.existsSync(configPath)) {
+      try {
+        config = JSON.parse(fs.readFileSync(configPath, "utf8"));
+      } catch {
+        config = {};
+      }
+    }
+
+    if (!config.mcpServers || typeof config.mcpServers !== "object") {
+      config.mcpServers = {};
+    }
+
+    config.mcpServers["jev-dev"] = {
+      command: "npx",
+      args: ["-y", "jev-dev-harness"],
+      env: envVars,
+    };
+
+    fs.writeFileSync(configPath, JSON.stringify(config, null, 2), "utf8");
+    console.log(`  ✓ Configured ${agentName} at ${configPath}`);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export interface SetupOptions {
   provider?: "typesafe" | "openrouter" | "offline";
   key?: string;
@@ -118,21 +156,80 @@ export async function runSetupWizard(options: SetupOptions = {}): Promise<void> 
     fs.writeFileSync(globalConfigFile, JSON.stringify(globalData, null, 2), "utf8");
     console.log(`  ✓ Saved global config at ${globalConfigFile}`);
 
-    // 3. Detect and optionally configure Codex Desktop
+    // 3. Detect and automatically configure Coding Agents (Codex, Claude, Antigravity, Cursor, Windsurf, Trae)
+    console.log("\n🤖 Detecting and Configuring AI Coding Agents...");
+    let configuredAgentsCount = 0;
+
+    const mcpEnv: Record<string, string> = {};
+    if (provider === "openrouter" && apiKey) {
+      mcpEnv["OPENROUTER_API_KEY"] = apiKey;
+      if (model) mcpEnv["OPENROUTER_MODEL"] = model;
+    } else if (apiKey) {
+      mcpEnv["TYPESAFE_API_KEY"] = apiKey;
+    }
+
+    // Agent A: Codex Desktop (~/.codex/config.toml)
     const codexConfigPath = path.join(os.homedir(), ".codex", "config.toml");
     if (fs.existsSync(codexConfigPath)) {
-      console.log(`  ✓ Detected Codex Desktop at ${codexConfigPath}`);
-      // Check if jev_dev is already in config.toml
-      const codexContent = fs.readFileSync(codexConfigPath, "utf8");
-      if (!codexContent.includes("[mcp_servers.jev_dev]")) {
-        const tomlSnippet = `\n[mcp_servers.jev_dev]\ncommand = "npx"\nargs = ["-y", "jev-dev-harness"]\nstartup_timeout_sec = 60.0\n\n[mcp_servers.jev_dev.env]\n${
-          provider === "openrouter"
-            ? `OPENROUTER_API_KEY = "${apiKey || ""}"\nOPENROUTER_MODEL = "${model || "deepseek/deepseek-v4-flash"}"`
-            : `TYPESAFE_API_KEY = "${apiKey || ""}"`
-        }\n\n[mcp_servers.jev_dev.tools.jev_rank_context]\napproval_mode = "approve"\n\n[mcp_servers.jev_dev.tools.jev_guard_check]\napproval_mode = "approve"\n\n[mcp_servers.jev_dev.tools.jev_review_patch]\napproval_mode = "approve"\n\n[mcp_servers.jev_dev.tools.jev_lint_semantic]\napproval_mode = "approve"\n`;
-        fs.appendFileSync(codexConfigPath, tomlSnippet, "utf8");
-        console.log("    -> Automatically registered jev_dev in Codex config.toml!");
+      try {
+        const codexContent = fs.readFileSync(codexConfigPath, "utf8");
+        if (!codexContent.includes("[mcp_servers.jev_dev]")) {
+          const tomlSnippet = `\n[mcp_servers.jev_dev]\ncommand = "npx"\nargs = ["-y", "jev-dev-harness"]\nstartup_timeout_sec = 60.0\n\n[mcp_servers.jev_dev.env]\n${
+            provider === "openrouter"
+              ? `OPENROUTER_API_KEY = "${apiKey || ""}"\nOPENROUTER_MODEL = "${model || "deepseek/deepseek-v4-flash"}"`
+              : `TYPESAFE_API_KEY = "${apiKey || ""}"`
+          }\n\n[mcp_servers.jev_dev.tools.jev_rank_context]\napproval_mode = "approve"\n\n[mcp_servers.jev_dev.tools.jev_guard_check]\napproval_mode = "approve"\n\n[mcp_servers.jev_dev.tools.jev_review_patch]\napproval_mode = "approve"\n\n[mcp_servers.jev_dev.tools.jev_lint_semantic]\napproval_mode = "approve"\n`;
+          fs.appendFileSync(codexConfigPath, tomlSnippet, "utf8");
+          console.log(`  ✓ Configured Codex Desktop at ${codexConfigPath}`);
+        } else {
+          console.log(`  ✓ Codex Desktop already configured at ${codexConfigPath}`);
+        }
+        configuredAgentsCount++;
+      } catch (err) {
+        // Non-critical
       }
+    }
+
+    // Agent B: Claude Desktop
+    const claudePath =
+      process.platform === "win32"
+        ? path.join(process.env.APPDATA || path.join(os.homedir(), "AppData", "Roaming"), "Claude", "claude_desktop_config.json")
+        : process.platform === "darwin"
+        ? path.join(os.homedir(), "Library", "Application Support", "Claude", "claude_desktop_config.json")
+        : path.join(os.homedir(), ".config", "Claude", "claude_desktop_config.json");
+
+    if (configureJsonMcpServer(claudePath, "Claude Desktop", mcpEnv)) {
+      configuredAgentsCount++;
+    }
+
+    // Agent C: Antigravity IDE / Desktop
+    const antigravityPath = path.join(os.homedir(), ".gemini", "antigravity", "mcp_config.json");
+    if (configureJsonMcpServer(antigravityPath, "Antigravity IDE", mcpEnv)) {
+      configuredAgentsCount++;
+    }
+
+    // Agent D: Cursor
+    const cursorPath = path.join(os.homedir(), ".cursor", "mcp.json");
+    if (configureJsonMcpServer(cursorPath, "Cursor", mcpEnv)) {
+      configuredAgentsCount++;
+    }
+
+    // Agent E: Windsurf (Codeium)
+    const windsurfPath = path.join(os.homedir(), ".codeium", "windsurf", "mcp_config.json");
+    if (configureJsonMcpServer(windsurfPath, "Windsurf", mcpEnv)) {
+      configuredAgentsCount++;
+    }
+
+    // Agent F: Trae
+    const traePath = path.join(os.homedir(), ".trae", "mcp.json");
+    if (configureJsonMcpServer(traePath, "Trae", mcpEnv)) {
+      configuredAgentsCount++;
+    }
+
+    if (configuredAgentsCount === 0) {
+      console.log("  ℹ No existing agent MCP configs detected. You can easily connect any agent using the instructions in README.md");
+    } else {
+      console.log(`  🎉 ${configuredAgentsCount} AI coding agent(s) ready with Jev MCP!`);
     }
 
     // 4. Test connection live if key provided

@@ -12,6 +12,9 @@ import {
   type ScoreQuestion,
   type SystemOneResult,
 } from "@typesafe-ai/sdk";
+import * as fs from "node:fs";
+import * as path from "node:path";
+import * as os from "node:os";
 import { redactState } from "./redaction.js";
 
 // Automatically load .env if present in current working directory
@@ -19,6 +22,27 @@ try {
   process.loadEnvFile?.();
 } catch {
   // Ignore if .env is missing or invalid
+}
+
+interface GlobalJevConfig {
+  provider?: JevProvider;
+  apiKey?: string;
+  model?: string;
+}
+
+function loadGlobalJevConfig(): GlobalJevConfig {
+  try {
+    const configPath =
+      process.env.JEV_CONFIG_FILE ||
+      path.join(os.homedir(), ".jev-dev", "config.json");
+    if (fs.existsSync(configPath)) {
+      const parsed = JSON.parse(fs.readFileSync(configPath, "utf-8"));
+      return parsed || {};
+    }
+  } catch {
+    // Non-critical if config.json cannot be read
+  }
+  return {};
 }
 
 export { choice, noul, score };
@@ -94,6 +118,8 @@ export class SafeJevClient {
       options.timeoutMs ??
       (parseInt(process.env.JEV_TIMEOUT_MS || "", 10) || 15000);
 
+    const globalConfig = loadGlobalJevConfig();
+
     // Detect explicit environment or option overrides
     const providerOverride =
       options.provider ||
@@ -102,12 +128,12 @@ export class SafeJevClient {
     const openRouterKey =
       options.apiKey?.startsWith("sk-or-")
         ? options.apiKey
-        : process.env.OPENROUTER_API_KEY;
+        : process.env.OPENROUTER_API_KEY || (globalConfig.provider === "openrouter" ? globalConfig.apiKey : undefined);
 
     const typeSafeKey =
       options.apiKey && !options.apiKey.startsWith("sk-or-")
         ? options.apiKey
-        : process.env.TYPESAFE_API_KEY || process.env.JEV_API_KEY;
+        : process.env.TYPESAFE_API_KEY || process.env.JEV_API_KEY || (globalConfig.provider !== "openrouter" ? globalConfig.apiKey : undefined);
 
     // Detect provider:
     // 1. Explicit options.provider
@@ -115,6 +141,7 @@ export class SafeJevClient {
     // 3. Explicit options.apiKey -> typesafe
     // 4. Ambient JEV_PROVIDER env override
     // 5. Ambient TYPESAFE_API_KEY / OPENROUTER_API_KEY
+    // 6. Global config from ~/.jev-dev/config.json
     if (options.provider) {
       this.provider = options.provider;
     } else if (
@@ -130,14 +157,16 @@ export class SafeJevClient {
       this.provider = "typesafe";
     } else if (process.env.OPENROUTER_API_KEY) {
       this.provider = "openrouter";
+    } else if (globalConfig.provider) {
+      this.provider = globalConfig.provider;
     } else {
       this.provider = "typesafe";
     }
 
     const effectiveKey =
       this.provider === "openrouter"
-        ? (options.apiKey?.startsWith("sk-or-") ? options.apiKey : process.env.OPENROUTER_API_KEY || options.apiKey)
-        : (options.apiKey || process.env.TYPESAFE_API_KEY || process.env.JEV_API_KEY);
+        ? (options.apiKey?.startsWith("sk-or-") ? options.apiKey : process.env.OPENROUTER_API_KEY || options.apiKey || (globalConfig.provider === "openrouter" ? globalConfig.apiKey : undefined))
+        : (options.apiKey || process.env.TYPESAFE_API_KEY || process.env.JEV_API_KEY || globalConfig.apiKey);
     this.apiKey = effectiveKey;
 
     if (this.provider === "openrouter") {
@@ -145,6 +174,7 @@ export class SafeJevClient {
         options.defaultModel ||
         process.env.OPENROUTER_MODEL ||
         process.env.TYPESAFE_DEFAULT_MODEL ||
+        globalConfig.model ||
         "deepseek/deepseek-v4-flash";
 
       // Normalize user-friendly DeepSeek slugs (e.g. deepseek-4-flash -> deepseek/deepseek-v4-flash)

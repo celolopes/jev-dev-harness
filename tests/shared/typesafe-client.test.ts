@@ -12,9 +12,11 @@ describe("SafeJevClient Module", () => {
     const origKey = process.env.TYPESAFE_API_KEY;
     const origJevKey = process.env.JEV_API_KEY;
     const origOrKey = process.env.OPENROUTER_API_KEY;
+    const origConfigFile = process.env.JEV_CONFIG_FILE;
     delete process.env.TYPESAFE_API_KEY;
     delete process.env.JEV_API_KEY;
     delete process.env.OPENROUTER_API_KEY;
+    process.env.JEV_CONFIG_FILE = "non-existent-config.json";
 
     try {
       const client = new SafeJevClient();
@@ -35,6 +37,41 @@ describe("SafeJevClient Module", () => {
       if (origKey) process.env.TYPESAFE_API_KEY = origKey;
       if (origJevKey) process.env.JEV_API_KEY = origJevKey;
       if (origOrKey) process.env.OPENROUTER_API_KEY = origOrKey;
+      if (origConfigFile) process.env.JEV_CONFIG_FILE = origConfigFile;
+      else delete process.env.JEV_CONFIG_FILE;
+    }
+  });
+
+  it("loads global config fallback from ~/.jev-dev/config.json", async () => {
+    const origKey = process.env.TYPESAFE_API_KEY;
+    const origJevKey = process.env.JEV_API_KEY;
+    const origOrKey = process.env.OPENROUTER_API_KEY;
+    const origConfigFile = process.env.JEV_CONFIG_FILE;
+    delete process.env.TYPESAFE_API_KEY;
+    delete process.env.JEV_API_KEY;
+    delete process.env.OPENROUTER_API_KEY;
+
+    // Point to a mock config file
+    const mockConfigPath = "tests/fixtures/.test-global-config.json";
+    const fs = await import("node:fs");
+    fs.writeFileSync(
+      mockConfigPath,
+      JSON.stringify({ provider: "typesafe", apiKey: "mock-global-key" }),
+      "utf-8"
+    );
+    process.env.JEV_CONFIG_FILE = mockConfigPath;
+
+    try {
+      const client = new SafeJevClient();
+      expect(client.isConfigured).toBe(true);
+      expect(client.provider).toBe("typesafe");
+    } finally {
+      if (fs.existsSync(mockConfigPath)) fs.unlinkSync(mockConfigPath);
+      if (origKey) process.env.TYPESAFE_API_KEY = origKey;
+      if (origJevKey) process.env.JEV_API_KEY = origJevKey;
+      if (origOrKey) process.env.OPENROUTER_API_KEY = origOrKey;
+      if (origConfigFile) process.env.JEV_CONFIG_FILE = origConfigFile;
+      else delete process.env.JEV_CONFIG_FILE;
     }
   });
 

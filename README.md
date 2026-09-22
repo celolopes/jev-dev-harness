@@ -120,7 +120,14 @@ jev-dev setup
 The wizard guides you through:
 1. **Provider Selection:** Native TypeSafe AI (Recommended), OpenRouter (DeepSeek / Claude / GPT), or Offline mode.
 2. **API Key Input:** Securely paste your key (automatically validated with a live connection ping).
-3. **Agent Auto-Configuration:** Automatically saves to `.env`, `~/.jev-dev/config.json`, and registers the MCP server in **Codex Desktop** (`~/.codex/config.toml`).
+3. **Global CLI Availability:** Automatically saves to `.env` and `~/.jev-dev/config.json`, making `jev-dev` commands available in **any directory on your system**.
+4. **Multi-Agent Auto-Configuration:** Automatically detects and registers the Jev MCP server across all installed coding agents on your machine:
+   * **Codex Desktop** (`~/.codex/config.toml`)
+   * **Claude Desktop** (`claude_desktop_config.json`)
+   * **Antigravity IDE** (`~/.gemini/antigravity/mcp_config.json`)
+   * **Cursor** (`~/.cursor/mcp.json`)
+   * **Windsurf** (`~/.codeium/windsurf/mcp_config.json`)
+   * **Trae** (`~/.trae/mcp.json`)
 
 ---
 
