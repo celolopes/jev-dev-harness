@@ -291,13 +291,23 @@ export async function startDashboardServer(options: DashboardOptions = {}): Prom
     // Serve HTML Dashboard
     if (pathname === "/" || pathname === "/index.html") {
       if (htmlPath && fs.existsSync(htmlPath)) {
-        res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+        res.writeHead(200, {
+          "Content-Type": "text/html; charset=utf-8",
+          "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0",
+          "Pragma": "no-cache",
+          "Expires": "0",
+        });
         fs.createReadStream(htmlPath).pipe(res);
         return;
       }
 
       // Basic fallback if HTML file is missing
-      res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+      res.writeHead(200, {
+        "Content-Type": "text/html; charset=utf-8",
+        "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0",
+        "Pragma": "no-cache",
+        "Expires": "0",
+      });
       res.end(`<!DOCTYPE html><html><body><h1>Jev Live Dashboard</h1><p>Telemetry recorded in ${getTelemetryFilePath()}</p></body></html>`);
       return;
     }
@@ -305,6 +315,16 @@ export async function startDashboardServer(options: DashboardOptions = {}): Prom
     // 404
     res.writeHead(404, { "Content-Type": "text/plain" });
     res.end("Not Found");
+  });
+
+  server.on("error", (err: any) => {
+    if (err.code === "EADDRINUSE") {
+      console.error(`\n❌ Port ${port} is already in use by a previous dashboard server.`);
+      console.error(`💡 Tip: Stop the previous dashboard process (Ctrl+C in its terminal) or run with a different port:\n   jev-dev dashboard -p 3742\n`);
+      process.exit(1);
+    } else {
+      console.error("Dashboard server error:", err);
+    }
   });
 
   server.listen(port, () => {
