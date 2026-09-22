@@ -7,6 +7,7 @@ import {
   getTelemetrySummary,
   recordTelemetryEvent,
 } from "../shared/telemetry.js";
+import { printJevBanner } from "./banner.js";
 
 export interface DoctorOptions {
   initRules?: boolean;
@@ -388,9 +389,7 @@ export async function runDoctorCommand(options: DoctorOptions = {}): Promise<Doc
   }
 
   // Terminal UI formatting
-  console.log("\n" + "=".repeat(65));
-  console.log("             🔮 JEV DEVELOPER HARNESS DOCTOR             ");
-  console.log("=".repeat(65) + "\n");
+  printJevBanner("🔮 SYSTEM HEALTH & DIAGNOSTICS");
 
   console.log("--- 💻 ENVIRONMENT ---");
   console.log(`  Node.js:          ${environment.nodeVersion}`);

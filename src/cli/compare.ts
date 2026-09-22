@@ -94,6 +94,8 @@ export function calculateRoi(
   };
 }
 
+import { printJevBanner } from "./banner.js";
+
 export function printTerminalComparison(json = false): void {
   const roi5 = calculateRoi(5, 50);
   const roi20 = calculateRoi(20, 50);
@@ -113,10 +115,7 @@ export function printTerminalComparison(json = false): void {
     return;
   }
 
-  console.log("\n" + "=".repeat(88));
-  console.log("            JEV DEVELOPER HARNESS — BENCHMARK & ROI COMPARISON REPORT           ");
-  console.log("    Measuring AI Coding Agents (Codex, Antigravity, Claude Code, Cursor, Aider) ");
-  console.log("=".repeat(88) + "\n");
+  printJevBanner("📊 BENCHMARK & ROI COMPARISON REPORT");
 
   console.log("┌" + "─".repeat(27) + "┬" + "─".repeat(28) + "┬" + "─".repeat(30) + "┐");
   console.log("│ METRIC                    │ WITHOUT JEV-DEV            │ WITH JEV-DEV-HARNESS (ROI)   │");

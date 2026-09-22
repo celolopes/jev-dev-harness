@@ -4,6 +4,7 @@ import path from "node:path";
 import readline from "node:readline";
 import { execSync } from "node:child_process";
 import { uninstallGitHook } from "../hooks/index.js";
+import { printJevBanner } from "./banner.js";
 
 function ask(rl: readline.Interface, query: string): Promise<string> {
   return new Promise((resolve) => rl.question(query, resolve));
@@ -31,9 +32,7 @@ export interface UninstallOptions {
 }
 
 export async function runUninstallCommand(options: UninstallOptions = {}): Promise<void> {
-  console.log("\n" + "=".repeat(70));
-  console.log("       🧹 JEV DEVELOPER HARNESS — CLEAN UNINSTALLATION & TEARDOWN      ");
-  console.log("=".repeat(70) + "\n");
+  printJevBanner("🧹 CLEAN UNINSTALLATION & TEARDOWN");
 
   const rl = readline.createInterface({
     input: process.stdin,

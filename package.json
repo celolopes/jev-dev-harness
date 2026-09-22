@@ -48,6 +48,7 @@
     "dist",
     "bin",
     "dashboard",
+    "assets",
     "README.md",
     "LICENSE"
   ],

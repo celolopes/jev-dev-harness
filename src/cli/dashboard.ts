@@ -12,6 +12,7 @@ import {
   TelemetryEvent,
 } from "../shared/telemetry.js";
 import { checkForUpdates } from "../shared/update-checker.js";
+import { printJevBanner } from "./banner.js";
 
 export interface DashboardOptions {
   port?: number;
@@ -188,6 +189,25 @@ export async function startDashboardServer(options: DashboardOptions = {}): Prom
       return;
     }
 
+    // Serve Static Logo / Favicon
+    if (pathname === "/assets/logo.png" || pathname === "/logo.png" || pathname === "/favicon.ico") {
+      try {
+        const currentDir = path.dirname(fileURLToPath(import.meta.url));
+        const logoCandidates = [
+          path.resolve(currentDir, "../../assets/logo.png"),
+          path.resolve(currentDir, "../assets/logo.png"),
+          path.resolve(process.cwd(), "assets/logo.png"),
+        ];
+        for (const cand of logoCandidates) {
+          if (fs.existsSync(cand)) {
+            res.writeHead(200, { "Content-Type": "image/png" });
+            fs.createReadStream(cand).pipe(res);
+            return;
+          }
+        }
+      } catch {}
+    }
+
     // Serve HTML Dashboard
     if (pathname === "/" || pathname === "/index.html") {
       if (htmlPath && fs.existsSync(htmlPath)) {
@@ -209,9 +229,7 @@ export async function startDashboardServer(options: DashboardOptions = {}): Prom
 
   server.listen(port, () => {
     const url = `http://localhost:${port}`;
-    console.log("\n=======================================================");
-    console.log("       JEV DEVELOPER HARNESS — LIVE DASHBOARD          ");
-    console.log("=======================================================\n");
+    printJevBanner("🌐 LIVE TELEMETRY WEB DASHBOARD");
     console.log(`🌐 Live Dashboard:  ${url}`);
     console.log(`📁 Telemetry File:  ${getTelemetryFilePath()}`);
     console.log(`⚡ Live Stream:     Connected via Server-Sent Events (SSE)`);
