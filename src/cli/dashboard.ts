@@ -81,6 +81,63 @@ export async function startDashboardServer(options: DashboardOptions = {}): Prom
   const port = options.port || 3741;
   const htmlPath = getDashboardHtmlPath();
 
+  // Cross-Process Live File Synchronizer
+  const telemetryFilePath = getTelemetryFilePath();
+  let lastKnownSize = 0;
+  const processedEventIds = new Set<string>();
+
+  try {
+    if (fs.existsSync(telemetryFilePath)) {
+      lastKnownSize = fs.statSync(telemetryFilePath).size;
+      const initialEvents = getTelemetryEvents(200);
+      for (const ev of initialEvents) {
+        if (ev && ev.id) processedEventIds.add(ev.id);
+      }
+    }
+  } catch {}
+
+  const broadcastEvent = (event: TelemetryEvent) => {
+    if (!event || !event.id) return;
+    if (processedEventIds.has(event.id)) return;
+    processedEventIds.add(event.id);
+    if (processedEventIds.size > 2000) {
+      const first = processedEventIds.values().next().value;
+      if (first) processedEventIds.delete(first);
+    }
+    telemetryEmitter.emit("event", event);
+  };
+
+  const fileWatcher = setInterval(() => {
+    try {
+      if (!fs.existsSync(telemetryFilePath)) return;
+      const stat = fs.statSync(telemetryFilePath);
+      if (stat.size > lastKnownSize) {
+        const newBytes = stat.size - lastKnownSize;
+        const buffer = Buffer.alloc(newBytes);
+        const fd = fs.openSync(telemetryFilePath, "r");
+        try {
+          fs.readSync(fd, buffer, 0, newBytes, lastKnownSize);
+        } finally {
+          fs.closeSync(fd);
+        }
+        lastKnownSize = stat.size;
+
+        const lines = buffer.toString("utf8").split(/\r?\n/).filter((l) => l.trim().length > 0);
+        for (const line of lines) {
+          try {
+            const ev = JSON.parse(line);
+            if (ev && ev.type && ev.id) {
+              broadcastEvent(ev as TelemetryEvent);
+            }
+          } catch {}
+        }
+      } else if (stat.size < lastKnownSize) {
+        lastKnownSize = stat.size;
+        telemetryEmitter.emit("cleared");
+      }
+    } catch {}
+  }, 500);
+
   const server = http.createServer((req, res) => {
     // Enable CORS for API
     res.setHeader("Access-Control-Allow-Origin", "*");
@@ -95,6 +152,13 @@ export async function startDashboardServer(options: DashboardOptions = {}): Prom
 
     const parsedUrl = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
     const pathname = parsedUrl.pathname;
+
+    // Prevent caching for all API routes
+    if (pathname.startsWith("/api/")) {
+      res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0");
+      res.setHeader("Pragma", "no-cache");
+      res.setHeader("Expires", "0");
+    }
 
     // API: Summary
     if (pathname === "/api/summary" && req.method === "GET") {
@@ -136,6 +200,9 @@ export async function startDashboardServer(options: DashboardOptions = {}): Prom
     // API: Clear History
     if (pathname === "/api/clear" && req.method === "POST") {
       clearTelemetryEvents();
+      lastKnownSize = 0;
+      processedEventIds.clear();
+      telemetryEmitter.emit("cleared");
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ ok: true, message: "History cleared" }));
       return;
@@ -171,7 +238,19 @@ export async function startDashboardServer(options: DashboardOptions = {}): Prom
         }
       };
 
+      const onCleared = () => {
+        try {
+          const payload = JSON.stringify({
+            type: "init",
+            summary: getTelemetrySummary(),
+            events: [],
+          });
+          res.write(`data: ${payload}\n\n`);
+        } catch {}
+      };
+
       telemetryEmitter.on("event", onEvent);
+      telemetryEmitter.on("cleared", onCleared);
 
       // Heartbeat ping every 15s to keep connection open
       const interval = setInterval(() => {
@@ -184,6 +263,7 @@ export async function startDashboardServer(options: DashboardOptions = {}): Prom
 
       req.on("close", () => {
         telemetryEmitter.off("event", onEvent);
+        telemetryEmitter.off("cleared", onCleared);
         clearInterval(interval);
       });
       return;
@@ -243,6 +323,7 @@ export async function startDashboardServer(options: DashboardOptions = {}): Prom
   // Graceful shutdown
   const shutdown = () => {
     console.log("\nStopping Jev Live Dashboard...");
+    clearInterval(fileWatcher);
     server.close(() => {
       process.exit(0);
     });

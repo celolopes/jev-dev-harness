@@ -554,8 +554,15 @@
             if (data.type === 'init') {
               updateTelemetryUi(data.summary, data.events);
             } else if (data.type === 'event') {
-              eventsList.unshift(data.event);
-              if (eventsList.length > 100) eventsList.pop();
+              if (data.event && data.event.id) {
+                const existingIdx = eventsList.findIndex(e => e.id === data.event.id);
+                if (existingIdx >= 0) {
+                  eventsList[existingIdx] = data.event;
+                } else {
+                  eventsList.unshift(data.event);
+                  if (eventsList.length > 100) eventsList.pop();
+                }
+              }
               updateTelemetryUi(data.summary, eventsList);
             }
           } catch (e) {
@@ -563,22 +570,32 @@
           }
         };
 
+        evtSource.onopen = function() {
+          const statusEl = document.getElementById('liveStreamStatus');
+          if (statusEl) {
+            statusEl.innerText = '⚡ Live Stream: Connected';
+            statusEl.className = 'text-emerald-400';
+          }
+        };
+
         evtSource.onerror = function() {
-          document.getElementById('liveStreamStatus').innerText = '🔄 Polling fallback (SSE disconnected)';
-          document.getElementById('liveStreamStatus').className = 'text-amber-400';
-          setTimeout(refreshData, 3000);
+          const statusEl = document.getElementById('liveStreamStatus');
+          if (statusEl) {
+            statusEl.innerText = '🔄 Reconnecting...';
+            statusEl.className = 'text-amber-400';
+          }
         };
       } catch {
-        // Fallback polling
-        setInterval(refreshData, 3000);
+        // Fallback handled by auto-sync below
       }
     }
 
     async function refreshData() {
       try {
+        const nocache = `_t=${Date.now()}`;
         const [sumRes, evRes] = await Promise.all([
-          fetch('/api/summary'),
-          fetch('/api/events?limit=50')
+          fetch(`/api/summary?${nocache}`),
+          fetch(`/api/events?limit=50&${nocache}`)
         ]);
         if (sumRes.ok && evRes.ok) {
           const summary = await sumRes.json();
@@ -589,6 +606,15 @@
         console.error('Failed to fetch telemetry data:', err);
       }
     }
+
+    // Continuous background sync (every 2.5s) to guarantee real-time updates across multiple processes
+    setInterval(refreshData, 2500);
+
+    // Sync immediately whenever the developer switches back to the dashboard tab
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) refreshData();
+    });
+    window.addEventListener('focus', refreshData);
 
     async function clearHistory() {
       if (!confirm('Clear all recorded telemetry history?')) return;
