@@ -82,6 +82,7 @@ npx -y jev-dev compare
 | **MCP Server** | `jev-dev mcp` | Standard Model Context Protocol (stdio) exposing all 4 tools to Cursor, Claude Desktop, Antigravity. |
 | **Benchmark & ROI** | `jev-dev compare` | Live comparison of agent speed, token reduction, and dollar savings with vs. without Jev. |
 | **Live Dashboard** | `jev-dev dashboard` | Real-time web dashboard with SSE streaming to monitor active agent operations, token cuts, and dollar savings. |
+| **Health & Diagnostics** | `jev-dev doctor` | Verifies active status, tests AI connectivity, audits MCP integrations, and auto-generates agent rule files (`--init-rules`). |
 | **Setup Wizard** | `jev-dev setup` | 1-minute interactive CLI to configure API keys (TypeSafe/OpenRouter) and auto-register agents. |
 | **Auto-Update** | `jev-dev update` | 1-click upgrade to the latest npm release, with non-blocking background notifications. |
 

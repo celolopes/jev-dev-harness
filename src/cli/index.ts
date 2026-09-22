@@ -10,7 +10,9 @@ import { startMcpServer } from "../mcp/index.js";
 import { printTerminalComparison } from "./compare.js";
 import { runSetupWizard } from "./setup.js";
 import { startDashboardServer } from "./dashboard.js";
+import { runDoctorCommand } from "./doctor.js";
 import { checkForUpdates, printUpdateNotification } from "../shared/update-checker.js";
+import { recordTelemetryEvent } from "../shared/telemetry.js";
 
 export function createCli(): Command {
   const program = new Command();
@@ -18,7 +20,7 @@ export function createCli(): Command {
   program
     .name("jev-dev")
     .description("Developer Harness with TypeSafe AI / Jev for AI Coding Agents")
-    .version("0.1.4");
+    .version("0.1.5");
 
   // ==========================================
   // COMMAND: context rank (Phase 2)
@@ -48,6 +50,23 @@ export function createCli(): Command {
           threshold: options.threshold,
           useCache: options.cache !== false,
           useJev: options.jev !== false,
+        });
+
+        recordTelemetryEvent({
+          type: "context_rank",
+          task: result.task,
+          initialCandidates: result.metrics.initialCandidates,
+          selectedFiles: result.selected.length,
+          tokensSaved: Math.round((result.metrics.initialCandidates - result.selected.length) * 800),
+          reductionPct:
+            result.metrics.initialCandidates > 0
+              ? Math.round(
+                  ((result.metrics.initialCandidates - result.selected.length) /
+                    result.metrics.initialCandidates) *
+                    100
+                )
+              : 0,
+          latencyMs: result.metrics.latencyMs,
         });
 
         if (options.json) {
@@ -128,6 +147,17 @@ export function createCli(): Command {
           staged: options.staged,
           commitRange: options.commitRange,
           useJev: options.jev !== false,
+        });
+
+        recordTelemetryEvent({
+          type: "patch_review",
+          task: result.task,
+          status: result.status,
+          riskScore: result.riskScore,
+          filesCount: result.filesChanged.length,
+          additions: result.additions,
+          deletions: result.deletions,
+          latencyMs: result.latencyMs,
         });
 
         if (options.json) {
@@ -215,6 +245,16 @@ export function createCli(): Command {
           useJev: options.jev !== false,
         });
 
+        recordTelemetryEvent({
+          type: "guard_check",
+          command: result.command,
+          category: result.category,
+          allowed: result.allowed,
+          riskLevel: result.riskLevel,
+          reason: result.reason,
+          latencyMs: result.latencyMs,
+        });
+
         if (options.json) {
           console.log(JSON.stringify(result, null, 2));
           return;
@@ -285,6 +325,14 @@ export function createCli(): Command {
           commitRange: options.commitRange,
           advisoryOnly: options.advisory,
           useJev: options.jev !== false,
+        });
+
+        recordTelemetryEvent({
+          type: "lint_semantic",
+          status: result.passed ? "PASSED" : "FAILED",
+          passed: result.passed,
+          violationsCount: result.failedRules,
+          latencyMs: result.latencyMs,
         });
 
         if (options.json) {
@@ -439,11 +487,26 @@ export function createCli(): Command {
       }
     });
 
+  // ==========================================
+  // COMMAND: doctor (Diagnostics & Health Check)
+  // ==========================================
+  program
+    .command("doctor")
+    .description("Verify that Jev is active, test AI connectivity, check MCP configurations and agent rules")
+    .option("--init-rules", "Automatically create GEMINI.md, CLAUDE.md, and .cursorrules in current workspace")
+    .option("--json", "Output diagnostics as JSON")
+    .action(async (options) => {
+      await runDoctorCommand({
+        initRules: options.initRules,
+        json: options.json,
+      });
+    });
+
   // Non-blocking update notifier on CLI completion (excluding stdio mcp)
   program.hook("postAction", async (_thisCommand, actionCommand) => {
     if (actionCommand.name() !== "mcp") {
       try {
-        const update = await checkForUpdates("0.1.4");
+        const update = await checkForUpdates("0.1.5");
         printUpdateNotification(update);
       } catch {
         // Silently ignore

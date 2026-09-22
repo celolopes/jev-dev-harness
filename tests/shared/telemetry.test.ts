@@ -1,5 +1,7 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll } from "vitest";
 import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import {
   recordTelemetryEvent,
   getTelemetryEvents,
@@ -11,24 +13,30 @@ import {
 } from "../../src/shared/telemetry.js";
 
 describe("Telemetry Module", () => {
-  const telemetryFile = getTelemetryFilePath();
-  let originalContent = "";
+  const tempTelemetryFile = path.join(os.tmpdir(), `jev-test-telemetry-${Date.now()}-${Math.random().toString(36).slice(2)}.jsonl`);
+  const previousEnv = process.env.JEV_TELEMETRY_FILE;
+
+  beforeAll(() => {
+    process.env.JEV_TELEMETRY_FILE = tempTelemetryFile;
+  });
+
+  afterAll(() => {
+    if (previousEnv) {
+      process.env.JEV_TELEMETRY_FILE = previousEnv;
+    } else {
+      delete process.env.JEV_TELEMETRY_FILE;
+    }
+    if (fs.existsSync(tempTelemetryFile)) {
+      try { fs.unlinkSync(tempTelemetryFile); } catch {}
+    }
+  });
 
   beforeEach(() => {
-    if (fs.existsSync(telemetryFile)) {
-      originalContent = fs.readFileSync(telemetryFile, "utf-8");
-    } else {
-      originalContent = "";
-    }
     clearTelemetryEvents();
   });
 
   afterEach(() => {
-    if (originalContent) {
-      fs.writeFileSync(telemetryFile, originalContent, "utf-8");
-    } else {
-      clearTelemetryEvents();
-    }
+    clearTelemetryEvents();
   });
 
   it("records context_rank events with proper fields", () => {

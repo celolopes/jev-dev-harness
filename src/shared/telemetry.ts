@@ -195,6 +195,9 @@ export const telemetryEmitter = new EventEmitter();
  * Get the path to the global telemetry file ~/.jev-dev/telemetry.jsonl
  */
 export function getTelemetryFilePath(): string {
+  if (process.env.JEV_TELEMETRY_FILE) {
+    return process.env.JEV_TELEMETRY_FILE;
+  }
   const homeDir = os.homedir();
   const dir = path.join(homeDir, ".jev-dev");
   if (!fs.existsSync(dir)) {
