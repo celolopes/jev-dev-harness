@@ -63,9 +63,9 @@ export async function runUninstallCommand(options: UninstallOptions = {}): Promi
     if (fs.existsSync(codexPath)) {
       try {
         let content = fs.readFileSync(codexPath, "utf8");
-        if (content.includes("[mcp_servers.jev_dev]")) {
-          // Remove the jev_dev block
-          content = content.replace(/\n?\[mcp_servers\.jev_dev\][\s\S]*?(?=\n\[mcp_servers|\n*$)/g, "");
+        if (content.includes("[mcp_servers.jev_dev")) {
+          // Remove all jev_dev blocks (main server, env, tools, etc.)
+          content = content.replace(/\n?\[mcp_servers\.jev_dev[^\]]*\][\s\S]*?(?=\n\[|\n*$)/g, "");
           fs.writeFileSync(codexPath, content, "utf8");
           console.log(`  ✓ Cleaned Codex Desktop config at ${codexPath}`);
           removedMcpCount++;

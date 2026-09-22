@@ -9,14 +9,18 @@ describe("Uninstall CLI Command", () => {
     expect(typeof runUninstallCommand).toBe("function");
   });
 
-  it("handles non-interactive cancel if input is not yes", async () => {
+  it("handles execution safely without touching real filesystem", async () => {
     const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
-    
-    // When yes is false, without input it should exit cleanly
-    // Pass yes: true, but no global uninstall
+    const writeSpy = vi.spyOn(fs, "writeFileSync").mockImplementation(() => {});
+    const rmSpy = vi.spyOn(fs, "rmSync").mockImplementation(() => {});
+    const unlinkSpy = vi.spyOn(fs, "unlinkSync").mockImplementation(() => {});
+
     await runUninstallCommand({ yes: true, global: false, rules: false });
 
     expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("JEV DEVELOPER HARNESS"));
     consoleSpy.mockRestore();
+    writeSpy.mockRestore();
+    rmSpy.mockRestore();
+    unlinkSpy.mockRestore();
   });
 });
