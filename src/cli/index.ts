@@ -11,6 +11,7 @@ import { printTerminalComparison } from "./compare.js";
 import { runSetupWizard } from "./setup.js";
 import { startDashboardServer } from "./dashboard.js";
 import { runDoctorCommand } from "./doctor.js";
+import { runUninstallCommand } from "./uninstall.js";
 import { checkForUpdates, printUpdateNotification } from "../shared/update-checker.js";
 import { recordTelemetryEvent } from "../shared/telemetry.js";
 
@@ -499,6 +500,26 @@ export function createCli(): Command {
       await runDoctorCommand({
         initRules: options.initRules,
         json: options.json,
+      });
+    });
+
+  // ==========================================
+  // COMMAND: uninstall / teardown (Clean Removal)
+  // ==========================================
+  program
+    .command("uninstall")
+    .alias("teardown")
+    .description("Completely remove Jev MCP registrations, git hooks, and ~/.jev-dev configuration")
+    .option("--purge", "Purge all configs without confirmation prompt")
+    .option("--global", "Also uninstall global npm package")
+    .option("--rules", "Also delete agent rule files in current workspace")
+    .option("-y, --yes", "Skip interactive confirmation")
+    .action(async (options) => {
+      await runUninstallCommand({
+        purge: options.purge,
+        global: options.global,
+        rules: options.rules,
+        yes: options.yes || options.purge,
       });
     });
 

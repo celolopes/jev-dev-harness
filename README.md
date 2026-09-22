@@ -1,13 +1,23 @@
-# Jev Developer Harness (`jev-dev-harness`)
+<p align="center">
+  <img src="./assets/logo.png" alt="Jev Developer Harness Logo" width="220" style="border-radius: 20px; box-shadow: 0 8px 32px rgba(37, 99, 235, 0.25);" />
+</p>
 
-[![npm version](https://img.shields.io/npm/v/jev-dev-harness.svg?color=cb3837)](https://www.npmjs.com/package/jev-dev-harness)
-[![Tests](https://img.shields.io/badge/tests-106%20passing-brightgreen.svg)]()
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue.svg)]()
-[![Node](https://img.shields.io/badge/Node.js-22+-green.svg)]()
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![TypeSafe AI](https://img.shields.io/badge/Powered%20By-TypeSafe%20AI%20%2F%20Jev-purple.svg)](https://typesafe.ai)
+<h1 align="center">Jev Developer Harness</h1>
 
-> **An open-source developer harness and runtime safety toolkit for AI coding agents (Antigravity, Codex, Claude Code, Cursor, Aider) powered by TypeSafe AI / Jev.**
+<p align="center">
+  <strong>The Ultimate Runtime Safety, Token-Reduction, and Intelligence Harness for AI Coding Agents</strong>
+</p>
+
+<p align="center">
+  <a href="https://www.npmjs.com/package/jev-dev-harness"><img src="https://img.shields.io/npm/v/jev-dev-harness.svg?color=cb3837" alt="npm version" /></a>
+  <img src="https://img.shields.io/badge/tests-121%20passing-brightgreen.svg" alt="Tests" />
+  <img src="https://img.shields.io/badge/TypeScript-5.8-blue.svg" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/Node.js-22+-green.svg" alt="Node" />
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT" /></a>
+  <a href="https://typesafe.ai"><img src="https://img.shields.io/badge/Powered%20By-TypeSafe%20AI%20%2F%20Jev-purple.svg" alt="TypeSafe AI" /></a>
+</p>
+
+> **An open-source developer harness and runtime safety toolkit for AI coding agents (Antigravity, Codex, Claude Code, Cursor, VSCode, Aider) powered by TypeSafe AI / Jev.**
 
 ---
 
@@ -85,6 +95,7 @@ npx -y jev-dev compare
 | **Health & Diagnostics** | `jev-dev doctor` | Verifies active status, tests AI connectivity, audits MCP integrations, and auto-generates agent rule files (`--init-rules`). |
 | **Setup Wizard** | `jev-dev setup` | 1-minute interactive CLI to configure API keys (TypeSafe/OpenRouter) and auto-register agents. |
 | **Auto-Update** | `jev-dev update` | 1-click upgrade to the latest npm release, with non-blocking background notifications. |
+| **Clean Uninstall** | `jev-dev uninstall` | 1-click clean uninstaller. Removes all MCP entries across IDEs, git hooks, and `~/.jev-dev` data. |
 
 ---
 
@@ -518,6 +529,27 @@ npm run bench
 # Run TypeScript typecheck
 npm run typecheck
 ```
+
+---
+
+## 🧹 Clean Uninstallation & Teardown
+
+If you ever wish to completely remove `jev-dev-harness` from your machine and coding agents, run:
+
+```bash
+# Interactive uninstaller (confirms each step):
+jev-dev uninstall
+
+# Or completely purge everything without prompts:
+jev-dev uninstall --purge --global --rules
+```
+
+**What it cleanly removes:**
+* Removes Jev MCP configurations from all IDEs (Codex, Antigravity, Claude, Cursor, Windsurf, Trae, VSCode).
+* Removes git pre-commit safety hooks in the local repository.
+* Purges the global `~/.jev-dev/` data and telemetry directory.
+* Optionally removes workspace agent rule files (`GEMINI.md`, `CLAUDE.md`, `.cursorrules`).
+* Optionally uninstalls the global npm package (`npm uninstall -g jev-dev-harness`).
 
 ---
 
