@@ -10,6 +10,7 @@ import { rankContext } from "../context-ranker/index.js";
 import { reviewPatchPipeline } from "../patch-reviewer/index.js";
 import { lintSemantic } from "../semantic-linter/index.js";
 import { guardCheck } from "../tool-guard/index.js";
+import { recordTelemetryEvent } from "../shared/telemetry.js";
 
 export const TOOLS: Tool[] = [
   {
@@ -177,6 +178,16 @@ export function createMcpServer(): Server {
             ? Math.round(((initialCandidates - selectedCount) / initialCandidates) * 1000) / 10
             : 0;
 
+          recordTelemetryEvent({
+            type: "context_rank",
+            task,
+            initialCandidates,
+            selectedFiles: selectedCount,
+            tokensSaved: estimatedTokensSaved,
+            reductionPct,
+            latencyMs: result.metrics.latencyMs,
+          });
+
           const responseWithEfficiency = {
             ...result,
             efficiencyReport: {
@@ -212,6 +223,16 @@ export function createMcpServer(): Server {
             allowProduction,
           });
 
+          recordTelemetryEvent({
+            type: "guard_check",
+            command,
+            category: result.category,
+            allowed: result.allowed,
+            riskLevel: result.riskLevel,
+            reason: result.reason,
+            latencyMs: result.latencyMs,
+          });
+
           return {
             content: [
               {
@@ -237,6 +258,17 @@ export function createMcpServer(): Server {
             staged,
             commitRange,
             repoPath,
+          });
+
+          recordTelemetryEvent({
+            type: "patch_review",
+            task,
+            status: result.status,
+            riskScore: result.riskScore,
+            filesCount: result.filesChanged.length,
+            additions: result.additions,
+            deletions: result.deletions,
+            latencyMs: result.latencyMs,
           });
 
           const responseWithEfficiency = {
@@ -272,6 +304,14 @@ export function createMcpServer(): Server {
             commitRange,
             advisoryOnly,
             repoPath,
+          });
+
+          recordTelemetryEvent({
+            type: "lint_semantic",
+            status: result.passed ? "PASSED" : "VIOLATIONS_FOUND",
+            passed: result.passed,
+            violationsCount: result.failedRules,
+            latencyMs: result.latencyMs,
           });
 
           return {

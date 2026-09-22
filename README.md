@@ -81,6 +81,7 @@ npx -y jev-dev compare
 | **Git Hook Automation** | `jev-dev hooks install` | 1-click installer for git pre-commit safety gate. Blocks commits containing leaked credentials or critical regression risk. |
 | **MCP Server** | `jev-dev mcp` | Standard Model Context Protocol (stdio) exposing all 4 tools to Cursor, Claude Desktop, Antigravity. |
 | **Benchmark & ROI** | `jev-dev compare` | Live comparison of agent speed, token reduction, and dollar savings with vs. without Jev. |
+| **Live Dashboard** | `jev-dev dashboard` | Real-time web dashboard with SSE streaming to monitor active agent operations, token cuts, and dollar savings. |
 | **Setup Wizard** | `jev-dev setup` | 1-minute interactive CLI to configure API keys (TypeSafe/OpenRouter) and auto-register agents. |
 
 ---
@@ -129,6 +130,9 @@ The wizard guides you through:
 # Interactive setup wizard
 npx -y jev-dev setup
 
+# Open real-time Live Telemetry web dashboard
+npx -y jev-dev dashboard
+
 # Live ROI & benchmark comparison
 npx -y jev-dev compare
 
@@ -147,6 +151,7 @@ npm install -g jev-dev-harness
 
 # Now available globally anywhere on your system:
 jev-dev setup     # Run the setup wizard
+jev-dev dashboard # Open live telemetry dashboard
 jev-dev compare   # View ROI and benchmarks
 jev-dev --help    # View all commands
 jev-mcp           # Launch the MCP server
@@ -448,6 +453,30 @@ Agents can present this summary at the conclusion of each completed task, giving
 - **Economia Estimada:** ~68.000 tokens economizados nesta tarefa (~$0.20).
 - **Segurança & Velocidade:** Comandos e diffs auditados em tempo real pelo Jev System One (<1s).
 ```
+
+### 🌐 Live Telemetry Web Dashboard (`jev-dev dashboard`)
+
+Want to inspect your accumulated savings, token reductions, and real-time operations visually?
+
+Launch the live telemetry web dashboard anytime:
+
+```bash
+# Launch live dashboard on http://localhost:3741:
+npx -y jev-dev dashboard
+
+# Or specify a custom port / headless mode:
+npx -y jev-dev dashboard --port 8790 --no-open
+
+# Output aggregated metrics to JSON (for CI or telemetry tracking):
+npx -y jev-dev dashboard --json
+```
+
+**Dashboard Features:**
+* 🟢 **Active Telemetry & Protection Banner:** Live connection indicator showing active coding agents (Codex Desktop, Antigravity, Claude Code).
+* 📊 **Live Key Metrics:** Live counters for Agent Ops, Tokens Saved, $ Net Saved, Jev Avg & p95 Latency, Tool Guard Interceptions, and Patch Audits.
+* 📈 **Request Distribution:** Visual breakdown of operations handled by Jev across your workspace.
+* ⚡ **Live Operations Stream:** Real-time Server-Sent Events (SSE) feed displaying every tool call made by your agent with latency, token savings, and security verdicts.
+* 🧮 **ROI & Benchmark Simulator:** Integrated team size & pricing calculator to forecast monthly and annual cost savings.
 
 ---
 

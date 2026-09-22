@@ -8,6 +8,7 @@ import { guardCheck } from "../tool-guard/index.js";
 import { startMcpServer } from "../mcp/index.js";
 import { printTerminalComparison } from "./compare.js";
 import { runSetupWizard } from "./setup.js";
+import { startDashboardServer } from "./dashboard.js";
 
 export function createCli(): Command {
   const program = new Command();
@@ -15,7 +16,7 @@ export function createCli(): Command {
   program
     .name("jev-dev")
     .description("Developer Harness with TypeSafe AI / Jev for AI Coding Agents")
-    .version("0.1.0");
+    .version("0.1.3");
 
   // ==========================================
   // COMMAND: context rank (Phase 2)
@@ -398,6 +399,25 @@ export function createCli(): Command {
         key: options.key,
         model: options.model,
         nonInteractive: options.yes,
+      });
+    });
+
+  // ==========================================
+  // COMMAND: dashboard (Live Telemetry Monitor)
+  // ==========================================
+  program
+    .command("dashboard")
+    .description("Start the Live Telemetry web dashboard to monitor token savings and agent operations")
+    .option("-p, --port <port>", "Port to bind HTTP server", (val) => parseInt(val, 10), 3741)
+    .option("--no-open", "Do not automatically open the browser")
+    .option("--clear", "Clear recorded telemetry history and exit")
+    .option("--json", "Output telemetry summary as JSON and exit")
+    .action(async (options) => {
+      await startDashboardServer({
+        port: options.port,
+        open: options.open,
+        clear: options.clear,
+        json: options.json,
       });
     });
 

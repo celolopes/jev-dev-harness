@@ -3,290 +3,594 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Jev Developer Harness — Agent Benchmark & ROI Comparison</title>
+  <title>Jev Developer Harness — Live Telemetry & ROI Dashboard</title>
   <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
   <style>
     @keyframes pulse-slow {
       0%, 100% { opacity: 1; }
-      50% { opacity: 0.6; }
+      50% { opacity: 0.5; }
     }
     .animate-pulse-slow {
-      animation: pulse-slow 3s infinite ease-in-out;
+      animation: pulse-slow 2.5s infinite ease-in-out;
+    }
+    .tab-active {
+      background-color: #3b82f6;
+      color: #ffffff;
+      box-shadow: 0 4px 14px 0 rgba(59, 130, 246, 0.39);
+    }
+    .tab-inactive {
+      background-color: transparent;
+      color: #94a3b8;
+    }
+    .tab-inactive:hover {
+      color: #f1f5f9;
+      background-color: #1e293b;
     }
   </style>
 </head>
-<body class="bg-slate-950 text-slate-100 antialiased min-h-screen p-4 md:p-8 font-sans selection:bg-purple-500 selection:text-white">
+<body class="bg-slate-950 text-slate-100 antialiased min-h-screen p-4 md:p-8 font-sans selection:bg-blue-500 selection:text-white">
 
   <!-- Main Container -->
-  <div class="max-w-6xl mx-auto space-y-8">
+  <div class="max-w-6xl mx-auto space-y-6">
 
-    <!-- Header Section -->
-    <header class="border border-slate-800 bg-slate-900/80 backdrop-blur-md rounded-2xl p-6 md:p-8 shadow-2xl relative overflow-hidden">
-      <div class="absolute -right-16 -top-16 w-64 h-64 bg-purple-600/15 rounded-full blur-3xl pointer-events-none"></div>
-      <div class="absolute -left-16 -bottom-16 w-64 h-64 bg-blue-600/15 rounded-full blur-3xl pointer-events-none"></div>
-
-      <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative z-10">
-        <div class="space-y-2">
-          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-xs font-semibold uppercase tracking-wider">
-            <span class="w-2 h-2 rounded-full bg-purple-400 animate-pulse"></span>
-            Performance & Token Economics Showcase
+    <!-- Top Navigation Bar & Brand Header -->
+    <header class="border border-slate-800 bg-slate-900/90 backdrop-blur-md rounded-2xl p-5 md:p-6 shadow-2xl relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-emerald-500 flex items-center justify-center shadow-lg shadow-blue-500/20 font-black text-white text-lg font-mono">
+          J
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-xl md:text-2xl font-extrabold tracking-tight text-white font-mono">
+              jev-dev-harness
+            </h1>
+            <span class="text-[10px] font-mono uppercase px-2 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 font-bold">
+              v0.1.2
+            </span>
           </div>
-          <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-100 to-purple-300 bg-clip-text text-transparent">
-            AI Agents: With vs. Without Jev Harness
-          </h1>
-          <p class="text-slate-400 max-w-2xl text-sm md:text-base">
-            Quantifying speed, safety, and dollar savings when using <span class="text-purple-300 font-semibold">TypeSafe AI / Jev</span> across Codex, Antigravity, Claude Code, Cursor, and Aider.
+          <p class="text-xs text-slate-400">
+            Runtime Developer Harness & Live Telemetry for AI Coding Agents
           </p>
         </div>
+      </div>
 
-        <div class="flex flex-wrap items-center gap-3">
-          <button onclick="copyShareText()" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 active:scale-95 text-white font-medium text-sm transition-all shadow-lg shadow-purple-600/20 cursor-pointer">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
-            Copy Pitch Summary
-          </button>
-          <a href="https://github.com/celolopes/jev-dev-harness" target="_blank" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 font-medium text-sm border border-slate-700 transition-all">
-            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"></path></svg>
-            GitHub Repo
-          </a>
-        </div>
+      <!-- Tab Switcher -->
+      <div class="flex items-center gap-2 bg-slate-950/80 p-1.5 rounded-xl border border-slate-800">
+        <button id="tabBtnLive" onclick="switchTab('live')" class="px-4 py-2 rounded-lg text-xs font-semibold font-mono transition-all flex items-center gap-2 tab-active cursor-pointer">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          Live Telemetry
+        </button>
+        <button id="tabBtnRoi" onclick="switchTab('roi')" class="px-4 py-2 rounded-lg text-xs font-semibold font-mono transition-all flex items-center gap-2 tab-inactive cursor-pointer">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+          ROI & Simulator
+        </button>
       </div>
     </header>
 
-    <!-- Key Impact Metrics (Top Highlights) -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-      <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800 shadow-sm relative overflow-hidden">
-        <div class="text-xs uppercase font-semibold text-purple-400 mb-1">Context Token Cut</div>
-        <div class="text-3xl font-extrabold text-white">92.4%</div>
-        <p class="text-xs text-slate-400 mt-1">From 85k down to ~6.5k tokens per prompt</p>
+    <!-- ============================================================== -->
+    <!-- TAB 1: LIVE TELEMETRY (Real Data from Codex / Antigravity / Claude) -->
+    <!-- ============================================================== -->
+    <div id="tabContentLive" class="space-y-6">
+
+      <!-- Active Gateway / Agent Status Banner (Inspired by Jev Gateway) -->
+      <div class="border border-emerald-500/30 bg-emerald-950/20 backdrop-blur-md rounded-2xl p-5 md:p-6 shadow-xl relative overflow-hidden">
+        <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div class="space-y-1.5">
+            <div class="inline-flex items-center gap-2 font-mono text-xs text-emerald-400 font-semibold bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+              Codex Desktop • Antigravity • Claude Code
+            </div>
+            <div class="flex items-center gap-2">
+              <svg class="w-6 h-6 text-emerald-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+              <h2 class="text-2xl font-bold text-white tracking-tight">Active Telemetry & Protection</h2>
+            </div>
+            <p id="liveStatusSubtext" class="text-xs md:text-sm text-slate-300">
+              Jev optimized <strong id="liveDecidedCount" class="text-emerald-300">0</strong> requests across your coding agents.
+            </p>
+            <div class="text-[11px] text-slate-400 font-mono flex flex-wrap items-center gap-2 pt-1">
+              <span>Model: <span class="text-slate-200">TypeSafe Jev System One</span></span>
+              <span>•</span>
+              <span id="liveStreamStatus" class="text-emerald-400">⚡ Live Stream: Connected</span>
+              <span>•</span>
+              <span>Store: <code class="text-slate-300">~/.jev-dev/telemetry.jsonl</code></span>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 self-start md:self-auto">
+            <button onclick="clearHistory()" class="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 hover:text-white text-xs font-mono transition-all cursor-pointer">
+              Clear History
+            </button>
+            <button onclick="refreshData()" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-mono font-bold transition-all shadow-lg shadow-emerald-600/20 cursor-pointer">
+              Refresh
+            </button>
+          </div>
+        </div>
       </div>
-      <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800 shadow-sm relative overflow-hidden">
-        <div class="text-xs uppercase font-semibold text-emerald-400 mb-1">Turn Latency</div>
-        <div class="text-3xl font-extrabold text-white">5x Faster</div>
-        <p class="text-xs text-slate-400 mt-1">30-45s full LLM cycle down to 5-8s</p>
+
+      <!-- Live Metric Cards Grid -->
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <!-- Card 1: Requests -->
+        <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 shadow-sm">
+          <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Agent Ops</div>
+          <div id="metricTotalEvents" class="text-2xl font-extrabold text-white font-mono">0</div>
+          <p class="text-[10px] text-slate-400 mt-1">Through harness</p>
+        </div>
+
+        <!-- Card 2: Tokens Saved -->
+        <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 shadow-sm">
+          <div class="text-[11px] font-semibold text-purple-400 uppercase tracking-wider mb-1">Tokens Saved</div>
+          <div id="metricTokensSaved" class="text-2xl font-extrabold text-purple-300 font-mono">0</div>
+          <p id="metricTokensSavedSub" class="text-[10px] text-slate-400 mt-1">~92% context cut</p>
+        </div>
+
+        <!-- Card 3: Cash Saved -->
+        <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 shadow-sm">
+          <div class="text-[11px] font-semibold text-emerald-400 uppercase tracking-wider mb-1">$ Net Saved</div>
+          <div id="metricDollarsSaved" class="text-2xl font-extrabold text-emerald-300 font-mono">$0.00</div>
+          <p class="text-[10px] text-slate-400 mt-1">vs LLM input waste</p>
+        </div>
+
+        <!-- Card 4: Jev Latency -->
+        <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 shadow-sm">
+          <div class="text-[11px] font-semibold text-blue-400 uppercase tracking-wider mb-1">Avg Latency</div>
+          <div id="metricLatency" class="text-2xl font-extrabold text-blue-300 font-mono">-- ms</div>
+          <p id="metricLatencySub" class="text-[10px] text-slate-400 mt-1">p95: -- ms</p>
+        </div>
+
+        <!-- Card 5: Tool Guard -->
+        <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 shadow-sm">
+          <div class="text-[11px] font-semibold text-amber-400 uppercase tracking-wider mb-1">Tool Guard</div>
+          <div id="metricGuardCount" class="text-2xl font-extrabold text-amber-300 font-mono">0</div>
+          <p id="metricGuardSub" class="text-[10px] text-slate-400 mt-1">0 blocked</p>
+        </div>
+
+        <!-- Card 6: Patch Audits -->
+        <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 shadow-sm">
+          <div class="text-[11px] font-semibold text-rose-400 uppercase tracking-wider mb-1">Patch Audits</div>
+          <div id="metricPatchCount" class="text-2xl font-extrabold text-rose-300 font-mono">0</div>
+          <p id="metricPatchSub" class="text-[10px] text-slate-400 mt-1">Avg risk: --/100</p>
+        </div>
       </div>
-      <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800 shadow-sm relative overflow-hidden">
-        <div class="text-xs uppercase font-semibold text-blue-400 mb-1">Guard Interception</div>
-        <div class="text-3xl font-extrabold text-white">&lt; 1 ms</div>
-        <p class="text-xs text-slate-400 mt-1">Zero-latency security barrier for terminal</p>
+
+      <!-- Distribution & Operations Breakdown (Mirroring Jev Gateway UI) -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- What happened to each request -->
+        <div class="lg:col-span-7 border border-slate-800 bg-slate-900/90 rounded-2xl p-5 shadow-xl space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold text-white uppercase tracking-wider font-mono">What happened to each request</h3>
+            <span id="distSummaryText" class="text-xs text-slate-400 font-mono">0 total requests</span>
+          </div>
+
+          <!-- Stacked Bar Representation -->
+          <div class="w-full h-5 rounded-lg bg-slate-800 overflow-hidden flex" id="distStackedBar">
+            <div id="barRank" class="bg-purple-500 h-full transition-all" style="width: 0%" title="Context Ranker"></div>
+            <div id="barGuard" class="bg-amber-500 h-full transition-all" style="width: 0%" title="Tool Guard"></div>
+            <div id="barPatch" class="bg-blue-500 h-full transition-all" style="width: 0%" title="Patch Reviewer"></div>
+            <div id="barLint" class="bg-emerald-500 h-full transition-all" style="width: 0%" title="Semantic Linter"></div>
+          </div>
+
+          <!-- Legend -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 text-xs font-mono">
+            <div class="flex items-center gap-2">
+              <span class="w-3 h-3 rounded bg-purple-500 flex-shrink-0"></span>
+              <span class="text-slate-300">Context Rank (<span id="pctRank">0%</span>)</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="w-3 h-3 rounded bg-amber-500 flex-shrink-0"></span>
+              <span class="text-slate-300">Tool Guard (<span id="pctGuard">0%</span>)</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="w-3 h-3 rounded bg-blue-500 flex-shrink-0"></span>
+              <span class="text-slate-300">Patch Audit (<span id="pctPatch">0%</span>)</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="w-3 h-3 rounded bg-emerald-500 flex-shrink-0"></span>
+              <span class="text-slate-300">Semantic Lint (<span id="pctLint">0%</span>)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Protection & Interception Summary -->
+        <div class="lg:col-span-5 border border-slate-800 bg-slate-900/90 rounded-2xl p-5 shadow-xl space-y-3 flex flex-col justify-between">
+          <h3 class="text-sm font-bold text-white uppercase tracking-wider font-mono">Safety & Gate Verdicts</h3>
+          <div class="space-y-2 text-xs font-mono">
+            <div class="flex justify-between items-center p-2 rounded-lg bg-slate-950/60 border border-slate-800">
+              <span class="text-slate-400">Destructive Commands Blocked:</span>
+              <span id="gateBlockedVal" class="text-emerald-400 font-bold">0 safe</span>
+            </div>
+            <div class="flex justify-between items-center p-2 rounded-lg bg-slate-950/60 border border-slate-800">
+              <span class="text-slate-400">Patches Escalated / Blocked:</span>
+              <span id="gateEscalatedVal" class="text-amber-400 font-bold">0 escalated</span>
+            </div>
+            <div class="flex justify-between items-center p-2 rounded-lg bg-slate-950/60 border border-slate-800">
+              <span class="text-slate-400">Context Reduction Rate:</span>
+              <span id="gateAvgReductionVal" class="text-purple-400 font-bold">92.4%</span>
+            </div>
+          </div>
+          <div class="text-[11px] text-slate-500 text-right">
+            Deterministic rule gates + Jev System One
+          </div>
+        </div>
       </div>
-      <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800 shadow-sm relative overflow-hidden">
-        <div class="text-xs uppercase font-semibold text-amber-400 mb-1">Cost Savings</div>
-        <div class="text-3xl font-extrabold text-white">~$3,100+</div>
-        <p class="text-xs text-slate-400 mt-1">Per engineer/year in avoided token waste</p>
+
+      <!-- Real-Time Activity Feed / Event Log -->
+      <div class="border border-slate-800 bg-slate-900/90 rounded-2xl p-5 shadow-xl space-y-4">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+            <h3 class="text-base font-bold text-white font-mono">Live Operations Stream</h3>
+          </div>
+          <span class="text-xs text-slate-400 font-mono" id="feedCountText">Listening for agent tool calls...</span>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs font-mono text-slate-300">
+            <thead class="text-[11px] uppercase bg-slate-950/80 text-slate-400 border-y border-slate-800">
+              <tr>
+                <th scope="col" class="py-2.5 px-3">Time</th>
+                <th scope="col" class="py-2.5 px-3">Operation</th>
+                <th scope="col" class="py-2.5 px-3">Target / Detail</th>
+                <th scope="col" class="py-2.5 px-3">Outcome / Impact</th>
+                <th scope="col" class="py-2.5 px-3">Speed</th>
+                <th scope="col" class="py-2.5 px-3">Status</th>
+              </tr>
+            </thead>
+            <tbody id="eventsTableBody" class="divide-y divide-slate-800/60">
+              <tr id="emptyEventsRow">
+                <td colspan="6" class="py-8 text-center text-slate-500">
+                  No telemetry events recorded yet. Run a prompt in Codex Desktop or Antigravity to see live data here!
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
+
     </div>
 
-    <!-- Live Interactive ROI & Token Savings Calculator -->
-    <section class="border border-slate-800 bg-slate-900/90 rounded-2xl p-6 md:p-8 shadow-xl">
-      <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-6 border-b border-slate-800">
-        <div>
-          <h2 class="text-xl font-bold text-white flex items-center gap-2">
-            <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-            Interactive ROI & Dollar Savings Calculator
-          </h2>
-          <p class="text-xs md:text-sm text-slate-400">Simulate monthly and annual savings based on your team size and model usage.</p>
-        </div>
-        <span class="px-3 py-1 rounded-full text-xs font-mono bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
-          Live Real-time Model
-        </span>
-      </div>
+    <!-- ============================================================== -->
+    <!-- TAB 2: ROI & BENCHMARK SIMULATOR                                -->
+    <!-- ============================================================== -->
+    <div id="tabContentRoi" class="space-y-6 hidden">
 
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-6">
-        <!-- Sliders & Controls -->
-        <div class="lg:col-span-6 space-y-6">
+      <!-- Interactive Calculator Section -->
+      <section class="border border-slate-800 bg-slate-900/90 rounded-2xl p-6 md:p-8 shadow-xl">
+        <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-6 border-b border-slate-800">
           <div>
-            <div class="flex justify-between items-center mb-2">
-              <label class="text-sm font-medium text-slate-300">Team Size (Engineers with AI Agents)</label>
-              <span id="teamSizeVal" class="text-base font-bold text-purple-400 font-mono">10 devs</span>
-            </div>
-            <input id="teamSize" type="range" min="1" max="100" value="10" class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-purple-500" oninput="updateCalculator()">
-            <div class="flex justify-between text-[11px] text-slate-500 mt-1 font-mono">
-              <span>1 solo</span>
-              <span>10 team</span>
-              <span>50 squad</span>
-              <span>100 enterprise</span>
-            </div>
+            <h2 class="text-xl font-bold text-white flex items-center gap-2">
+              <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+              Interactive ROI & Dollar Savings Calculator
+            </h2>
+            <p class="text-xs md:text-sm text-slate-400">Simulate monthly and annual savings based on your team size and model usage.</p>
           </div>
-
-          <div>
-            <div class="flex justify-between items-center mb-2">
-              <label class="text-sm font-medium text-slate-300">Agent Prompts per Dev / Day</label>
-              <span id="promptsVal" class="text-base font-bold text-blue-400 font-mono">40 prompts</span>
-            </div>
-            <input id="promptsPerDay" type="range" min="10" max="150" step="5" value="40" class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500" oninput="updateCalculator()">
-            <div class="flex justify-between text-[11px] text-slate-500 mt-1 font-mono">
-              <span>10 light</span>
-              <span>40 standard</span>
-              <span>80 intense</span>
-              <span>150 power user</span>
-            </div>
-          </div>
-
-          <div>
-            <label class="block text-sm font-medium text-slate-300 mb-2">Target Agent Model & Pricing</label>
-            <select id="modelSelect" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-purple-500" onchange="updateCalculator()">
-              <option value="3.00">Claude 3.5 Sonnet ($3.00 / million input tokens)</option>
-              <option value="2.50">OpenAI GPT-4o ($2.50 / million input tokens)</option>
-              <option value="0.80">Claude 3.5 Haiku ($0.80 / million input tokens)</option>
-              <option value="0.14">DeepSeek V3 ($0.14 / million input tokens)</option>
-            </select>
-          </div>
+          <span class="px-3 py-1 rounded-full text-xs font-mono bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
+            Interactive Model
+          </span>
         </div>
 
-        <!-- Calculated Results Cards -->
-        <div class="lg:col-span-6 bg-slate-950/60 border border-slate-800/80 rounded-xl p-6 flex flex-col justify-between">
-          <div class="space-y-4">
-            <div class="flex items-center justify-between pb-3 border-b border-slate-800 text-xs">
-              <span class="text-slate-400">Monthly Tokens Without Jev:</span>
-              <span id="tokensWithoutVal" class="font-mono text-slate-300 font-semibold">748M tokens</span>
-            </div>
-            <div class="flex items-center justify-between pb-3 border-b border-slate-800 text-xs">
-              <span class="text-slate-400">Monthly Tokens With Jev (Surgical):</span>
-              <span id="tokensWithVal" class="font-mono text-purple-300 font-semibold">57M tokens (-92.4%)</span>
-            </div>
-            <div class="grid grid-cols-2 gap-3 pt-2">
-              <div class="p-3 rounded-lg bg-red-950/20 border border-red-900/30">
-                <span class="text-[11px] uppercase font-bold text-red-400 block">Cost Without Jev</span>
-                <span id="costWithoutVal" class="text-xl font-bold font-mono text-red-200">$2,244.00</span>
-                <span class="text-[10px] text-slate-400 block mt-0.5">/ month</span>
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-6">
+          <!-- Sliders & Controls -->
+          <div class="lg:col-span-6 space-y-6">
+            <div>
+              <div class="flex justify-between items-center mb-2">
+                <label class="text-sm font-medium text-slate-300">Team Size (Engineers with AI Agents)</label>
+                <span id="teamSizeVal" class="text-base font-bold text-purple-400 font-mono">10 devs</span>
               </div>
-              <div class="p-3 rounded-lg bg-emerald-950/20 border border-emerald-900/30">
-                <span class="text-[11px] uppercase font-bold text-emerald-400 block">Cost With Jev</span>
-                <span id="costWithVal" class="text-xl font-bold font-mono text-emerald-200">$171.60</span>
-                <span class="text-[10px] text-slate-400 block mt-0.5">/ month</span>
+              <input id="teamSize" type="range" min="1" max="100" value="10" class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-purple-500" oninput="updateCalculator()">
+              <div class="flex justify-between text-[11px] text-slate-500 mt-1 font-mono">
+                <span>1 solo</span>
+                <span>10 team</span>
+                <span>50 squad</span>
+                <span>100 enterprise</span>
               </div>
             </div>
+
+            <div>
+              <div class="flex justify-between items-center mb-2">
+                <label class="text-sm font-medium text-slate-300">Agent Prompts per Dev / Day</label>
+                <span id="promptsVal" class="text-base font-bold text-blue-400 font-mono">40 prompts</span>
+              </div>
+              <input id="promptsPerDay" type="range" min="10" max="150" step="5" value="40" class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500" oninput="updateCalculator()">
+              <div class="flex justify-between text-[11px] text-slate-500 mt-1 font-mono">
+                <span>10 light</span>
+                <span>40 standard</span>
+                <span>80 intense</span>
+                <span>150 power user</span>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-2">Target Agent Model & Pricing</label>
+              <select id="modelSelect" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-purple-500" onchange="updateCalculator()">
+                <option value="3.00">Claude 3.5 Sonnet ($3.00 / million input tokens)</option>
+                <option value="2.50">OpenAI GPT-4o ($2.50 / million input tokens)</option>
+                <option value="0.80">Claude 3.5 Haiku ($0.80 / million input tokens)</option>
+                <option value="0.14">DeepSeek V3 ($0.14 / million input tokens)</option>
+              </select>
+            </div>
           </div>
 
-          <div class="mt-6 pt-4 border-t border-slate-800/80 bg-gradient-to-r from-purple-950/30 to-emerald-950/30 p-4 rounded-xl border border-purple-900/30">
-            <div class="flex items-baseline justify-between">
-              <div>
-                <span class="text-xs uppercase font-extrabold tracking-wider text-emerald-400 block">Net Monthly Cash Saved</span>
-                <span id="savingsMonthVal" class="text-3xl font-black font-mono text-white">$2,072.40</span>
+          <!-- Calculated Results Cards -->
+          <div class="lg:col-span-6 bg-slate-950/60 border border-slate-800/80 rounded-xl p-6 flex flex-col justify-between">
+            <div class="space-y-4">
+              <div class="flex items-center justify-between pb-3 border-b border-slate-800 text-xs">
+                <span class="text-slate-400">Monthly Tokens Without Jev:</span>
+                <span id="tokensWithoutVal" class="font-mono text-slate-300 font-semibold">748M tokens</span>
               </div>
-              <div class="text-right">
-                <span class="text-xs uppercase font-extrabold tracking-wider text-purple-400 block">Annual Savings</span>
-                <span id="savingsYearVal" class="text-xl font-bold font-mono text-purple-200">$24,868.80</span>
+              <div class="flex items-center justify-between pb-3 border-b border-slate-800 text-xs">
+                <span class="text-slate-400">Monthly Tokens With Jev (Surgical):</span>
+                <span id="tokensWithVal" class="font-mono text-purple-300 font-semibold">57M tokens (-92.4%)</span>
+              </div>
+              <div class="grid grid-cols-2 gap-3 pt-2">
+                <div class="p-3 rounded-lg bg-red-950/20 border border-red-900/30">
+                  <span class="text-[11px] uppercase font-bold text-red-400 block">Cost Without Jev</span>
+                  <span id="costWithoutVal" class="text-xl font-bold font-mono text-red-200">$2,244.00</span>
+                  <span class="text-[10px] text-slate-400 block mt-0.5">/ month</span>
+                </div>
+                <div class="p-3 rounded-lg bg-emerald-950/20 border border-emerald-900/30">
+                  <span class="text-[11px] uppercase font-bold text-emerald-400 block">Cost With Jev</span>
+                  <span id="costWithVal" class="text-xl font-bold font-mono text-emerald-200">$171.60</span>
+                  <span class="text-[10px] text-slate-400 block mt-0.5">/ month</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-6 pt-4 border-t border-slate-800/80 bg-gradient-to-r from-purple-950/30 to-emerald-950/30 p-4 rounded-xl border border-purple-900/30">
+              <div class="flex items-baseline justify-between">
+                <div>
+                  <span class="text-xs uppercase font-extrabold tracking-wider text-emerald-400 block">Net Monthly Cash Saved</span>
+                  <span id="savingsMonthVal" class="text-3xl font-black font-mono text-white">$2,072.40</span>
+                </div>
+                <div class="text-right">
+                  <span class="text-xs uppercase font-extrabold tracking-wider text-purple-400 block">Annual Savings</span>
+                  <span id="savingsYearVal" class="text-xl font-bold font-mono text-purple-200">$24,868.80</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <!-- Side-by-Side Workflow Comparison Table -->
-    <section class="border border-slate-800 bg-slate-900/80 rounded-2xl p-6 md:p-8 shadow-xl space-y-6">
-      <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div>
-          <h2 class="text-xl font-bold text-white flex items-center gap-2">
-            <svg class="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-            Side-by-Side Architectural Comparison
-          </h2>
-          <p class="text-xs md:text-sm text-slate-400">Comparing typical vanilla agent sessions against jev-dev-harness enhanced environments.</p>
+      <!-- Side-by-Side Matrix -->
+      <section class="border border-slate-800 bg-slate-900/80 rounded-2xl p-6 md:p-8 shadow-xl space-y-6">
+        <h2 class="text-xl font-bold text-white font-mono">Side-by-Side Architectural Matrix</h2>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm text-slate-300">
+            <thead class="text-xs uppercase bg-slate-950/60 text-slate-400 border-y border-slate-800">
+              <tr>
+                <th scope="col" class="py-3 px-4">Feature / Dimension</th>
+                <th scope="col" class="py-3 px-4 text-red-400 bg-red-950/10 border-x border-slate-800">Without Jev (Vanilla Agent)</th>
+                <th scope="col" class="py-3 px-4 text-emerald-400 bg-emerald-950/10">With Jev Developer Harness</th>
+                <th scope="col" class="py-3 px-4 text-purple-400">Competitive Advantage</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/60 font-normal">
+              <tr class="hover:bg-slate-800/30">
+                <td class="py-3.5 px-4 font-semibold text-white">Context Discovery</td>
+                <td class="py-3.5 px-4 text-slate-400 bg-red-950/5 border-x border-slate-800">Dumps 40–90 files into prompt. High "lost in the middle" rate.</td>
+                <td class="py-3.5 px-4 text-emerald-200 bg-emerald-950/5 font-medium">4-stage ranker isolates the exact 3–5 crucial files.</td>
+                <td class="py-3.5 px-4 font-semibold text-purple-300">92%–94% token cut, pinpoint code grounding.</td>
+              </tr>
+              <tr class="hover:bg-slate-800/30">
+                <td class="py-3.5 px-4 font-semibold text-white">Shell Command Execution</td>
+                <td class="py-3.5 px-4 text-slate-400 bg-red-950/5 border-x border-slate-800">LLM executes terminal commands blindly (risk of `rm -rf`, `git reset`).</td>
+                <td class="py-3.5 px-4 text-emerald-200 bg-emerald-950/5 font-medium">&lt;1ms lexical classifier + Jev evaluator for unknown syntax.</td>
+                <td class="py-3.5 px-4 font-semibold text-purple-300">100% deterministic guard blocking destructive actions.</td>
+              </tr>
+              <tr class="hover:bg-slate-800/30">
+                <td class="py-3.5 px-4 font-semibold text-white">Git Diff & Patch Audit</td>
+                <td class="py-3.5 px-4 text-slate-400 bg-red-950/5 border-x border-slate-800">Manual developer review or waiting minutes for remote CI runs.</td>
+                <td class="py-3.5 px-4 text-emerald-200 bg-emerald-950/5 font-medium">Sub-second (~750ms) System One pre-commit hook automatically audits diffs.</td>
+                <td class="py-3.5 px-4 font-semibold text-purple-300">Catches credential leaks & regression risk before commit.</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
-        <div class="inline-flex rounded-lg border border-slate-700 bg-slate-800 p-1 text-xs font-medium">
-          <span class="px-3 py-1 rounded-md bg-purple-600 text-white shadow-sm">Side-by-Side Matrix</span>
-        </div>
-      </div>
+      </section>
 
-      <div class="overflow-x-auto">
-        <table class="w-full text-left text-sm text-slate-300">
-          <thead class="text-xs uppercase bg-slate-950/60 text-slate-400 border-y border-slate-800">
-            <tr>
-              <th scope="col" class="py-3 px-4">Feature / Dimension</th>
-              <th scope="col" class="py-3 px-4 text-red-400 bg-red-950/10 border-x border-slate-800">Without Jev (Vanilla Agent)</th>
-              <th scope="col" class="py-3 px-4 text-emerald-400 bg-emerald-950/10">With Jev Developer Harness</th>
-              <th scope="col" class="py-3 px-4 text-purple-400">Competitive Advantage</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-800/60 font-normal">
-            <tr class="hover:bg-slate-800/30">
-              <td class="py-3.5 px-4 font-semibold text-white">Context Discovery</td>
-              <td class="py-3.5 px-4 text-slate-400 bg-red-950/5 border-x border-slate-800">Dumps 40–90 files into prompt. High "lost in the middle" rate.</td>
-              <td class="py-3.5 px-4 text-emerald-200 bg-emerald-950/5 font-medium">4-stage ranker isolates the exact 3–5 crucial files.</td>
-              <td class="py-3.5 px-4 font-semibold text-purple-300">92%–94% token cut, pinpoint code grounding.</td>
-            </tr>
-            <tr class="hover:bg-slate-800/30">
-              <td class="py-3.5 px-4 font-semibold text-white">Shell Command Execution</td>
-              <td class="py-3.5 px-4 text-slate-400 bg-red-950/5 border-x border-slate-800">LLM executes terminal commands blindly (risk of `rm -rf`, `git reset`).</td>
-              <td class="py-3.5 px-4 text-emerald-200 bg-emerald-950/5 font-medium">&lt;1ms lexical classifier + Jev evaluator for unknown syntax.</td>
-              <td class="py-3.5 px-4 font-semibold text-purple-300">100% deterministic guard blocking destructive actions.</td>
-            </tr>
-            <tr class="hover:bg-slate-800/30">
-              <td class="py-3.5 px-4 font-semibold text-white">Git Diff & Patch Audit</td>
-              <td class="py-3.5 px-4 text-slate-400 bg-red-950/5 border-x border-slate-800">Manual developer review or waiting minutes for remote CI runs.</td>
-              <td class="py-3.5 px-4 text-emerald-200 bg-emerald-950/5 font-medium">Sub-second (~750ms) System One pre-commit hook automatically audits diffs.</td>
-              <td class="py-3.5 px-4 font-semibold text-purple-300">Catches credential leaks & regression risk before commit.</td>
-            </tr>
-            <tr class="hover:bg-slate-800/30">
-              <td class="py-3.5 px-4 font-semibold text-white">Architectural Consistency</td>
-              <td class="py-3.5 px-4 text-slate-400 bg-red-950/5 border-x border-slate-800">Code drift, raw SQL in UI components, hazardous DB migrations.</td>
-              <td class="py-3.5 px-4 text-emerald-200 bg-emerald-950/5 font-medium">Semantic Linter runs in GitHub Actions CI with calibrated rules.</td>
-              <td class="py-3.5 px-4 font-semibold text-purple-300">Zero architectural decay across multi-dev PRs.</td>
-            </tr>
-            <tr class="hover:bg-slate-800/30">
-              <td class="py-3.5 px-4 font-semibold text-white">Multi-Agent Protocol</td>
-              <td class="py-3.5 px-4 text-slate-400 bg-red-950/5 border-x border-slate-800">Proprietary or disparate custom tool APIs.</td>
-              <td class="py-3.5 px-4 text-emerald-200 bg-emerald-950/5 font-medium">Official MCP Server (`npx -y jev-dev-harness`).</td>
-              <td class="py-3.5 px-4 font-semibold text-purple-300">Plugs into Cursor, Claude Desktop, Antigravity, Codex.</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <!-- Marketing Copy & Pitch Generator -->
-    <section class="border border-slate-800 bg-slate-900/80 rounded-2xl p-6 md:p-8 shadow-xl space-y-4">
-      <h2 class="text-xl font-bold text-white flex items-center gap-2">
-        <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
-        Ready-to-Use Marketing Snippets (Click to Copy)
-      </h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 relative group cursor-pointer hover:border-purple-500/50 transition-all" onclick="copySnippet('post')">
-          <div class="flex justify-between items-center mb-2">
-            <span class="text-xs font-semibold uppercase text-purple-400">Social Media / LinkedIn / X Pitch</span>
-            <span class="text-xs text-slate-500 group-hover:text-purple-300">Click to Copy</span>
-          </div>
-          <p id="snippetPost" class="text-xs text-slate-300 font-mono leading-relaxed">
-🚀 Stop wasting 90% of your LLM tokens on codebase noise!
-
-We just open-sourced `jev-dev-harness` — a runtime developer harness for AI coding agents (Codex, Antigravity, Claude Code, Cursor) powered by TypeSafe AI / Jev:
-⚡ Context Ranker: 94% token cut (85k -> 6k tokens)
-🛡️ Tool Guard: &lt;1ms shell safety gate
-🔍 Patch Reviewer: 750ms pre-commit audit
-🔌 Official MCP Server over stdio
-
-👉 Try in 5 seconds: `npx -y jev-dev-harness`
-          </p>
-        </div>
-
-        <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 relative group cursor-pointer hover:border-blue-500/50 transition-all" onclick="copySnippet('cli')">
-          <div class="flex justify-between items-center mb-2">
-            <span class="text-xs font-semibold uppercase text-blue-400">Terminal Benchmark Command</span>
-            <span class="text-xs text-slate-500 group-hover:text-blue-300">Click to Copy</span>
-          </div>
-          <p id="snippetCli" class="text-xs text-slate-300 font-mono leading-relaxed">
-# Run the live benchmark comparison right in your terminal:
-npx -y jev-dev compare
-
-# Output machine-readable JSON for CI reports:
-npx -y jev-dev compare --json
-          </p>
-          <div class="mt-4 pt-3 border-t border-slate-800/80 text-[11px] text-slate-400">
-            Runs offline or with active TypeSafe / OpenRouter API keys.
-          </div>
-        </div>
-      </div>
-    </section>
+    </div>
 
     <!-- Footer -->
-    <footer class="text-center text-xs text-slate-500 py-4">
-      jev-dev-harness v0.1.1 • Licensed under MIT • Powered by TypeSafe AI / Jev System One
+    <footer class="text-center text-xs text-slate-500 py-4 font-mono">
+      jev-dev-harness v0.1.2 • Licensed under MIT • Powered by TypeSafe AI / Jev System One
     </footer>
 
   </div>
 
+  <!-- Client-side Telemetry & Calculator Script -->
   <script>
+    // Tab switching
+    function switchTab(tab) {
+      const liveTab = document.getElementById('tabContentLive');
+      const roiTab = document.getElementById('tabContentRoi');
+      const btnLive = document.getElementById('tabBtnLive');
+      const btnRoi = document.getElementById('tabBtnRoi');
+
+      if (tab === 'live') {
+        liveTab.classList.remove('hidden');
+        roiTab.classList.add('hidden');
+        btnLive.className = 'px-4 py-2 rounded-lg text-xs font-semibold font-mono transition-all flex items-center gap-2 tab-active cursor-pointer';
+        btnRoi.className = 'px-4 py-2 rounded-lg text-xs font-semibold font-mono transition-all flex items-center gap-2 tab-inactive cursor-pointer';
+      } else {
+        liveTab.classList.add('hidden');
+        roiTab.classList.remove('hidden');
+        btnLive.className = 'px-4 py-2 rounded-lg text-xs font-semibold font-mono transition-all flex items-center gap-2 tab-inactive cursor-pointer';
+        btnRoi.className = 'px-4 py-2 rounded-lg text-xs font-semibold font-mono transition-all flex items-center gap-2 tab-active cursor-pointer';
+      }
+    }
+
+    // Live Telemetry Handlers
+    let currentSummary = null;
+    let eventsList = [];
+
+    function updateTelemetryUi(summary, events) {
+      if (summary) {
+        currentSummary = summary;
+        document.getElementById('liveDecidedCount').innerText = summary.totalEvents;
+        document.getElementById('liveStatusSubtext').innerHTML = `Jev optimized <strong class="text-emerald-300">${summary.totalEvents}</strong> requests across your coding agents.`;
+        document.getElementById('metricTotalEvents').innerText = summary.totalEvents;
+        document.getElementById('metricTokensSaved').innerText = `${summary.totalTokensSaved.toLocaleString()}`;
+        document.getElementById('metricDollarsSaved').innerText = `$${summary.estimatedDollarsSaved.toFixed(2)}`;
+        document.getElementById('metricLatency').innerText = summary.avgLatencyMs ? `${summary.avgLatencyMs} ms` : '-- ms';
+        document.getElementById('metricLatencySub').innerText = summary.p95LatencyMs ? `p95: ${summary.p95LatencyMs} ms` : 'p95: -- ms';
+        document.getElementById('metricGuardCount').innerText = summary.guardStats?.totalChecked || 0;
+        document.getElementById('metricGuardSub').innerText = `${summary.guardStats?.blocked || 0} blocked`;
+        document.getElementById('metricPatchCount').innerText = summary.patchStats?.totalAudited || 0;
+        document.getElementById('metricPatchSub').innerText = `Avg risk: ${summary.patchStats?.avgRiskScore || 0}/100`;
+
+        document.getElementById('gateBlockedVal').innerText = `${summary.guardStats?.blocked || 0} blocked (${summary.guardStats?.allowed || 0} safe)`;
+        document.getElementById('gateEscalatedVal').innerText = `${summary.patchStats?.escalated || 0} escalated (${summary.patchStats?.approved || 0} approved)`;
+        document.getElementById('gateAvgReductionVal').innerText = summary.contextStats?.avgReductionPct ? `${summary.contextStats.avgReductionPct}%` : '92.4%';
+
+        // Stacked Bar
+        const total = summary.totalEvents || 1;
+        const rankCount = summary.byType?.context_rank || 0;
+        const guardCount = summary.byType?.guard_check || 0;
+        const patchCount = summary.byType?.patch_review || 0;
+        const lintCount = summary.byType?.lint_semantic || 0;
+
+        const pRank = Math.round((rankCount / total) * 100);
+        const pGuard = Math.round((guardCount / total) * 100);
+        const pPatch = Math.round((patchCount / total) * 100);
+        const pLint = Math.max(0, 100 - pRank - pGuard - pPatch);
+
+        document.getElementById('barRank').style.width = `${pRank}%`;
+        document.getElementById('barGuard').style.width = `${pGuard}%`;
+        document.getElementById('barPatch').style.width = `${pPatch}%`;
+        document.getElementById('barLint').style.width = `${pLint}%`;
+
+        document.getElementById('pctRank').innerText = `${pRank}%`;
+        document.getElementById('pctGuard').innerText = `${pGuard}%`;
+        document.getElementById('pctPatch').innerText = `${pPatch}%`;
+        document.getElementById('pctLint').innerText = `${pLint}%`;
+        document.getElementById('distSummaryText').innerText = `${summary.totalEvents} total requests logged`;
+      }
+
+      if (events && Array.isArray(events)) {
+        eventsList = events;
+        renderEventsTable(events);
+      }
+    }
+
+    function renderEventsTable(events) {
+      const tbody = document.getElementById('eventsTableBody');
+      if (!events || events.length === 0) {
+        tbody.innerHTML = `<tr id="emptyEventsRow"><td colspan="6" class="py-8 text-center text-slate-500">No telemetry events recorded yet. Run a prompt in Codex Desktop or Antigravity to see live data here!</td></tr>`;
+        document.getElementById('feedCountText').innerText = '0 events recorded';
+        return;
+      }
+
+      document.getElementById('feedCountText').innerText = `${events.length} latest events`;
+      tbody.innerHTML = events.map(e => {
+        const time = new Date(e.timestamp).toLocaleTimeString();
+        let typeBadge = '';
+        let detail = '';
+        let outcome = '';
+        let statusBadge = '';
+
+        if (e.type === 'context_rank') {
+          typeBadge = '<span class="px-2 py-0.5 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20 font-bold">CONTEXT_RANK</span>';
+          detail = `<span class="text-slate-300 truncate max-w-xs block" title="${escapeHtml(e.task)}">${escapeHtml(e.task || 'File context ranking')}</span>`;
+          outcome = `<span class="text-purple-300 font-semibold">${e.selectedFiles}/${e.initialCandidates} files (-${e.reductionPct}%)</span>`;
+          statusBadge = '<span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">RANKED</span>';
+        } else if (e.type === 'guard_check') {
+          typeBadge = '<span class="px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 font-bold">TOOL_GUARD</span>';
+          detail = `<code class="text-slate-300 truncate max-w-xs block text-[11px]" title="${escapeHtml(e.command)}">${escapeHtml(e.command)}</code>`;
+          outcome = `<span class="${e.allowed ? 'text-emerald-400' : 'text-red-400'}">${e.category} (${e.riskLevel})</span>`;
+          statusBadge = e.allowed
+            ? '<span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">ALLOWED</span>'
+            : '<span class="px-2 py-0.5 rounded bg-red-500/10 text-red-400 border border-red-500/20 font-bold animate-pulse">BLOCKED</span>';
+        } else if (e.type === 'patch_review') {
+          typeBadge = '<span class="px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 font-bold">PATCH_REVIEW</span>';
+          detail = `<span class="text-slate-300">${e.filesCount} file(s) (+${e.additions}/-${e.deletions})</span>`;
+          outcome = `<span class="text-slate-300 font-semibold">Risk: ${e.riskScore}/100</span>`;
+          statusBadge = e.status === 'APPROVED'
+            ? '<span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">APPROVED</span>'
+            : '<span class="px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">ESCALATED</span>';
+        } else {
+          typeBadge = '<span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold">LINT_SEMANTIC</span>';
+          detail = `<span class="text-slate-300">${e.violationsCount || 0} violations</span>`;
+          outcome = `<span class="text-slate-300">${e.status}</span>`;
+          statusBadge = e.passed
+            ? '<span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">PASSED</span>'
+            : '<span class="px-2 py-0.5 rounded bg-red-500/10 text-red-400 border border-red-500/20">VIOLATIONS</span>';
+        }
+
+        return `<tr class="hover:bg-slate-800/40">
+          <td class="py-2.5 px-3 text-slate-400">${time}</td>
+          <td class="py-2.5 px-3">${typeBadge}</td>
+          <td class="py-2.5 px-3">${detail}</td>
+          <td class="py-2.5 px-3">${outcome}</td>
+          <td class="py-2.5 px-3 text-slate-400">${e.latencyMs || 0}ms</td>
+          <td class="py-2.5 px-3">${statusBadge}</td>
+        </tr>`;
+      }).join('');
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    // Connect to SSE Live Stream
+    function initLiveStream() {
+      try {
+        const evtSource = new EventSource('/api/live');
+        evtSource.onmessage = function(event) {
+          try {
+            const data = JSON.parse(event.data);
+            if (data.type === 'init') {
+              updateTelemetryUi(data.summary, data.events);
+            } else if (data.type === 'event') {
+              eventsList.unshift(data.event);
+              if (eventsList.length > 100) eventsList.pop();
+              updateTelemetryUi(data.summary, eventsList);
+            }
+          } catch (e) {
+            // Non-JSON ping
+          }
+        };
+
+        evtSource.onerror = function() {
+          document.getElementById('liveStreamStatus').innerText = '🔄 Polling fallback (SSE disconnected)';
+          document.getElementById('liveStreamStatus').className = 'text-amber-400';
+          setTimeout(refreshData, 3000);
+        };
+      } catch {
+        // Fallback polling
+        setInterval(refreshData, 3000);
+      }
+    }
+
+    async function refreshData() {
+      try {
+        const [sumRes, evRes] = await Promise.all([
+          fetch('/api/summary'),
+          fetch('/api/events?limit=50')
+        ]);
+        if (sumRes.ok && evRes.ok) {
+          const summary = await sumRes.json();
+          const events = await evRes.json();
+          updateTelemetryUi(summary, events);
+        }
+      } catch (err) {
+        console.error('Failed to fetch telemetry data:', err);
+      }
+    }
+
+    async function clearHistory() {
+      if (!confirm('Clear all recorded telemetry history?')) return;
+      try {
+        const res = await fetch('/api/clear', { method: 'POST' });
+        if (res.ok) {
+          await refreshData();
+        }
+      } catch (err) {
+        alert('Failed to clear history');
+      }
+    }
+
+    // ROI Calculator Logic
     function updateCalculator() {
       const teamSize = parseInt(document.getElementById('teamSize').value, 10);
       const promptsPerDay = parseInt(document.getElementById('promptsPerDay').value, 10);
@@ -319,22 +623,9 @@ npx -y jev-dev compare --json
       document.getElementById('savingsYearVal').innerText = `$${savingsYear.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     }
 
-    function copyShareText() {
-      const text = `🚀 AI Coding Agents: With vs Without Jev Harness\n\n• Token Reduction: 92.4% fewer tokens sent to LLMs (85k -> 6.5k)\n• Speed: 4x-6x faster task turnaround\n• Safety: <1ms tool call guard (blocks destructive actions)\n• Diff Audit: ~750ms pre-commit triage\n• Est. Team Savings: $2,000 - $10,000+ / month\n\nOpen-source: https://github.com/celolopes/jev-dev-harness\nRun via npx: npx -y jev-dev-harness`;
-      navigator.clipboard.writeText(text).then(() => {
-        alert('Pitch summary copied to clipboard!');
-      });
-    }
-
-    function copySnippet(type) {
-      const elId = type === 'post' ? 'snippetPost' : 'snippetCli';
-      const text = document.getElementById(elId).innerText.trim();
-      navigator.clipboard.writeText(text).then(() => {
-        alert('Copied to clipboard!');
-      });
-    }
-
-    // Initialize on load
+    // Init
+    refreshData();
+    initLiveStream();
     updateCalculator();
   </script>
 </body>
