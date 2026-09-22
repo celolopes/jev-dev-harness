@@ -45,7 +45,7 @@
               jev-dev-harness
             </h1>
             <span class="text-[10px] font-mono uppercase px-2 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 font-bold">
-              v0.1.2
+              v0.1.4
             </span>
           </div>
           <p class="text-xs text-slate-400">
@@ -66,6 +66,19 @@
         </button>
       </div>
     </header>
+
+    <!-- Update Available Notification Banner -->
+    <div id="updateBanner" class="hidden p-3.5 rounded-xl bg-gradient-to-r from-purple-950/60 to-blue-950/60 border border-purple-500/40 text-xs font-mono flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg shadow-purple-950/30">
+      <div class="flex items-center gap-2.5">
+        <span class="w-2.5 h-2.5 rounded-full bg-purple-400 animate-ping"></span>
+        <span class="text-slate-200">
+          🔔 New update available: <strong id="updateCurrentVer" class="text-slate-400 font-semibold"></strong> ➔ <strong id="updateLatestVer" class="text-purple-300 font-bold"></strong>. Run <code class="bg-purple-900/40 border border-purple-700/50 px-1.5 py-0.5 rounded text-white font-mono">jev-dev update</code>
+        </span>
+      </div>
+      <a href="https://github.com/celolopes/jev-dev-harness/releases" target="_blank" class="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 active:scale-95 text-white font-bold transition-all text-center self-start sm:self-auto cursor-pointer">
+        View Release
+      </a>
+    </div>
 
     <!-- ============================================================== -->
     <!-- TAB 1: LIVE TELEMETRY (Real Data from Codex / Antigravity / Claude) -->
@@ -623,10 +636,27 @@
       document.getElementById('savingsYearVal').innerText = `$${savingsYear.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     }
 
+    async function checkUpdates() {
+      try {
+        const res = await fetch('/api/update-status');
+        if (res.ok) {
+          const info = await res.json();
+          if (info && info.updateAvailable) {
+            document.getElementById('updateBanner').classList.remove('hidden');
+            document.getElementById('updateCurrentVer').innerText = `v${info.currentVersion}`;
+            document.getElementById('updateLatestVer').innerText = `v${info.latestVersion}`;
+          }
+        }
+      } catch {
+        // Non-critical
+      }
+    }
+
     // Init
     refreshData();
     initLiveStream();
     updateCalculator();
+    checkUpdates();
   </script>
 </body>
 </html>

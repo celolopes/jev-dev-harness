@@ -11,6 +11,7 @@ import {
   getTelemetryFilePath,
   TelemetryEvent,
 } from "../shared/telemetry.js";
+import { checkForUpdates } from "../shared/update-checker.js";
 
 export interface DashboardOptions {
   port?: number;
@@ -99,6 +100,26 @@ export async function startDashboardServer(options: DashboardOptions = {}): Prom
       const summary = getTelemetrySummary();
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify(summary));
+      return;
+    }
+
+    // API: Update Status
+    if (pathname === "/api/update-status" && req.method === "GET") {
+      checkForUpdates("0.1.4")
+        .then((info) => {
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify(info));
+        })
+        .catch(() => {
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(
+            JSON.stringify({
+              currentVersion: "0.1.4",
+              latestVersion: "0.1.4",
+              updateAvailable: false,
+            })
+          );
+        });
       return;
     }
 

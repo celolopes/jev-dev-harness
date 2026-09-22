@@ -1,5 +1,6 @@
 import { Command } from "commander";
 import path from "node:path";
+import { execSync } from "node:child_process";
 import { rankContext } from "../context-ranker/index.js";
 import { installGitHook, uninstallGitHook } from "../hooks/index.js";
 import { reviewPatchPipeline } from "../patch-reviewer/index.js";
@@ -9,6 +10,7 @@ import { startMcpServer } from "../mcp/index.js";
 import { printTerminalComparison } from "./compare.js";
 import { runSetupWizard } from "./setup.js";
 import { startDashboardServer } from "./dashboard.js";
+import { checkForUpdates, printUpdateNotification } from "../shared/update-checker.js";
 
 export function createCli(): Command {
   const program = new Command();
@@ -16,7 +18,7 @@ export function createCli(): Command {
   program
     .name("jev-dev")
     .description("Developer Harness with TypeSafe AI / Jev for AI Coding Agents")
-    .version("0.1.3");
+    .version("0.1.4");
 
   // ==========================================
   // COMMAND: context rank (Phase 2)
@@ -420,6 +422,34 @@ export function createCli(): Command {
         json: options.json,
       });
     });
+
+  // ==========================================
+  // COMMAND: update (Upgrade to latest npm version)
+  // ==========================================
+  program
+    .command("update")
+    .description("Update jev-dev-harness to the latest version published on npm")
+    .action(() => {
+      console.log("\n📦 Checking and updating jev-dev-harness to latest version...\n");
+      try {
+        execSync("npm install -g jev-dev-harness@latest", { stdio: "inherit" });
+        console.log("\n🎉 Successfully updated jev-dev-harness to latest version!\n");
+      } catch (err) {
+        console.error("\n❌ Failed to update automatically. Try running: npm install -g jev-dev-harness@latest\n");
+      }
+    });
+
+  // Non-blocking update notifier on CLI completion (excluding stdio mcp)
+  program.hook("postAction", async (_thisCommand, actionCommand) => {
+    if (actionCommand.name() !== "mcp") {
+      try {
+        const update = await checkForUpdates("0.1.4");
+        printUpdateNotification(update);
+      } catch {
+        // Silently ignore
+      }
+    }
+  });
 
   return program;
 }

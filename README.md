@@ -83,6 +83,7 @@ npx -y jev-dev compare
 | **Benchmark & ROI** | `jev-dev compare` | Live comparison of agent speed, token reduction, and dollar savings with vs. without Jev. |
 | **Live Dashboard** | `jev-dev dashboard` | Real-time web dashboard with SSE streaming to monitor active agent operations, token cuts, and dollar savings. |
 | **Setup Wizard** | `jev-dev setup` | 1-minute interactive CLI to configure API keys (TypeSafe/OpenRouter) and auto-register agents. |
+| **Auto-Update** | `jev-dev update` | 1-click upgrade to the latest npm release, with non-blocking background notifications. |
 
 ---
 
@@ -160,6 +161,7 @@ npm install -g jev-dev-harness
 jev-dev setup     # Run the setup wizard
 jev-dev dashboard # Open live telemetry dashboard
 jev-dev compare   # View ROI and benchmarks
+jev-dev update    # Upgrade to latest npm version
 jev-dev --help    # View all commands
 jev-mcp           # Launch the MCP server
 ```
