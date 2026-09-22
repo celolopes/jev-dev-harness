@@ -159,7 +159,7 @@ export async function startDashboardServer(options: DashboardOptions = {}): Prom
 
     // API: Update Status
     if (pathname === "/api/update-status" && req.method === "GET") {
-      checkForUpdates("0.2.0")
+      checkForUpdates("0.2.1")
         .then((info) => {
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(JSON.stringify(info));
@@ -168,8 +168,8 @@ export async function startDashboardServer(options: DashboardOptions = {}): Prom
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(
             JSON.stringify({
-              currentVersion: "0.2.0",
-              latestVersion: "0.2.0",
+              currentVersion: "0.2.1",
+              latestVersion: "0.2.1",
               updateAvailable: false,
             })
           );

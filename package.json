@@ -1,6 +1,6 @@
 {
   "name": "jev-dev-harness",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Developer Harness with TypeSafe AI / Jev for AI Coding Agents",
   "type": "module",
   "bin": {
