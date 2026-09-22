@@ -69,7 +69,9 @@ export async function runSetupWizard(options: SetupOptions = {}): Promise<void> 
     if (!provider && !options.nonInteractive) {
       console.log("Select your primary AI Provider for Jev System One:");
       console.log("  [1] Native TypeSafe AI (Recommended — ultra-fast native System One models)");
-      console.log("  [2] OpenRouter (Community — DeepSeek V4 Flash, Claude 3.5 Haiku, GPT-4o-mini)");
+      console.log("      🔗 Generate key: https://typesafe.ai (Dashboard: https://typesafe.ai/dashboard)");
+      console.log("  [2] OpenRouter / OpenCode (Community — DeepSeek V4, Claude 3.5, GPT-4o-mini)");
+      console.log("      🔗 Generate key: https://openrouter.ai/keys (or https://openrouter.ai)");
       console.log("  [3] Offline / Deterministic Only (Heuristics & regex — no API key needed)\n");
 
       const choice = (await ask(rl, "Enter choice [1-3] (default: 1): ")).trim();
@@ -90,18 +92,26 @@ export async function runSetupWizard(options: SetupOptions = {}): Promise<void> 
     if (provider === "typesafe") {
       if (!apiKey && !options.nonInteractive) {
         console.log("\n🔑 TypeSafe AI Configuration:");
-        console.log("Get your key at: https://typesafe.ai");
+        console.log("  📌 How to generate your API key:");
+        console.log("     1. Visit:     👉 https://typesafe.ai");
+        console.log("     2. Dashboard: 👉 https://typesafe.ai/dashboard");
+        console.log("     3. Copy your key and paste it below:\n");
         apiKey = (await ask(rl, "Paste your TYPESAFE_API_KEY (or press Enter to skip): ")).trim();
       }
     } else if (provider === "openrouter") {
       if (!apiKey && !options.nonInteractive) {
-        console.log("\n🔑 OpenRouter Configuration:");
-        console.log("Get your key at: https://openrouter.ai/keys");
+        console.log("\n🔑 OpenRouter / OpenCode Configuration:");
+        console.log("  📌 How to generate your API key:");
+        console.log("     1. Visit:     👉 https://openrouter.ai/keys");
+        console.log("     2. Website:   👉 https://openrouter.ai");
+        console.log("     3. Click 'Create Key' and paste it below:\n");
         apiKey = (await ask(rl, "Paste your OPENROUTER_API_KEY (or press Enter to skip): ")).trim();
       }
 
       if (!model && !options.nonInteractive) {
         const defaultModel = "deepseek/deepseek-v4-flash";
+        console.log(`\n🤖 Target Model for System One judgments (default: ${defaultModel})`);
+        console.log("   Popular choices: deepseek/deepseek-v4-flash, anthropic/claude-3.5-haiku, openai/gpt-4o-mini");
         const modelInput = (
           await ask(rl, `Enter model slug (default: ${defaultModel}): `)
         ).trim();
@@ -282,6 +292,13 @@ export async function runSetupWizard(options: SetupOptions = {}): Promise<void> 
       } catch (err) {
         console.log(`  ℹ Note: Could not complete live test (${(err as Error).message}). Fallback heuristics remain active.`);
       }
+    }
+
+    if (!apiKey && provider !== "offline") {
+      console.log("\n💡 Skipped entering an API key for now? You can generate one anytime at:");
+      console.log("  • TypeSafe AI: 👉 https://typesafe.ai (Dashboard: https://typesafe.ai/dashboard)");
+      console.log("  • OpenRouter:  👉 https://openrouter.ai/keys (Website: https://openrouter.ai)");
+      console.log("  Then simply re-run: 'npx jev-dev setup' or edit ~/.jev-dev/config.json");
     }
 
     console.log("\n" + "=".repeat(78));

@@ -106,9 +106,11 @@ npx -y jev-dev compare
 1. **Native TypeSafe AI (Recommended)**:
    * Direct integration with TypeSafe's Jev System One model.
    * Calibrated probabilities, native discrete choices, and extreme low-latency evaluation.
+   * 👉 **Generate API Key:** [https://typesafe.ai](https://typesafe.ai) (Dashboard: [https://typesafe.ai/dashboard](https://typesafe.ai/dashboard))
    * Automatically activated when `TYPESAFE_API_KEY` (or `JEV_API_KEY`) is set.
 2. **OpenRouter Emulator (Community & Multi-Model)**:
    * Emulates Jev's structured System One contract (`noul`, `score`, `choice`) using fast reasoning models (defaults to `deepseek/deepseek-v4-flash`, also supports `openai/gpt-4o-mini`, `anthropic/claude-3.5-haiku`).
+   * 👉 **Generate API Key:** [https://openrouter.ai/keys](https://openrouter.ai/keys)
    * Automatically activated when `OPENROUTER_API_KEY` (or keys starting with `sk-or-`) is configured.
 3. **Deterministic Offline Fallback**:
    * If offline or no API keys are provided, the harness automatically falls back to regex and heuristic analysis. **Your coding agents are never blocked by API downtime.**
