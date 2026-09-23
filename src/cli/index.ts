@@ -24,7 +24,7 @@ export function createCli(): Command {
   program
     .name("jev-dev")
     .description("Developer Harness with TypeSafe AI / Jev for AI Coding Agents")
-    .version("0.2.3");
+    .version("0.2.4");
 
   // ==========================================
   // COMMAND: context rank (Phase 2)
@@ -644,7 +644,7 @@ export function createCli(): Command {
   program.hook("postAction", async (_thisCommand, actionCommand) => {
     if (actionCommand.name() !== "mcp" && actionCommand.name() !== "update") {
       try {
-        const update = await checkForUpdates("0.2.3");
+        const update = await checkForUpdates("0.2.4");
         printUpdateNotification(update);
       } catch {
         // Silently ignore
