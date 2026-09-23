@@ -235,6 +235,7 @@ export async function rankTools(options: ToolRankOptions): Promise<ToolRankResul
     latencyMs,
     harness: "Tool Ranker",
     provider: client.provider || "typesafe",
+    platform: options.platform,
   });
 
   return {

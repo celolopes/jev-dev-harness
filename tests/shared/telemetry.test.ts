@@ -204,5 +204,8 @@ describe("Telemetry Module", () => {
     expect(detectPlatform({ clientName: "cursor" })).toBe("Cursor");
     expect(detectPlatform({ clientName: "trae" })).toBe("Trae");
     expect(detectPlatform({ clientName: "windsurf" })).toBe("Windsurf");
+    expect(detectPlatform({ clientName: "vscode" })).toBe("VS Code");
+    expect(detectPlatform({ clientName: "cline" })).toBe("Cline");
+    expect(detectPlatform({ clientName: "roo" })).toBe("Roo Code");
   });
 });

@@ -43,6 +43,7 @@ export function createCli(): Command {
     .option("--json", "Output machine-readable stable JSON format", false)
     .option("--no-cache", "Disable caching")
     .option("--no-jev", "Disable Jev semantic evaluation (force deterministic fallback)")
+    .option("--platform <platform>", "Originating agent platform (e.g. Codex, Claude, Trae, Antigravity)")
     .action(async (options) => {
       try {
         const repoPath = path.resolve(options.path);
@@ -71,6 +72,7 @@ export function createCli(): Command {
                 )
               : 0,
           latencyMs: result.metrics.latencyMs,
+          platform: options.platform,
         });
 
         if (options.json) {
@@ -139,6 +141,7 @@ export function createCli(): Command {
     .option("--commit-range <range>", "Git commit range (e.g. HEAD~1)")
     .option("--json", "Output machine-readable stable JSON format", false)
     .option("--no-jev", "Disable Jev semantic evaluation (force deterministic fallback)")
+    .option("--platform <platform>", "Originating agent platform (e.g. Codex, Claude, Trae, Antigravity)")
     .action(async (options) => {
       try {
         const repoPath = path.resolve(options.path);
@@ -162,6 +165,7 @@ export function createCli(): Command {
           additions: result.additions,
           deletions: result.deletions,
           latencyMs: result.latencyMs,
+          platform: options.platform,
         });
 
         if (options.json) {
@@ -239,6 +243,7 @@ export function createCli(): Command {
     .option("--allow-production", "Authorize production/cloud commands", false)
     .option("--json", "Output machine-readable stable JSON format", false)
     .option("--no-jev", "Disable Jev semantic evaluation (force deterministic fallback)")
+    .option("--platform <platform>", "Originating agent platform (e.g. Codex, Claude, Trae, Antigravity)")
     .action(async (options) => {
       try {
         const result = await guardCheck({
@@ -257,6 +262,7 @@ export function createCli(): Command {
           riskLevel: result.riskLevel,
           reason: result.reason,
           latencyMs: result.latencyMs,
+          platform: options.platform,
         });
 
         if (options.json) {
@@ -317,6 +323,7 @@ export function createCli(): Command {
     .option("--advisory", "Advisory mode (does not fail CI process exit code)", false)
     .option("--json", "Output machine-readable stable JSON format", false)
     .option("--no-jev", "Disable Jev semantic evaluation (force deterministic fallback)")
+    .option("--platform <platform>", "Originating agent platform (e.g. Codex, Claude, Trae, Antigravity)")
     .action(async (options) => {
       try {
         const repoPath = path.resolve(options.path);
@@ -337,6 +344,7 @@ export function createCli(): Command {
           passed: result.passed,
           violationsCount: result.failedRules,
           latencyMs: result.latencyMs,
+          platform: options.platform,
         });
 
         if (options.json) {
@@ -517,6 +525,7 @@ export function createCli(): Command {
     .option("--threshold <number>", "Minimum score threshold", (val) => parseFloat(val), 0.15)
     .option("--json", "Output machine-readable JSON format", false)
     .option("--no-jev", "Disable Jev semantic evaluation (force deterministic fallback)")
+    .option("--platform <platform>", "Originating agent platform (e.g. Codex, Claude, Trae, Antigravity)")
     .action(async (options) => {
       try {
         const result = await rankTools({
@@ -525,6 +534,7 @@ export function createCli(): Command {
           top: options.top,
           threshold: options.threshold,
           useJev: options.jev !== false,
+          platform: options.platform,
         });
 
         if (options.json) {

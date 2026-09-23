@@ -298,6 +298,8 @@ export function detectPlatform(extraContext?: { agent?: string; clientName?: str
     if (cn.includes("trae")) return "Trae";
     if (cn.includes("cline")) return "Cline";
     if (cn.includes("roo")) return "Roo Code";
+    if (cn.includes("continue")) return "Continue";
+    if (cn.includes("vscode") || cn.includes("vs code") || cn === "code") return "VS Code";
     return extraContext.clientName;
   }
 
@@ -311,6 +313,10 @@ export function detectPlatform(extraContext?: { agent?: string; clientName?: str
     if (a.includes("cursor")) return "Cursor";
     if (a.includes("windsurf")) return "Windsurf";
     if (a.includes("trae")) return "Trae";
+    if (a.includes("cline")) return "Cline";
+    if (a.includes("roo")) return "Roo Code";
+    if (a.includes("continue")) return "Continue";
+    if (a.includes("vscode") || a.includes("vs code") || a === "code") return "VS Code";
     if (a.includes("opencode")) return "OpenCode";
     return extraContext.agent.charAt(0).toUpperCase() + extraContext.agent.slice(1);
   }

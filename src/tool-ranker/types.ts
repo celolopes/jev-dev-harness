@@ -58,6 +58,7 @@ export interface ToolRankOptions {
   useJev?: boolean;
   apiKey?: string;
   timeoutMs?: number;
+  platform?: string;
 }
 
 export interface ToolRankMetrics {
