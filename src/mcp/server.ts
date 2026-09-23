@@ -11,7 +11,7 @@ import { rankTools } from "../tool-ranker/index.js";
 import { reviewPatchPipeline } from "../patch-reviewer/index.js";
 import { lintSemantic } from "../semantic-linter/index.js";
 import { guardCheck } from "../tool-guard/index.js";
-import { recordTelemetryEvent } from "../shared/telemetry.js";
+import { recordTelemetryEvent, detectPlatform } from "../shared/telemetry.js";
 
 export const TOOLS: Tool[] = [
   {
@@ -186,7 +186,9 @@ export function createMcpServer(): Server {
   // Handle tool invocation
   server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const { name, arguments: args = {} } = request.params;
-    const clientPlatform = server.getClientVersion()?.name;
+    const clientPlatform = detectPlatform({
+      clientName: server.getClientVersion()?.name,
+    });
 
     try {
       switch (name) {

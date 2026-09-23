@@ -11,7 +11,8 @@ function ask(rl: readline.Interface, query: string): Promise<string> {
 function configureJsonMcpServer(
   configPath: string,
   agentName: string,
-  envVars: Record<string, string>
+  envVars: Record<string, string>,
+  platformName?: string
 ): boolean {
   try {
     const dir = path.dirname(configPath);
@@ -35,7 +36,10 @@ function configureJsonMcpServer(
     config.mcpServers["jev-dev"] = {
       command: "npx",
       args: ["-y", "jev-dev-harness"],
-      env: envVars,
+      env: {
+        ...envVars,
+        ...(platformName ? { JEV_CLIENT_PLATFORM: platformName } : {}),
+      },
     };
 
     fs.writeFileSync(configPath, JSON.stringify(config, null, 2), "utf8");
@@ -267,7 +271,7 @@ export async function runSetupWizard(options: SetupOptions = {}): Promise<void> 
       try {
         const codexContent = fs.readFileSync(codexConfigPath, "utf8");
         if (!codexContent.includes("[mcp_servers.jev_dev]")) {
-          const tomlSnippet = `\n[mcp_servers.jev_dev]\ncommand = "npx"\nargs = ["-y", "jev-dev-harness"]\nstartup_timeout_sec = 60.0\n\n[mcp_servers.jev_dev.env]\n${
+          const tomlSnippet = `\n[mcp_servers.jev_dev]\ncommand = "npx"\nargs = ["-y", "jev-dev-harness"]\nstartup_timeout_sec = 60.0\n\n[mcp_servers.jev_dev.env]\nJEV_CLIENT_PLATFORM = "Codex"\n${
             provider === "vercel"
               ? `JEV_PROVIDER = "vercel"\nAI_GATEWAY_API_KEY = "${apiKey || ""}"`
               : provider === "openrouter"
@@ -293,31 +297,31 @@ export async function runSetupWizard(options: SetupOptions = {}): Promise<void> 
         ? path.join(os.homedir(), "Library", "Application Support", "Claude", "claude_desktop_config.json")
         : path.join(os.homedir(), ".config", "Claude", "claude_desktop_config.json");
 
-    if (configureJsonMcpServer(claudePath, "Claude Desktop", mcpEnv)) {
+    if (configureJsonMcpServer(claudePath, "Claude Desktop", mcpEnv, "Claude")) {
       configuredAgentsCount++;
     }
 
     // Agent C: Antigravity IDE / Desktop
     const antigravityPath = path.join(os.homedir(), ".gemini", "antigravity", "mcp_config.json");
-    if (configureJsonMcpServer(antigravityPath, "Antigravity IDE", mcpEnv)) {
+    if (configureJsonMcpServer(antigravityPath, "Antigravity IDE", mcpEnv, "Antigravity")) {
       configuredAgentsCount++;
     }
 
     // Agent D: Cursor
     const cursorPath = path.join(os.homedir(), ".cursor", "mcp.json");
-    if (configureJsonMcpServer(cursorPath, "Cursor", mcpEnv)) {
+    if (configureJsonMcpServer(cursorPath, "Cursor", mcpEnv, "Cursor")) {
       configuredAgentsCount++;
     }
 
     // Agent E: Windsurf (Codeium)
     const windsurfPath = path.join(os.homedir(), ".codeium", "windsurf", "mcp_config.json");
-    if (configureJsonMcpServer(windsurfPath, "Windsurf", mcpEnv)) {
+    if (configureJsonMcpServer(windsurfPath, "Windsurf", mcpEnv, "Windsurf")) {
       configuredAgentsCount++;
     }
 
     // Agent F: Trae
     const traePath = path.join(os.homedir(), ".trae", "mcp.json");
-    if (configureJsonMcpServer(traePath, "Trae", mcpEnv)) {
+    if (configureJsonMcpServer(traePath, "Trae", mcpEnv, "Trae")) {
       configuredAgentsCount++;
     }
 
@@ -328,7 +332,7 @@ export async function runSetupWizard(options: SetupOptions = {}): Promise<void> 
         : process.platform === "darwin"
         ? path.join(os.homedir(), "Library", "Application Support", "Code", "User", "globalStorage", "saoudrizwan.claude-dev", "settings", "cline_mcp_settings.json")
         : path.join(os.homedir(), ".config", "Code", "User", "globalStorage", "saoudrizwan.claude-dev", "settings", "cline_mcp_settings.json");
-    if (configureJsonMcpServer(clinePath, "VSCode (Cline)", mcpEnv)) {
+    if (configureJsonMcpServer(clinePath, "VSCode (Cline)", mcpEnv, "Cline")) {
       configuredAgentsCount++;
     }
 
@@ -339,13 +343,13 @@ export async function runSetupWizard(options: SetupOptions = {}): Promise<void> 
         : process.platform === "darwin"
         ? path.join(os.homedir(), "Library", "Application Support", "Code", "User", "globalStorage", "rooveterinaryinc.roo-cline", "settings", "cline_mcp_settings.json")
         : path.join(os.homedir(), ".config", "Code", "User", "globalStorage", "rooveterinaryinc.roo-cline", "settings", "cline_mcp_settings.json");
-    if (configureJsonMcpServer(rooPath, "VSCode (Roo Code)", mcpEnv)) {
+    if (configureJsonMcpServer(rooPath, "VSCode (Roo Code)", mcpEnv, "Roo Code")) {
       configuredAgentsCount++;
     }
 
     // Agent I: VSCode (Continue)
     const continuePath = path.join(os.homedir(), ".continue", "config.json");
-    if (configureJsonMcpServer(continuePath, "VSCode (Continue)", mcpEnv)) {
+    if (configureJsonMcpServer(continuePath, "VSCode (Continue)", mcpEnv, "Continue")) {
       configuredAgentsCount++;
     }
 

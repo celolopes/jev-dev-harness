@@ -10,6 +10,7 @@ import {
   getTelemetryFilePath,
   telemetryEmitter,
   TelemetryEvent,
+  detectPlatform,
 } from "../../src/shared/telemetry.js";
 
 describe("Telemetry Module", () => {
@@ -193,5 +194,15 @@ describe("Telemetry Module", () => {
     expect(getTelemetryEvents().length).toBeGreaterThan(0);
     clearTelemetryEvents();
     expect(getTelemetryEvents().length).toBe(0);
+  });
+
+  it("detects agent platform accurately from client name and environment", () => {
+    expect(detectPlatform({ clientName: "antigravity" })).toBe("Antigravity");
+    expect(detectPlatform({ agent: "antigravity" })).toBe("Antigravity");
+    expect(detectPlatform({ clientName: "codex-desktop" })).toBe("Codex");
+    expect(detectPlatform({ clientName: "claude-code" })).toBe("Claude");
+    expect(detectPlatform({ clientName: "cursor" })).toBe("Cursor");
+    expect(detectPlatform({ clientName: "trae" })).toBe("Trae");
+    expect(detectPlatform({ clientName: "windsurf" })).toBe("Windsurf");
   });
 });

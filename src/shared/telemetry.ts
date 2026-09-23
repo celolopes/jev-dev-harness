@@ -281,27 +281,95 @@ function detectDefaultProvider(): string {
  * Detect which agent platform originated the execution (Codex, Claude, Gemini, Antigravity, Cursor, Trae, etc.)
  */
 export function detectPlatform(extraContext?: { agent?: string; clientName?: string }): string {
-  if (extraContext?.clientName) return extraContext.clientName;
+  // 1. Explicit platform environment variable (e.g. injected in MCP server config)
+  if (process.env.JEV_CLIENT_PLATFORM) {
+    return process.env.JEV_CLIENT_PLATFORM;
+  }
+
+  // 2. Client name passed from MCP or proxy context
+  if (extraContext?.clientName) {
+    const cn = extraContext.clientName.toLowerCase();
+    if (cn.includes("antigravity")) return "Antigravity";
+    if (cn.includes("codex")) return "Codex";
+    if (cn.includes("claude")) return "Claude";
+    if (cn.includes("gemini")) return "Gemini";
+    if (cn.includes("cursor")) return "Cursor";
+    if (cn.includes("windsurf")) return "Windsurf";
+    if (cn.includes("trae")) return "Trae";
+    if (cn.includes("cline")) return "Cline";
+    if (cn.includes("roo")) return "Roo Code";
+    return extraContext.clientName;
+  }
+
+  // 3. Agent name passed from options
   if (extraContext?.agent) {
     const a = extraContext.agent.toLowerCase();
+    if (a.includes("antigravity")) return "Antigravity";
     if (a.includes("codex")) return "Codex";
     if (a.includes("claude")) return "Claude";
     if (a.includes("gemini")) return "Gemini";
+    if (a.includes("cursor")) return "Cursor";
+    if (a.includes("windsurf")) return "Windsurf";
+    if (a.includes("trae")) return "Trae";
     if (a.includes("opencode")) return "OpenCode";
     return extraContext.agent.charAt(0).toUpperCase() + extraContext.agent.slice(1);
   }
 
-  if (process.env.CODEX_DESKTOP || process.env.CODEX) return "Codex";
-  if (process.env.ANTIGRAVITY || process.cwd().includes(".gemini") || process.env.GEMINI_CLI) return "Antigravity";
-  if (process.env.CLAUDE_CODE || process.env.CLAUDE) return "Claude";
-  if (process.env.CURSOR_AGENT || process.env.CURSOR_VERSION || process.env.CURSOR) return "Cursor";
-  if (process.env.WINDSURF || process.env.CODEIUM) return "Windsurf";
-  if (process.env.TRAE || process.env.TRAE_VERSION) return "Trae";
-  if (process.env.VSCODE_PID) return "VS Code";
+  // 4. Antigravity IDE & Gemini Code Assistant (highest priority in this workspace)
+  if (
+    process.env.ANTIGRAVITY_AGENT ||
+    process.env.ANTIGRAVITY ||
+    process.env.ANTIGRAVITY_CONVERSATION_ID ||
+    process.env.ANTIGRAVITY_PROJECT_ID ||
+    process.env.ANTIGRAVITY_LS_ADDRESS ||
+    process.env.ANTIGRAVITY_AGENTAPI_EXE ||
+    process.env.GEMINI_CLI ||
+    process.cwd().toLowerCase().includes("antigravity") ||
+    process.cwd().toLowerCase().includes(".gemini")
+  ) {
+    return "Antigravity";
+  }
 
+  // 5. Codex Desktop
+  if (process.env.CODEX_DESKTOP || process.env.CODEX_THREAD_ID || (process.env.CODEX && !process.env.ANTIGRAVITY_AGENT)) {
+    return "Codex";
+  }
+
+  // 6. Claude Code / Desktop
+  if (process.env.CLAUDE_CODE || process.env.CLAUDE_PROJECT_DIR || (process.env.CLAUDE && !process.env.ANTIGRAVITY_AGENT)) {
+    return "Claude";
+  }
+
+  // 7. Cursor
+  if (process.env.CURSOR_AGENT || process.env.CURSOR_VERSION || (process.env.CURSOR && !process.env.ANTIGRAVITY_AGENT)) {
+    return "Cursor";
+  }
+
+  // 8. Windsurf / Codeium
+  if (process.env.WINDSURF || (process.env.CODEIUM && !process.env.ANTIGRAVITY_AGENT)) {
+    return "Windsurf";
+  }
+
+  // 9. Trae
+  if (process.env.TRAE || process.env.TRAE_VERSION) {
+    return "Trae";
+  }
+
+  // 10. Generic VS Code
+  if ((process.env.VSCODE_PID || process.env.VSCODE_INJECTION) && !process.env.ANTIGRAVITY_AGENT) {
+    return "VS Code";
+  }
+
+  // 11. Script entry point inspection
   const script = (process.argv[1] || "").toLowerCase();
   if (script.includes("mcp")) return "MCP Agent";
   if (script.includes("proxy")) return "Proxy Gateway";
+
+  // Check if ~/.gemini/antigravity exists as active configuration
+  const geminiAntigravityDir = path.join(os.homedir(), ".gemini", "antigravity");
+  if (fs.existsSync(geminiAntigravityDir) && fs.existsSync(path.join(geminiAntigravityDir, "mcp_config.json"))) {
+    return "Antigravity";
+  }
 
   return "Terminal CLI";
 }
