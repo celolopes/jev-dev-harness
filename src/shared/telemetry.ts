@@ -7,13 +7,18 @@ export type TelemetryEventType =
   | "context_rank"
   | "guard_check"
   | "patch_review"
-  | "lint_semantic";
+  | "lint_semantic"
+  | "tool_rank"
+  | "proxy_turn";
 
 export interface BaseTelemetryEvent {
   id: string;
   timestamp: string; // ISO 8601 string
   type: TelemetryEventType;
   latencyMs: number;
+  harness?: string;  // e.g. "Context Ranker", "Tool Guard", "Patch Reviewer", "Tool Ranker", "Proxy (codex)"
+  provider?: string; // e.g. "typesafe", "vercel", "openrouter", "offline"
+  platform?: string; // e.g. "Codex", "Claude", "Gemini", "Antigravity", "Cursor", "Trae", "Terminal CLI"
 }
 
 export interface ContextRankEvent extends BaseTelemetryEvent {
@@ -51,11 +56,31 @@ export interface LintSemanticEvent extends BaseTelemetryEvent {
   violationsCount: number;
 }
 
+export interface ToolRankEvent extends BaseTelemetryEvent {
+  type: "tool_rank";
+  task: string;
+  initialTools: number;
+  selectedTools: number;
+  tokensSaved: number;
+  reductionPct: number;
+}
+
+export interface ProxyTurnEvent extends BaseTelemetryEvent {
+  type: "proxy_turn";
+  agent: string; // "codex" | "claude" | "opencode" | "gemini" | "generic"
+  mode: string;  // "forced" | "hint" | "direct" | "none" | "passthrough"
+  tool?: string;
+  tokensSaved: number;
+  confidence?: number;
+}
+
 export type TelemetryEvent =
   | ContextRankEvent
   | GuardCheckEvent
   | PatchReviewEvent
-  | LintSemanticEvent;
+  | LintSemanticEvent
+  | ToolRankEvent
+  | ProxyTurnEvent;
 
 export interface TelemetrySummary {
   totalEvents: number;
@@ -68,6 +93,8 @@ export interface TelemetrySummary {
     guard_check: number;
     patch_review: number;
     lint_semantic: number;
+    tool_rank: number;
+    proxy_turn: number;
   };
   guardStats: {
     totalChecked: number;
@@ -84,6 +111,16 @@ export interface TelemetrySummary {
   contextStats: {
     totalRankings: number;
     avgReductionPct: number;
+  };
+  toolStats: {
+    totalRankings: number;
+    toolsPruned: number;
+    avgReductionPct: number;
+  };
+  proxyStats: {
+    totalTurns: number;
+    routed: number;
+    passthrough: number;
   };
 }
 
@@ -142,13 +179,26 @@ export class TelemetryCollector {
     this.tokensReceived += outputTokens;
   }
 
-  recordFallback(reason: string): void {
+  setFallback(used: boolean, reason?: string): void {
+    this.fallbackUsed = used;
+    this.fallbackReason = reason;
+  }
+
+  recordFallback(reason?: string): void {
     this.fallbackUsed = true;
     this.fallbackReason = reason;
   }
 
+  setProvider(prov?: string): void {
+    this.provider = prov;
+  }
+
   toMetrics(): TelemetryMetrics {
-    const elapsed = this.endTime ? this.endTime - this.startTime : Date.now() - this.startTime;
+    return this.getMetrics();
+  }
+
+  getMetrics(): TelemetryMetrics {
+    const latencyMs = (this.endTime ?? Date.now()) - this.startTime;
     const avgConfidence =
       this.confidences.length > 0
         ? this.confidences.reduce((a, b) => a + b, 0) / this.confidences.length
@@ -160,9 +210,9 @@ export class TelemetryCollector {
       evaluatedByJev: this.evaluatedByJev,
       tokensSent: this.tokensSent,
       tokensReceived: this.tokensReceived,
-      latencyMs: elapsed,
+      latencyMs,
       selectedCount: this.selectedCount,
-      confidence: Number(avgConfidence.toFixed(4)),
+      confidence: Math.round(avgConfidence * 10000) / 10000,
       cacheHits: this.cacheHits,
       cacheMisses: this.cacheMisses,
       errors: this.errors,
@@ -170,22 +220,6 @@ export class TelemetryCollector {
       fallbackReason: this.fallbackReason,
       provider: this.provider,
     };
-  }
-
-  toFormattedString(): string {
-    const m = this.toMetrics();
-    return [
-      `Telemetry Summary:`,
-      `  • Initial candidates:   ${m.initialCandidates}`,
-      `  • Filtered candidates:  ${m.filteredCandidates}`,
-      `  • Evaluated by Jev:     ${m.evaluatedByJev}`,
-      `  • Tokens (in/out):      ${m.tokensSent} / ${m.tokensReceived}`,
-      `  • Selected count:       ${m.selectedCount}`,
-      `  • Avg confidence:       ${(m.confidence * 100).toFixed(1)}%`,
-      `  • Cache hits / misses:  ${m.cacheHits} / ${m.cacheMisses}`,
-      `  • Latency:              ${m.latencyMs}ms`,
-      `  • Fallback used:        ${m.fallbackUsed ? `YES (${m.fallbackReason})` : "NO (Jev Active)"}`,
-    ].join("\n");
   }
 }
 
@@ -210,19 +244,91 @@ export function getTelemetryFilePath(): string {
   return path.join(dir, "telemetry.jsonl");
 }
 
+function detectDefaultHarness(type: TelemetryEventType, eventData: any): string {
+  switch (type) {
+    case "context_rank":
+      return "Context Ranker";
+    case "guard_check":
+      return "Tool Guard";
+    case "patch_review":
+      return "Patch Reviewer";
+    case "lint_semantic":
+      return "Semantic Linter";
+    case "tool_rank":
+      return "Tool Ranker";
+    case "proxy_turn":
+      return `Proxy (${eventData.agent || "generic"})`;
+    default:
+      return "Jev Harness";
+  }
+}
+
+function detectDefaultProvider(): string {
+  if (process.env.JEV_PROVIDER) {
+    return process.env.JEV_PROVIDER;
+  }
+  try {
+    const configPath = path.join(os.homedir(), ".jev-dev", "config.json");
+    if (fs.existsSync(configPath)) {
+      const parsed = JSON.parse(fs.readFileSync(configPath, "utf-8"));
+      if (parsed && parsed.provider) return parsed.provider;
+    }
+  } catch {}
+  return "typesafe";
+}
+
+/**
+ * Detect which agent platform originated the execution (Codex, Claude, Gemini, Antigravity, Cursor, Trae, etc.)
+ */
+export function detectPlatform(extraContext?: { agent?: string; clientName?: string }): string {
+  if (extraContext?.clientName) return extraContext.clientName;
+  if (extraContext?.agent) {
+    const a = extraContext.agent.toLowerCase();
+    if (a.includes("codex")) return "Codex";
+    if (a.includes("claude")) return "Claude";
+    if (a.includes("gemini")) return "Gemini";
+    if (a.includes("opencode")) return "OpenCode";
+    return extraContext.agent.charAt(0).toUpperCase() + extraContext.agent.slice(1);
+  }
+
+  if (process.env.CODEX_DESKTOP || process.env.CODEX) return "Codex";
+  if (process.env.ANTIGRAVITY || process.cwd().includes(".gemini") || process.env.GEMINI_CLI) return "Antigravity";
+  if (process.env.CLAUDE_CODE || process.env.CLAUDE) return "Claude";
+  if (process.env.CURSOR_AGENT || process.env.CURSOR_VERSION || process.env.CURSOR) return "Cursor";
+  if (process.env.WINDSURF || process.env.CODEIUM) return "Windsurf";
+  if (process.env.TRAE || process.env.TRAE_VERSION) return "Trae";
+  if (process.env.VSCODE_PID) return "VS Code";
+
+  const script = (process.argv[1] || "").toLowerCase();
+  if (script.includes("mcp")) return "MCP Agent";
+  if (script.includes("proxy")) return "Proxy Gateway";
+
+  return "Terminal CLI";
+}
+
 /**
  * Safely record a telemetry event to ~/.jev-dev/telemetry.jsonl
  * Non-blocking, never throws or disrupts calling code.
  */
 export function recordTelemetryEvent(
-  eventData: Omit<ContextRankEvent, "id" | "timestamp"> |
-    Omit<GuardCheckEvent, "id" | "timestamp"> |
-    Omit<PatchReviewEvent, "id" | "timestamp"> |
-    Omit<LintSemanticEvent, "id" | "timestamp">
+  eventData:
+    | Omit<ContextRankEvent, "id" | "timestamp">
+    | Omit<GuardCheckEvent, "id" | "timestamp">
+    | Omit<PatchReviewEvent, "id" | "timestamp">
+    | Omit<LintSemanticEvent, "id" | "timestamp">
+    | Omit<ToolRankEvent, "id" | "timestamp">
+    | Omit<ProxyTurnEvent, "id" | "timestamp">
 ): TelemetryEvent | null {
   try {
+    const harness = eventData.harness || detectDefaultHarness(eventData.type, eventData);
+    const provider = eventData.provider || detectDefaultProvider();
+    const platform = eventData.platform || detectPlatform({ agent: (eventData as any).agent });
+
     const fullEvent: TelemetryEvent = {
       ...eventData,
+      harness,
+      provider,
+      platform,
       id: `jev_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
       timestamp: new Date().toISOString(),
     } as TelemetryEvent;
@@ -262,6 +368,16 @@ export function getTelemetryEvents(limit = 100): TelemetryEvent[] {
         if (!line) continue;
         const parsed = JSON.parse(line);
         if (parsed && parsed.type && parsed.timestamp) {
+          // Backward compatibility: ensure harness, provider, and platform exist
+          if (!parsed.harness) {
+            parsed.harness = detectDefaultHarness(parsed.type, parsed);
+          }
+          if (!parsed.provider) {
+            parsed.provider = "typesafe";
+          }
+          if (!parsed.platform) {
+            parsed.platform = detectPlatform({ agent: parsed.agent });
+          }
           events.push(parsed as TelemetryEvent);
         }
       } catch {
@@ -290,6 +406,8 @@ export function getTelemetrySummary(): TelemetrySummary {
     guard_check: 0,
     patch_review: 0,
     lint_semantic: 0,
+    tool_rank: 0,
+    proxy_turn: 0,
   };
 
   const guardStats = {
@@ -311,6 +429,19 @@ export function getTelemetrySummary(): TelemetrySummary {
     totalRankings: 0,
     totalReductionPct: 0,
     avgReductionPct: 0,
+  };
+
+  const toolStats = {
+    totalRankings: 0,
+    toolsPruned: 0,
+    totalReductionPct: 0,
+    avgReductionPct: 0,
+  };
+
+  const proxyStats = {
+    totalTurns: 0,
+    routed: 0,
+    passthrough: 0,
   };
 
   for (const event of events) {
@@ -341,6 +472,21 @@ export function getTelemetrySummary(): TelemetrySummary {
       else patchStats.escalated++;
     } else if (event.type === "lint_semantic") {
       byType.lint_semantic++;
+    } else if (event.type === "tool_rank") {
+      byType.tool_rank++;
+      totalTokensSaved += event.tokensSaved || 0;
+      toolStats.totalRankings++;
+      toolStats.toolsPruned += (event.initialTools - event.selectedTools);
+      toolStats.totalReductionPct += event.reductionPct || 0;
+    } else if (event.type === "proxy_turn") {
+      byType.proxy_turn++;
+      totalTokensSaved += event.tokensSaved || 0;
+      proxyStats.totalTurns++;
+      if (event.mode === "forced" || event.mode === "hint" || event.mode === "direct") {
+        proxyStats.routed++;
+      } else {
+        proxyStats.passthrough++;
+      }
     }
   }
 
@@ -358,6 +504,10 @@ export function getTelemetrySummary(): TelemetrySummary {
 
   if (contextStats.totalRankings > 0) {
     contextStats.avgReductionPct = Math.round((contextStats.totalReductionPct / contextStats.totalRankings) * 10) / 10;
+  }
+
+  if (toolStats.totalRankings > 0) {
+    toolStats.avgReductionPct = Math.round((toolStats.totalReductionPct / toolStats.totalRankings) * 10) / 10;
   }
 
   // $3.00 per million input tokens (standard Claude 3.5 Sonnet / GPT-4o input cost)
@@ -382,6 +532,12 @@ export function getTelemetrySummary(): TelemetrySummary {
       totalRankings: contextStats.totalRankings,
       avgReductionPct: contextStats.avgReductionPct,
     },
+    toolStats: {
+      totalRankings: toolStats.totalRankings,
+      toolsPruned: toolStats.toolsPruned,
+      avgReductionPct: toolStats.avgReductionPct,
+    },
+    proxyStats,
   };
 }
 

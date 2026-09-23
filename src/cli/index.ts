@@ -6,6 +6,8 @@ import { installGitHook, uninstallGitHook } from "../hooks/index.js";
 import { reviewPatchPipeline } from "../patch-reviewer/index.js";
 import { lintSemantic } from "../semantic-linter/index.js";
 import { guardCheck } from "../tool-guard/index.js";
+import { rankTools } from "../tool-ranker/index.js";
+import { startProxyServer } from "../proxy/index.js";
 import { startMcpServer } from "../mcp/index.js";
 import { printTerminalComparison } from "./compare.js";
 import { runSetupWizard } from "./setup.js";
@@ -22,7 +24,7 @@ export function createCli(): Command {
   program
     .name("jev-dev")
     .description("Developer Harness with TypeSafe AI / Jev for AI Coding Agents")
-    .version("0.2.1");
+    .version("0.2.2");
 
   // ==========================================
   // COMMAND: context rank (Phase 2)
@@ -500,6 +502,99 @@ export function createCli(): Command {
     });
 
   // ==========================================
+  // COMMAND: tools rank (Tool Pruning & Ranking)
+  // ==========================================
+  const toolsCommand = program
+    .command("tools")
+    .description("Tool pruning and intelligent tool calling ranking");
+
+  toolsCommand
+    .command("rank")
+    .description("Rank and filter tools for a given task, eliminating token bloat")
+    .requiredOption("-t, --task <task>", "Task description or objective")
+    .option("--tools <path>", "Path to a JSON file containing tool definitions")
+    .option("--top <number>", "Maximum number of tools to select", (val) => parseInt(val, 10), 5)
+    .option("--threshold <number>", "Minimum score threshold", (val) => parseFloat(val), 0.15)
+    .option("--json", "Output machine-readable JSON format", false)
+    .option("--no-jev", "Disable Jev semantic evaluation (force deterministic fallback)")
+    .action(async (options) => {
+      try {
+        const result = await rankTools({
+          task: options.task,
+          toolsJsonPath: options.tools ? path.resolve(options.tools) : undefined,
+          top: options.top,
+          threshold: options.threshold,
+          useJev: options.jev !== false,
+        });
+
+        if (options.json) {
+          console.log(JSON.stringify(result, null, 2));
+          return;
+        }
+
+        console.log("\n=======================================================");
+        console.log("             JEV TOOL PRUNING & RANKER                ");
+        console.log("=======================================================\n");
+        console.log(`Task:        ${result.task}`);
+        console.log(`Provider:    ${result.metrics.provider || "TypeSafe Jev System One"}`);
+        console.log(`Selected:    ${result.selected.length} / ${result.metrics.initialTools} tools (-${result.metrics.reductionPct}%)`);
+        console.log(`Saved:       ~${result.metrics.tokensSaved.toLocaleString()} tokens/turn\n`);
+
+        if (result.selected.length === 0) {
+          console.log("  No tools matched the required criteria.\n");
+        } else {
+          console.log("--- SELECTED TOOLS ---");
+          result.selected.forEach((t, i) => {
+            const pct = (t.relevanceScore * 100).toFixed(1);
+            console.log(`#${i + 1} [${pct}% score] ${t.name}`);
+            console.log(`    Reason: ${t.reason}`);
+            if (t.closedParams && t.closedParams.length > 0) {
+              const cpDesc = t.closedParams.map((cp) => `${cp.name} (${cp.kind})`).join(", ");
+              console.log(`    Closed params: [${cpDesc}]`);
+            }
+          });
+          console.log("");
+        }
+
+        if (result.pruned.length > 0) {
+          console.log(`--- PRUNED TOOLS (${result.pruned.length}) ---`);
+          console.log(`  ${result.pruned.slice(0, 10).join(", ")}${result.pruned.length > 10 ? ` ...and ${result.pruned.length - 10} more` : ""}`);
+          console.log("");
+        }
+
+        console.log("--- METRICS ---");
+        console.log(`  Latency: ${result.metrics.latencyMs}ms | Mode: ${result.fallbackUsed ? "Fallback" : "Jev Active"}`);
+        console.log("=======================================================\n");
+      } catch (err) {
+        console.error("Error executing tool ranker:", (err as Error).message);
+        process.exit(1);
+      }
+    });
+
+  // ==========================================
+  // COMMAND: proxy (Local Reverse Proxy Gateway)
+  // ==========================================
+  program
+    .command("proxy [target]")
+    .description("Start local LLM reverse proxy gateway (codex, claude, opencode, gemini, generic)")
+    .option("-p, --port <number>", "Port to listen on", (val) => parseInt(val, 10))
+    .option("-u, --upstream <url>", "Upstream base URL")
+    .option("--no-routing", "Passthrough only mode (baseline)")
+    .action(async (target, options) => {
+      try {
+        await startProxyServer({
+          target: target || "generic",
+          port: options.port,
+          upstreamBaseUrl: options.upstream,
+          routing: options.routing !== false,
+        });
+      } catch (err) {
+        console.error("Error starting proxy gateway:", (err as Error).message);
+        process.exit(1);
+      }
+    });
+
+  // ==========================================
   // COMMAND: doctor (Diagnostics & Health Check)
   // ==========================================
   program
@@ -538,7 +633,7 @@ export function createCli(): Command {
   program.hook("postAction", async (_thisCommand, actionCommand) => {
     if (actionCommand.name() !== "mcp") {
       try {
-        const update = await checkForUpdates("0.2.1");
+        const update = await checkForUpdates("0.2.2");
         printUpdateNotification(update);
       } catch {
         // Silently ignore

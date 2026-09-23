@@ -7,6 +7,7 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import path from "node:path";
 import { rankContext } from "../context-ranker/index.js";
+import { rankTools } from "../tool-ranker/index.js";
 import { reviewPatchPipeline } from "../patch-reviewer/index.js";
 import { lintSemantic } from "../semantic-linter/index.js";
 import { guardCheck } from "../tool-guard/index.js";
@@ -31,6 +32,36 @@ export const TOOLS: Tool[] = [
         top: {
           type: "number",
           description: "Maximum number of files to select (default: 5).",
+        },
+        threshold: {
+          type: "number",
+          description: "Minimum relevance score threshold between 0.0 and 1.0 (default: 0.15).",
+        },
+      },
+      required: ["task"],
+    },
+  },
+  {
+    name: "jev_rank_tools",
+    description:
+      "Intelligently filters and ranks the most relevant tools for a given task from large tool manifests, eliminating up to 90% of tool-definition token bloat using TypeSafe AI / Jev System One.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        task: {
+          type: "string",
+          description: "Description of the current task or user prompt.",
+        },
+        tools: {
+          type: "array",
+          description: "List of candidate tools with name, description and parameter schemas.",
+          items: {
+            type: "object",
+          },
+        },
+        top: {
+          type: "number",
+          description: "Maximum number of most relevant tools to keep (default: 5).",
         },
         threshold: {
           type: "number",
@@ -155,6 +186,7 @@ export function createMcpServer(): Server {
   // Handle tool invocation
   server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const { name, arguments: args = {} } = request.params;
+    const clientPlatform = server.getClientVersion()?.name;
 
     try {
       switch (name) {
@@ -186,6 +218,7 @@ export function createMcpServer(): Server {
             tokensSaved: estimatedTokensSaved,
             reductionPct,
             latencyMs: result.metrics.latencyMs,
+            platform: clientPlatform,
           });
 
           const responseWithEfficiency = {
@@ -197,6 +230,42 @@ export function createMcpServer(): Server {
               estimatedTokensSaved: `~${estimatedTokensSaved.toLocaleString()} tokens`,
               latencyMs: result.metrics.latencyMs,
               summaryMessage: `⚡ Jev Efficiency: Selected ${selectedCount} surgical files from ${initialCandidates} scanned (${reductionPct}% reduction, ~${estimatedTokensSaved.toLocaleString()} tokens saved in ${result.metrics.latencyMs}ms). Mention this brief summary to the user at the end of your response.`,
+            },
+          };
+
+          return {
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify(responseWithEfficiency, null, 2),
+              },
+            ],
+          };
+        }
+
+        case "jev_rank_tools": {
+          const task = String(args.task || "");
+          const tools = Array.isArray(args.tools) ? args.tools : [];
+          const top = typeof args.top === "number" ? args.top : 5;
+          const threshold = typeof args.threshold === "number" ? args.threshold : 0.15;
+
+          const result = await rankTools({
+            task,
+            tools,
+            top,
+            threshold,
+          });
+
+          const responseWithEfficiency = {
+            ...result,
+            efficiencyReport: {
+              initialToolsCount: result.metrics.initialTools,
+              selectedToolsCount: result.selected.length,
+              prunedToolsCount: result.pruned.length,
+              reductionPct: `${result.metrics.reductionPct}%`,
+              estimatedTokensSaved: `~${result.metrics.tokensSaved.toLocaleString()} tokens`,
+              latencyMs: result.metrics.latencyMs,
+              summaryMessage: `⚡ Jev Tool Pruning: Selected ${result.selected.length} essential tool(s) from ${result.metrics.initialTools} candidates (${result.metrics.reductionPct}% reduction, ~${result.metrics.tokensSaved.toLocaleString()} tokens saved per turn).`,
             },
           };
 
@@ -231,6 +300,7 @@ export function createMcpServer(): Server {
             riskLevel: result.riskLevel,
             reason: result.reason,
             latencyMs: result.latencyMs,
+            platform: clientPlatform,
           });
 
           return {
@@ -269,6 +339,7 @@ export function createMcpServer(): Server {
             additions: result.additions,
             deletions: result.deletions,
             latencyMs: result.latencyMs,
+            platform: clientPlatform,
           });
 
           const responseWithEfficiency = {
@@ -312,6 +383,7 @@ export function createMcpServer(): Server {
             passed: result.passed,
             violationsCount: result.failedRules,
             latencyMs: result.latencyMs,
+            platform: clientPlatform,
           });
 
           return {

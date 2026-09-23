@@ -5,3 +5,5 @@ export * from "./tool-guard/index.js";
 export * from "./hooks/index.js";
 export * from "./semantic-linter/index.js";
 export * from "./mcp/index.js";
+export * from "./tool-ranker/index.js";
+export * from "./proxy/index.js";

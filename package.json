@@ -1,6 +1,6 @@
 {
   "name": "jev-dev-harness",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Developer Harness with TypeSafe AI / Jev for AI Coding Agents",
   "type": "module",
   "bin": {
@@ -42,6 +42,14 @@
     "./shared": {
       "types": "./dist/shared/index.d.ts",
       "import": "./dist/shared/index.js"
+    },
+    "./tool-ranker": {
+      "types": "./dist/tool-ranker/index.d.ts",
+      "import": "./dist/tool-ranker/index.js"
+    },
+    "./proxy": {
+      "types": "./dist/proxy/index.d.ts",
+      "import": "./dist/proxy/index.js"
     }
   },
   "files": [

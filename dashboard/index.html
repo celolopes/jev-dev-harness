@@ -44,7 +44,7 @@
               jev-dev-harness
             </h1>
             <span class="text-[10px] font-mono uppercase px-2 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 font-bold">
-              v0.2.1
+              v0.2.2
             </span>
           </div>
           <p class="text-xs text-slate-400" data-i18n="header_subtitle">
@@ -253,6 +253,8 @@
             <thead class="text-[11px] uppercase bg-slate-950/80 text-slate-400 border-y border-slate-800">
               <tr>
                 <th scope="col" class="py-2.5 px-3" data-i18n="th_time">Time</th>
+                <th scope="col" class="py-2.5 px-3" data-i18n="th_platform">Platform / Agent</th>
+                <th scope="col" class="py-2.5 px-3" data-i18n="th_harness">Harness / Engine</th>
                 <th scope="col" class="py-2.5 px-3" data-i18n="th_operation">Operation</th>
                 <th scope="col" class="py-2.5 px-3" data-i18n="th_target">Target / Detail</th>
                 <th scope="col" class="py-2.5 px-3" data-i18n="th_outcome">Outcome / Impact</th>
@@ -262,7 +264,7 @@
             </thead>
             <tbody id="eventsTableBody" class="divide-y divide-slate-800/60">
               <tr id="emptyEventsRow">
-                <td colspan="6" class="py-8 text-center text-slate-500" data-i18n="table_empty">
+                <td colspan="8" class="py-8 text-center text-slate-500" data-i18n="table_empty">
                   No telemetry events recorded yet. Run a prompt in Codex Desktop or Antigravity to see live data here!
                 </td>
               </tr>
@@ -417,7 +419,7 @@
 
     <!-- Footer -->
     <footer class="text-center text-xs text-slate-500 py-4 font-mono" data-i18n="footer">
-      jev-dev-harness v0.2.1 • Licensed under MIT • Powered by TypeSafe AI / Jev System One
+      jev-dev-harness v0.2.2 • Licensed under MIT • Powered by TypeSafe AI / Jev System One
     </footer>
 
   </div>
@@ -483,6 +485,8 @@
         stream_title: 'Live Operations Stream',
         stream_listening: 'Listening for agent tool calls...',
         th_time: 'Time',
+        th_platform: 'Platform / Agent',
+        th_harness: 'Harness & Engine',
         th_operation: 'Operation',
         th_target: 'Target / Detail',
         th_outcome: 'Outcome / Impact',
@@ -527,7 +531,7 @@
         matrix_r3_without: 'Manual developer review or waiting minutes for remote CI runs.',
         matrix_r3_with: 'Sub-second (~750ms) System One pre-commit hook automatically audits diffs.',
         matrix_r3_adv: 'Catches credential leaks & regression risk before commit.',
-        footer: 'jev-dev-harness v0.2.1 • Licensed under MIT • Powered by TypeSafe AI / Jev System One'
+        footer: 'jev-dev-harness v0.2.2 • Licensed under MIT • Powered by TypeSafe AI / Jev System One'
       },
       pt: {
         header_subtitle: 'Runtime Developer Harness e Telemetria em Tempo Real para Agentes de IA',
@@ -564,6 +568,8 @@
         stream_title: 'Fluxo de Operações em Tempo Real',
         stream_listening: 'Escutando chamadas de ferramentas dos agentes...',
         th_time: 'Horário',
+        th_platform: 'Plataforma Acionada',
+        th_harness: 'Módulo & Provedor',
         th_operation: 'Operação',
         th_target: 'Alvo / Detalhe',
         th_outcome: 'Resultado / Impacto',
@@ -608,7 +614,7 @@
         matrix_r3_without: 'Revisão manual do dev ou minutos de espera em pipelines lentos de CI.',
         matrix_r3_with: 'Pre-commit hook System One sub-segundo (~750ms) audita diffs automaticamente.',
         matrix_r3_adv: 'Detecta vazamentos de credenciais e risco de regressão antes do commit.',
-        footer: 'jev-dev-harness v0.2.1 • Licenciado sob MIT • Desenvolvido com TypeSafe AI / Jev System One'
+        footer: 'jev-dev-harness v0.2.2 • Licenciado sob MIT • Desenvolvido com TypeSafe AI / Jev System One'
       }
     };
 
@@ -760,7 +766,7 @@
         const emptyMsg = currentLang === 'pt'
           ? 'Nenhum evento de telemetria registrado ainda. Execute um prompt no Codex Desktop ou Antigravity para ver os dados ao vivo aqui!'
           : 'No telemetry events recorded yet. Run a prompt in Codex Desktop or Antigravity to see live data here!';
-        tbody.innerHTML = `<tr id="emptyEventsRow"><td colspan="6" class="py-8 text-center text-slate-500">${emptyMsg}</td></tr>`;
+        tbody.innerHTML = `<tr id="emptyEventsRow"><td colspan="7" class="py-8 text-center text-slate-500">${emptyMsg}</td></tr>`;
         document.getElementById('feedCountText').innerText = currentLang === 'pt' ? '0 eventos gravados' : '0 events recorded';
         return;
       }
@@ -775,6 +781,80 @@
         let detail = '';
         let outcome = '';
         let statusBadge = '';
+
+        // Platform / Agent metadata (Codex, Claude, Gemini, Antigravity, Cursor, Trae, etc.)
+        const rawPlatform = e.platform || (
+          e.agent ? (e.agent.charAt(0).toUpperCase() + e.agent.slice(1)) :
+          (e.type === 'proxy_turn' ? 'Proxy' : 'Antigravity')
+        );
+
+        let platformIcon = '🤖';
+        let platformBadgeStyle = 'bg-slate-800 text-slate-200 border-slate-700';
+
+        const pLower = rawPlatform.toLowerCase();
+        if (pLower.includes('codex')) {
+          platformIcon = '⚡';
+          platformBadgeStyle = 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30';
+        } else if (pLower.includes('claude')) {
+          platformIcon = '🧠';
+          platformBadgeStyle = 'bg-amber-500/10 text-amber-300 border-amber-500/30';
+        } else if (pLower.includes('gemini')) {
+          platformIcon = '💎';
+          platformBadgeStyle = 'bg-blue-500/10 text-blue-300 border-blue-500/30';
+        } else if (pLower.includes('antigravity')) {
+          platformIcon = '🚀';
+          platformBadgeStyle = 'bg-purple-500/10 text-purple-300 border-purple-500/30';
+        } else if (pLower.includes('cursor')) {
+          platformIcon = '🎯';
+          platformBadgeStyle = 'bg-cyan-500/10 text-cyan-300 border-cyan-500/30';
+        } else if (pLower.includes('trae')) {
+          platformIcon = '🔮';
+          platformBadgeStyle = 'bg-indigo-500/10 text-indigo-300 border-indigo-500/30';
+        } else if (pLower.includes('windsurf')) {
+          platformIcon = '🌊';
+          platformBadgeStyle = 'bg-teal-500/10 text-teal-300 border-teal-500/30';
+        } else if (pLower.includes('cli') || pLower.includes('terminal')) {
+          platformIcon = '💻';
+          platformBadgeStyle = 'bg-slate-800 text-slate-300 border-slate-700';
+        }
+
+        const platformCell = `
+          <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border font-semibold text-xs font-mono ${platformBadgeStyle} whitespace-nowrap shadow-sm">
+            <span>${platformIcon}</span>
+            <span>${escapeHtml(rawPlatform)}</span>
+          </span>
+        `;
+
+        // Harness & Provider metadata
+        const harnessName = e.harness || (
+          e.type === 'context_rank' ? 'Context Ranker' :
+          e.type === 'guard_check' ? 'Tool Guard' :
+          e.type === 'patch_review' ? 'Patch Reviewer' :
+          e.type === 'tool_rank' ? 'Tool Ranker' :
+          e.type === 'proxy_turn' ? `Proxy (${e.agent || 'gateway'})` :
+          'Semantic Linter'
+        );
+        const providerName = (e.provider || 'typesafe').toLowerCase();
+
+        let provBadgeClass = 'bg-slate-800 text-slate-300 border-slate-700';
+        if (providerName.includes('vercel')) {
+          provBadgeClass = 'bg-cyan-500/10 text-cyan-300 border-cyan-500/30';
+        } else if (providerName.includes('typesafe')) {
+          provBadgeClass = 'bg-purple-500/10 text-purple-300 border-purple-500/30';
+        } else if (providerName.includes('openrouter')) {
+          provBadgeClass = 'bg-blue-500/10 text-blue-300 border-blue-500/30';
+        } else if (providerName.includes('offline')) {
+          provBadgeClass = 'bg-amber-500/10 text-amber-300 border-amber-500/30';
+        }
+
+        const harnessCell = `
+          <div class="flex flex-col">
+            <span class="font-bold text-slate-200 text-[11px] whitespace-nowrap">${escapeHtml(harnessName)}</span>
+            <span class="inline-block mt-0.5 px-1.5 py-0.5 text-[9px] rounded border font-mono ${provBadgeClass} w-max uppercase tracking-wider">
+              ${escapeHtml(providerName)}
+            </span>
+          </div>
+        `;
 
         if (e.type === 'context_rank') {
           typeBadge = '<span class="px-2 py-0.5 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20 font-bold">CONTEXT_RANK</span>';
@@ -795,6 +875,18 @@
           statusBadge = e.status === 'APPROVED'
             ? `<span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">${currentLang === 'pt' ? 'APROVADO' : 'APPROVED'}</span>`
             : `<span class="px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">${currentLang === 'pt' ? 'ESCALADO' : 'ESCALATED'}</span>`;
+        } else if (e.type === 'tool_rank') {
+          typeBadge = '<span class="px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-bold">TOOL_RANK</span>';
+          detail = `<span class="text-slate-300 truncate max-w-xs block" title="${escapeHtml(e.task)}">${escapeHtml(e.task || 'Tool pruning')}</span>`;
+          outcome = `<span class="text-indigo-300 font-semibold">${e.selectedTools}/${e.initialTools} tools (-${e.reductionPct}%)</span>`;
+          statusBadge = `<span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">${currentLang === 'pt' ? 'OTIMIZADO' : 'PRUNED'}</span>`;
+        } else if (e.type === 'proxy_turn') {
+          typeBadge = `<span class="px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 font-bold">PROXY_${escapeHtml((e.agent || 'GATEWAY').toUpperCase())}</span>`;
+          detail = `<span class="text-slate-300 font-mono text-[11px]">${e.tool ? `tool: ${escapeHtml(e.tool)}` : 'turn routing'}</span>`;
+          outcome = `<span class="text-cyan-300 font-semibold">Mode: ${escapeHtml(e.mode?.toUpperCase() || 'PASSTHROUGH')}${e.tokensSaved ? ` (+${e.tokensSaved} tok)` : ''}</span>`;
+          statusBadge = (e.mode === 'forced' || e.mode === 'hint')
+            ? `<span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">${currentLang === 'pt' ? 'ROTEADO' : 'ROUTED'}</span>`
+            : `<span class="px-2 py-0.5 rounded bg-slate-500/10 text-slate-400 border border-slate-500/20">PASS</span>`;
         } else {
           typeBadge = '<span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold">LINT_SEMANTIC</span>';
           detail = `<span class="text-slate-300">${e.violationsCount || 0} ${currentLang === 'pt' ? 'violações' : 'violations'}</span>`;
@@ -805,11 +897,13 @@
         }
 
         return `<tr class="hover:bg-slate-800/40">
-          <td class="py-2.5 px-3 text-slate-400">${time}</td>
+          <td class="py-2.5 px-3 text-slate-400 whitespace-nowrap">${time}</td>
+          <td class="py-2.5 px-3 whitespace-nowrap">${platformCell}</td>
+          <td class="py-2.5 px-3 whitespace-nowrap">${harnessCell}</td>
           <td class="py-2.5 px-3">${typeBadge}</td>
           <td class="py-2.5 px-3">${detail}</td>
           <td class="py-2.5 px-3">${outcome}</td>
-          <td class="py-2.5 px-3 text-slate-400">${e.latencyMs || 0}ms</td>
+          <td class="py-2.5 px-3 text-slate-400 whitespace-nowrap">${e.latencyMs || 0}ms</td>
           <td class="py-2.5 px-3">${statusBadge}</td>
         </tr>`;
       }).join('');
