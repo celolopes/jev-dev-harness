@@ -20,5 +20,10 @@ describe("Doctor CLI Command", () => {
     expect(report.mcpAgents.length).toBeGreaterThan(0);
     expect(report.telemetry.filePath).toContain(".jev-dev");
     expect(report.telemetry.pingEmitted).toBe(true);
+    expect(report.rules).toBeDefined();
+    expect(typeof report.rules.hasCodexMd).toBe("boolean");
+    expect(typeof report.rules.hasClineRules).toBe("boolean");
+    expect(typeof report.rules.hasWindsurfRules).toBe("boolean");
+    expect(typeof report.rules.hasCopilotRules).toBe("boolean");
   });
 });

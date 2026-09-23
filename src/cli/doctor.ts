@@ -44,6 +44,10 @@ export interface DoctorReport {
     hasGeminiMd: boolean;
     hasCursorRules: boolean;
     hasClaudeMd: boolean;
+    hasCodexMd: boolean;
+    hasClineRules: boolean;
+    hasWindsurfRules: boolean;
+    hasCopilotRules: boolean;
   };
   telemetry: {
     filePath: string;
@@ -93,8 +97,8 @@ Antes de concluir alterações de código ou sugerir commits:
 
 ---
 
-### 4. ⚡ Bloco de Telemetria e Eficiência
-Ao concluir com sucesso cada tarefa de desenvolvimento de software, apresente o bloco de resumo de eficiência ao final da sua resposta:
+### 4. ⚡ Bloco de Telemetria e Eficiência (Obrigatório em Todas as Respostas)
+Ao concluir qualquer tarefa de código, análise ou modificação em qualquer IDE (VS Code, Antigravity, Cursor, Trae, etc.) ou extensão de agente (Codex, Claude, Copilot, Cline, Roo Code), você DEVE SEMPRE apresentar o bloco de resumo de eficiência ao final da sua resposta:
 
 \`\`\`markdown
 ### ⚡ Eficiência Jev
@@ -252,8 +256,11 @@ export async function runDoctorCommand(options: DoctorOptions = {}): Promise<Doc
     const targets = [
       { name: "GEMINI.md (Antigravity)", file: path.join(cwd, "GEMINI.md") },
       { name: "CLAUDE.md (Claude Code)", file: path.join(cwd, "CLAUDE.md") },
+      { name: "CODEX.md (Codex / VS Code)", file: path.join(cwd, "CODEX.md") },
+      { name: ".clinerules (VS Code Cline & Roo Code)", file: path.join(cwd, ".clinerules") },
       { name: ".cursorrules (Cursor)", file: path.join(cwd, ".cursorrules") },
-      { name: "copilot-instructions.md (GitHub Copilot / VSCode)", file: path.join(githubDir, "copilot-instructions.md") },
+      { name: ".windsurfrules (Windsurf)", file: path.join(cwd, ".windsurfrules") },
+      { name: "copilot-instructions.md (GitHub Copilot / VS Code)", file: path.join(githubDir, "copilot-instructions.md") },
     ];
 
     console.log("\n📝 Initializing AI agent rule files in current workspace...\n");
@@ -356,6 +363,10 @@ export async function runDoctorCommand(options: DoctorOptions = {}): Promise<Doc
   const hasGeminiMd = fs.existsSync(path.join(cwd, "GEMINI.md")) || fs.existsSync(path.join(cwd, "AGENTS.md"));
   const hasCursorRules = fs.existsSync(path.join(cwd, ".cursorrules")) || fs.existsSync(path.join(cwd, ".cursor", "rules"));
   const hasClaudeMd = fs.existsSync(path.join(cwd, "CLAUDE.md"));
+  const hasCodexMd = fs.existsSync(path.join(cwd, "CODEX.md")) || fs.existsSync(path.join(cwd, ".codex", "instructions.md"));
+  const hasClineRules = fs.existsSync(path.join(cwd, ".clinerules"));
+  const hasWindsurfRules = fs.existsSync(path.join(cwd, ".windsurfrules"));
+  const hasCopilotRules = fs.existsSync(path.join(cwd, ".github", "copilot-instructions.md"));
 
   // 6. Telemetry & Emit Ping
   const telemetryPath = getTelemetryFilePath();
@@ -396,6 +407,10 @@ export async function runDoctorCommand(options: DoctorOptions = {}): Promise<Doc
       hasGeminiMd,
       hasCursorRules,
       hasClaudeMd,
+      hasCodexMd,
+      hasClineRules,
+      hasWindsurfRules,
+      hasCopilotRules,
     },
     telemetry: {
       filePath: telemetryPath,
@@ -436,9 +451,13 @@ export async function runDoctorCommand(options: DoctorOptions = {}): Promise<Doc
   console.log("");
 
   console.log("--- 📜 AGENT INSTRUCTION RULES (Current Directory) ---");
-  console.log(`  Antigravity (GEMINI.md) : ${hasGeminiMd ? "✓ Present" : "○ Missing (run 'jev-dev doctor --init-rules')"}`);
-  console.log(`  Cursor (.cursorrules)   : ${hasCursorRules ? "✓ Present" : "○ Missing (run 'jev-dev doctor --init-rules')"}`);
-  console.log(`  Claude Code (CLAUDE.md) : ${hasClaudeMd ? "✓ Present" : "○ Missing (run 'jev-dev doctor --init-rules')"}\n`);
+  console.log(`  Antigravity (GEMINI.md)       : ${hasGeminiMd ? "✓ Present" : "○ Missing (run 'jev-dev doctor --init-rules')"}`);
+  console.log(`  Codex (CODEX.md)              : ${hasCodexMd ? "✓ Present" : "○ Missing (run 'jev-dev doctor --init-rules')"}`);
+  console.log(`  Claude Code (CLAUDE.md)       : ${hasClaudeMd ? "✓ Present" : "○ Missing (run 'jev-dev doctor --init-rules')"}`);
+  console.log(`  VS Code Cline (.clinerules)   : ${hasClineRules ? "✓ Present" : "○ Missing (run 'jev-dev doctor --init-rules')"}`);
+  console.log(`  Cursor (.cursorrules)         : ${hasCursorRules ? "✓ Present" : "○ Missing (run 'jev-dev doctor --init-rules')"}`);
+  console.log(`  Windsurf (.windsurfrules)     : ${hasWindsurfRules ? "✓ Present" : "○ Missing (run 'jev-dev doctor --init-rules')"}`);
+  console.log(`  GitHub Copilot (instructions) : ${hasCopilotRules ? "✓ Present" : "○ Missing (run 'jev-dev doctor --init-rules')"}\n`);
 
   console.log("--- 📊 TELEMETRY & LIVE DASHBOARD ---");
   console.log(`  Telemetry Store:  ${telemetryPath} (${report.telemetry.eventsCount} events recorded)`);
@@ -446,7 +465,8 @@ export async function runDoctorCommand(options: DoctorOptions = {}): Promise<Doc
   console.log(`  Web Dashboard:    Run 'jev-dev dashboard' to view live metrics in browser\n`);
 
   console.log("=".repeat(65));
-  if (!hasGeminiMd && !hasCursorRules && !hasClaudeMd) {
+  const hasAnyRules = hasGeminiMd || hasCursorRules || hasClaudeMd || hasCodexMd || hasClineRules || hasWindsurfRules || hasCopilotRules;
+  if (!hasAnyRules) {
     console.log("\n💡 TIP: Run 'jev-dev doctor --init-rules' to automatically instruct your");
     console.log("   AI agent to use Jev tools and print efficiency summaries on every prompt!\n");
   } else {

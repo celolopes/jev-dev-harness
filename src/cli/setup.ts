@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import readline from "node:readline";
 import { SafeJevClient, noul } from "../shared/typesafe-client.js";
+import { getAgentRuleContent } from "./doctor.js";
 
 function ask(rl: readline.Interface, query: string): Promise<string> {
   return new Promise((resolve) => rl.question(query, resolve));
@@ -359,7 +360,34 @@ export async function runSetupWizard(options: SetupOptions = {}): Promise<void> 
       console.log(`  🎉 ${configuredAgentsCount} AI coding agent(s) ready with Jev MCP!`);
     }
 
-    // 4. Test connection live if key provided
+    // 4. Initialize agent instruction rules in current workspace
+    console.log("\n📝 Ensuring AI agent rule files in current workspace...");
+    const ruleContent = getAgentRuleContent();
+    const githubDir = path.join(process.cwd(), ".github");
+    if (!fs.existsSync(githubDir)) {
+      try { fs.mkdirSync(githubDir, { recursive: true }); } catch {}
+    }
+    const ruleTargets = [
+      { name: "CODEX.md (Codex / VS Code)", file: path.join(process.cwd(), "CODEX.md") },
+      { name: "CLAUDE.md (Claude Code)", file: path.join(process.cwd(), "CLAUDE.md") },
+      { name: "GEMINI.md (Antigravity)", file: path.join(process.cwd(), "GEMINI.md") },
+      { name: ".clinerules (VS Code Cline & Roo Code)", file: path.join(process.cwd(), ".clinerules") },
+      { name: ".cursorrules (Cursor)", file: path.join(process.cwd(), ".cursorrules") },
+      { name: ".windsurfrules (Windsurf)", file: path.join(process.cwd(), ".windsurfrules") },
+      { name: "copilot-instructions.md (GitHub Copilot / VS Code)", file: path.join(githubDir, "copilot-instructions.md") },
+    ];
+    for (const t of ruleTargets) {
+      if (!fs.existsSync(t.file)) {
+        try {
+          fs.writeFileSync(t.file, ruleContent, "utf8");
+          console.log(`  ✓ Created ${t.name}`);
+        } catch {}
+      } else {
+        console.log(`  ✓ Found ${t.name}`);
+      }
+    }
+
+    // 5. Test connection live if key provided
     if (apiKey && provider !== "offline") {
       console.log("\n🧪 Testing Live API Connection...");
       try {

@@ -15,7 +15,7 @@ import { runProviderCommand } from "./provider.js";
 import { startDashboardServer } from "./dashboard.js";
 import { runDoctorCommand } from "./doctor.js";
 import { runUninstallCommand } from "./uninstall.js";
-import { checkForUpdates, printUpdateNotification } from "../shared/update-checker.js";
+import { checkForUpdates, printUpdateNotification, clearUpdateCache } from "../shared/update-checker.js";
 import { recordTelemetryEvent } from "../shared/telemetry.js";
 
 export function createCli(): Command {
@@ -503,6 +503,7 @@ export function createCli(): Command {
       console.log("\n📦 Checking and updating jev-dev-harness to latest version...\n");
       try {
         execSync("npm install -g jev-dev-harness@latest", { stdio: "inherit" });
+        clearUpdateCache();
         console.log("\n🎉 Successfully updated jev-dev-harness to latest version!\n");
       } catch (err) {
         console.error("\n❌ Failed to update automatically. Try running: npm install -g jev-dev-harness@latest\n");
@@ -639,9 +640,9 @@ export function createCli(): Command {
       });
     });
 
-  // Non-blocking update notifier on CLI completion (excluding stdio mcp)
+  // Non-blocking update notifier on CLI completion (excluding stdio mcp and update command itself)
   program.hook("postAction", async (_thisCommand, actionCommand) => {
-    if (actionCommand.name() !== "mcp") {
+    if (actionCommand.name() !== "mcp" && actionCommand.name() !== "update") {
       try {
         const update = await checkForUpdates("0.2.3");
         printUpdateNotification(update);

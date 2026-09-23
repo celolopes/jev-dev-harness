@@ -73,6 +73,20 @@ function writeCache(latestVersion: string): void {
 }
 
 /**
+ * Clear cached update info
+ */
+export function clearUpdateCache(): void {
+  try {
+    const file = getCachePath();
+    if (fs.existsSync(file)) {
+      fs.unlinkSync(file);
+    }
+  } catch {
+    // Non-critical
+  }
+}
+
+/**
  * Checks npm registry for latest version of jev-dev-harness (cached for 12 hours)
  */
 export async function checkForUpdates(

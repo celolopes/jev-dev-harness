@@ -34,8 +34,8 @@ Antes de concluir alterações de código ou sugerir commits:
 
 ---
 
-### 4. ⚡ Bloco de Telemetria e Eficiência
-Ao concluir com sucesso cada tarefa de desenvolvimento de software, apresente o bloco de resumo de eficiência ao final da sua resposta:
+### 4. ⚡ Bloco de Telemetria e Eficiência (Obrigatório em Todas as Respostas)
+Ao concluir qualquer tarefa de código, análise ou modificação em qualquer IDE (VS Code, Antigravity, Cursor, Trae, etc.) ou extensão de agente (Codex, Claude, Copilot, Cline, Roo Code), você DEVE SEMPRE apresentar o bloco de resumo de eficiência ao final da sua resposta:
 
 ```markdown
 ### ⚡ Eficiência Jev
