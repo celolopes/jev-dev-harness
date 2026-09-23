@@ -12,6 +12,7 @@ import {
   TelemetryEvent,
 } from "../shared/telemetry.js";
 import { checkForUpdates } from "../shared/update-checker.js";
+import { getHarnessVersion } from "../shared/version.js";
 import { printJevBanner } from "./banner.js";
 
 export interface DashboardOptions {
@@ -159,7 +160,8 @@ export async function startDashboardServer(options: DashboardOptions = {}): Prom
 
     // API: Update Status
     if (pathname === "/api/update-status" && req.method === "GET") {
-      checkForUpdates("0.2.4")
+      const currentVersion = getHarnessVersion();
+      checkForUpdates(currentVersion)
         .then((info) => {
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(JSON.stringify(info));
@@ -168,8 +170,8 @@ export async function startDashboardServer(options: DashboardOptions = {}): Prom
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(
             JSON.stringify({
-              currentVersion: "0.2.4",
-              latestVersion: "0.2.4",
+              currentVersion,
+              latestVersion: currentVersion,
               updateAvailable: false,
             })
           );
