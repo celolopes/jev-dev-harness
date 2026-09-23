@@ -15,16 +15,19 @@ import { runProviderCommand } from "./provider.js";
 import { startDashboardServer } from "./dashboard.js";
 import { runDoctorCommand } from "./doctor.js";
 import { runUninstallCommand } from "./uninstall.js";
-import { checkForUpdates, printUpdateNotification, clearUpdateCache } from "../shared/update-checker.js";
+import { runVersionCommand } from "./version.js";
+import { checkForUpdates, printUpdateNotification, clearUpdateCache, compareSemver } from "../shared/update-checker.js";
 import { recordTelemetryEvent } from "../shared/telemetry.js";
+import { getHarnessVersion } from "../shared/version.js";
 
 export function createCli(): Command {
   const program = new Command();
+  const currentVersion = getHarnessVersion();
 
   program
     .name("jev-dev")
     .description("Developer Harness with TypeSafe AI / Jev for AI Coding Agents")
-    .version("0.2.4");
+    .version(currentVersion);
 
   // ==========================================
   // COMMAND: context rank (Phase 2)
@@ -499,15 +502,35 @@ export function createCli(): Command {
   program
     .command("update")
     .description("Update jev-dev-harness to the latest version published on npm")
-    .action(() => {
-      console.log("\n📦 Checking and updating jev-dev-harness to latest version...\n");
+    .option("-f, --force", "Force reinstall even if already on latest version")
+    .action(async (options) => {
+      console.log(`\n📦 Checking npm registry for updates (current: v${currentVersion})...\n`);
       try {
-        execSync("npm install -g jev-dev-harness@latest", { stdio: "inherit" });
+        const updateInfo = await checkForUpdates(currentVersion, true);
+        if (!options.force && !updateInfo.updateAvailable && compareSemver(currentVersion, updateInfo.latestVersion) >= 0) {
+          console.log(`✓ You are already on the latest version (v${currentVersion})!\n`);
+          return;
+        }
+
+        const target = updateInfo.latestVersion ? `jev-dev-harness@${updateInfo.latestVersion}` : "jev-dev-harness@latest";
+        console.log(`🚀 Upgrading to ${target}...\n`);
+        execSync(`npm install -g ${target} --prefer-online`, { stdio: "inherit" });
         clearUpdateCache();
-        console.log("\n🎉 Successfully updated jev-dev-harness to latest version!\n");
+        console.log(`\n🎉 Successfully updated jev-dev-harness to v${updateInfo.latestVersion || "latest"}!\n`);
       } catch (err) {
         console.error("\n❌ Failed to update automatically. Try running: npm install -g jev-dev-harness@latest\n");
       }
+    });
+
+  // ==========================================
+  // COMMAND: version (Check installed and latest version)
+  // ==========================================
+  program
+    .command("version")
+    .description("Display currently installed version, latest npm version, and installation details")
+    .option("--json", "Output version details as JSON")
+    .action(async (options) => {
+      await runVersionCommand({ json: options.json });
     });
 
   // ==========================================
@@ -640,11 +663,15 @@ export function createCli(): Command {
       });
     });
 
-  // Non-blocking update notifier on CLI completion (excluding stdio mcp and update command itself)
+  // Non-blocking update notifier on CLI completion (excluding stdio mcp, version, and update commands)
   program.hook("postAction", async (_thisCommand, actionCommand) => {
-    if (actionCommand.name() !== "mcp" && actionCommand.name() !== "update") {
+    if (
+      actionCommand.name() !== "mcp" &&
+      actionCommand.name() !== "update" &&
+      actionCommand.name() !== "version"
+    ) {
       try {
-        const update = await checkForUpdates("0.2.4");
+        const update = await checkForUpdates(currentVersion);
         printUpdateNotification(update);
       } catch {
         // Silently ignore

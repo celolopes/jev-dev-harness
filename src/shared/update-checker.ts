@@ -93,12 +93,18 @@ export async function checkForUpdates(
   currentVersion: string,
   force = false
 ): Promise<UpdateInfo> {
-  const TWELVE_HOURS_MS = 12 * 60 * 60 * 1000;
+  const ONE_HOUR_MS = 60 * 60 * 1000;
   const cached = readCache();
 
   let latestVersion = currentVersion;
 
-  if (!force && cached && Date.now() - cached.lastChecked < TWELVE_HOURS_MS) {
+  // Use cache only if fresh AND the cached version is at least as new as the currently installed version
+  if (
+    !force &&
+    cached &&
+    Date.now() - cached.lastChecked < ONE_HOUR_MS &&
+    compareSemver(currentVersion, cached.latestVersion) <= 0
+  ) {
     latestVersion = cached.latestVersion;
   } else {
     try {

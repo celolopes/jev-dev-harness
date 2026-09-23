@@ -1,8 +1,11 @@
+import { getHarnessVersion } from "../shared/version.js";
+
 /**
  * Jev Developer Harness — Stylized Terminal Banner
  * Renders cross-platform ANSI cybernetic shield & branding for CLI commands.
  */
 export function getJevBanner(subtitle?: string): string {
+  const version = getHarnessVersion();
   const cyan = "\x1b[36m";
   const purple = "\x1b[35m";
   const bold = "\x1b[1m";
@@ -10,7 +13,7 @@ export function getJevBanner(subtitle?: string): string {
   const reset = "\x1b[0m";
 
   const lines = [
-    `${cyan}${bold}     /\\       __ _____ _   _   ${purple}${bold}JEV DEVELOPER HARNESS ${reset}${dim}v0.2.4${reset}`,
+    `${cyan}${bold}     /\\       __ _____ _   _   ${purple}${bold}JEV DEVELOPER HARNESS ${reset}${dim}v${version}${reset}`,
     `${cyan}${bold}    /  \\      \\ V / __| | | |  ${reset}${bold}TypeSafe AI System One Engine${reset}`,
     `${cyan}${bold}   / /\\ \\    | \\ / _| | |_| |  ${purple}${dim}Runtime Safety • Token Reducer • Live Telemetry${reset}`,
     `${cyan}${bold}   \\ \\/ /     \\_/|___| \\___/   ${reset}${dim}https://typesafe.ai${reset}`,

@@ -8,6 +8,7 @@ import {
   recordTelemetryEvent,
 } from "../shared/telemetry.js";
 import { printJevBanner } from "./banner.js";
+import { getHarnessVersion } from "../shared/version.js";
 
 export interface DoctorOptions {
   initRules?: boolean;
@@ -276,14 +277,7 @@ export async function runDoctorCommand(options: DoctorOptions = {}): Promise<Doc
   }
 
   // 1. Environment
-  let harnessVersion = "0.1.4";
-  try {
-    const pkgPath = path.resolve(path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1")), "../../package.json");
-    if (fs.existsSync(pkgPath)) {
-      const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf8"));
-      harnessVersion = pkg.version || harnessVersion;
-    }
-  } catch {}
+  const harnessVersion = getHarnessVersion();
 
   const environment = {
     nodeVersion: process.version,
