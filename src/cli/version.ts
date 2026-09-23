@@ -1,5 +1,5 @@
 import { getHarnessPackageInfo } from "../shared/version.js";
-import { checkForUpdates } from "../shared/update-checker.js";
+import { checkForUpdates, compareSemver } from "../shared/update-checker.js";
 import { printJevBanner } from "./banner.js";
 
 export interface VersionOptions {
@@ -19,15 +19,18 @@ export interface VersionInfo {
 export async function runVersionCommand(options: VersionOptions = {}): Promise<VersionInfo> {
   const { version, location } = getHarnessPackageInfo();
   let latestVersion = version;
-  let isLatest = true;
 
   try {
     const updateInfo = await checkForUpdates(version, true);
     latestVersion = updateInfo.latestVersion;
-    isLatest = !updateInfo.updateAvailable && latestVersion === version;
   } catch {
     // Non-critical fallback
   }
+
+  const comparison = compareSemver(version, latestVersion);
+  const isUpdateAvailable = comparison > 0;
+  const isUpToDate = comparison === 0;
+  const isLatest = !isUpdateAvailable;
 
   const info: VersionInfo = {
     version,
@@ -46,7 +49,13 @@ export async function runVersionCommand(options: VersionOptions = {}): Promise<V
 
   printJevBanner(`VERSION INFO: v${version}`);
 
-  console.log(`  • Installed Version: v${version} ${isLatest ? "(latest ✓)" : `(update available: v${latestVersion} 🔔)`}`);
+  const statusLabel = isUpToDate
+    ? "(latest ✓)"
+    : isUpdateAvailable
+    ? `(update available: v${latestVersion} 🔔)`
+    : "(latest dev build 🚀)";
+
+  console.log(`  • Installed Version: v${version} ${statusLabel}`);
   console.log(`  • Latest on npm:     v${latestVersion}`);
   console.log(`  • Package Location:  ${location}`);
   console.log(`  • Node.js:           ${process.version} (${process.platform} ${process.arch})`);
@@ -62,7 +71,7 @@ export async function runVersionCommand(options: VersionOptions = {}): Promise<V
 
   console.log(`  • Installation Type: ${isGlobal ? "Global CLI" : "Local Workspace"}\n`);
 
-  if (!isLatest) {
+  if (isUpdateAvailable) {
     console.log(`💡 A newer version (v${latestVersion}) is available on npm! Run:`);
     console.log("   jev-dev update\n");
   }
