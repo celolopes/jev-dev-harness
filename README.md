@@ -10,7 +10,7 @@
 
 <p align="center">
   <a href="https://www.npmjs.com/package/jev-dev-harness"><img src="https://img.shields.io/npm/v/jev-dev-harness.svg?color=cb3837" alt="npm version" /></a>
-  <img src="https://img.shields.io/badge/tests-121%20passing-brightgreen.svg" alt="Tests" />
+  <img src="https://img.shields.io/badge/tests-142%20passing-brightgreen.svg" alt="Tests" />
   <img src="https://img.shields.io/badge/TypeScript-5.8-blue.svg" alt="TypeScript" />
   <img src="https://img.shields.io/badge/Node.js-22+-green.svg" alt="Node" />
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT" /></a>
@@ -52,7 +52,7 @@ Large Language Models (LLMs) are exceptional at generative synthesis and reasoni
 How much faster, cheaper, and safer is programming with an AI coding agent (Codex, Antigravity, Claude Code, Cursor) when using `jev-dev-harness`?
 
 <p align="center">
-  <img src="docs/images/dashboard-preview.png" alt="Jev Developer Harness Dashboard Comparison" width="100%" />
+  <img src="docs/images/dashboard-roi-preview.png" alt="Jev Developer Harness ROI & Benchmark Simulator" width="100%" />
 </p>
 
 ### 💡 Key Benchmarks at a Glance
@@ -80,22 +80,24 @@ npx -y jev-dev compare
 
 ---
 
-## ⚡ Key Modules
+## ⚡ Key Modules & CLI Commands
 
-| Module | Command | Purpose |
-| :--- | :--- | :--- |
-| **Context Ranker** | `jev-dev context rank` | Selects the top 3-5 crucial files for a task, reducing token bloat by 88%–94%. |
-| **Tool Call Guard** | `jev-dev guard check` | Intercepts agent commands in <1ms, categorizing operations into `read-only`, `modify-local`, `destructive-local`, `network`, or `production-sensitive`. |
-| **Patch Reviewer** | `jev-dev patch review` | Fast triage of git diffs before commit/PR. Detects scope creep, credential exposure, database mutations, and missing tests. |
-| **Semantic Linter** | `jev-dev lint semantic` | Automated architectural drift detection in GitHub Actions CI (prevents UI/database mixing, dangerous migrations, etc.). |
-| **Git Hook Automation** | `jev-dev hooks install` | 1-click installer for git pre-commit safety gate. Blocks commits containing leaked credentials or critical regression risk. |
-| **MCP Server** | `jev-dev mcp` | Standard Model Context Protocol (stdio) exposing all 4 tools to Cursor, Claude Desktop, Antigravity. |
-| **Benchmark & ROI** | `jev-dev compare` | Live comparison of agent speed, token reduction, and dollar savings with vs. without Jev. |
-| **Live Dashboard** | `jev-dev dashboard` | Real-time web dashboard with SSE streaming to monitor active agent operations, token cuts, and dollar savings. |
-| **Health & Diagnostics** | `jev-dev doctor` | Verifies active status, tests AI connectivity, audits MCP integrations, and auto-generates agent rule files (`--init-rules`). |
-| **Setup Wizard** | `jev-dev setup` | 1-minute interactive CLI to configure API keys (TypeSafe/OpenRouter) and auto-register agents. |
-| **Auto-Update** | `jev-dev update` | 1-click upgrade to the latest npm release, with non-blocking background notifications. |
-| **Clean Uninstall** | `jev-dev uninstall` | 1-click clean uninstaller. Removes all MCP entries across IDEs, git hooks, and `~/.jev-dev` data. |
+| Module / Command | Purpose |
+| :--- | :--- |
+| `jev-dev version` | Inspects currently installed harness version, latest on npm registry, package path, runtime details, and install type. |
+| `jev-dev context rank` | Selects the top 3-5 crucial files for a task, reducing token bloat by 88%–94%. |
+| `jev-dev guard check` | Intercepts commands in <1ms, categorizing operations into `read-only`, `modify-local`, `destructive-local`, `network`, or `production-sensitive`. |
+| `jev-dev patch review` | Fast triage of git diffs before commit/PR. Detects scope creep, credential exposure, database mutations, and missing tests. |
+| `jev-dev lint semantic` | Automated architectural drift detection in GitHub Actions CI (prevents UI/database mixing, dangerous migrations, etc.). |
+| `jev-dev hooks install` | 1-click installer for git pre-commit safety gate. Blocks commits containing leaked credentials or critical regression risk. |
+| `jev-dev mcp` | Standard Model Context Protocol (stdio) exposing all 4 tools to Cursor, Claude Desktop, Antigravity, VS Code. |
+| `jev-dev compare` | Live comparison of agent speed, token reduction, and dollar savings with vs. without Jev. |
+| `jev-dev dashboard` | Real-time web dashboard with SSE streaming, platform origin detection, and interactive ROI simulator. |
+| `jev-dev doctor` | System health check: AI connectivity ping, MCP integrations, telemetry status, and auto-generates 7 agent rule files (`--init-rules`). |
+| `jev-dev setup` | 1-minute interactive CLI wizard to configure providers and auto-register agents. Supports `-y` for non-interactive execution. |
+| `jev-dev provider` | Inspects or switches the active AI provider (`typesafe`, `vercel`, `openrouter`, `offline`) on the fly. |
+| `jev-dev update` | 1-click upgrade to the latest npm release, with smart cache eviction and non-blocking notifications. |
+| `jev-dev uninstall` | 1-click clean uninstaller. Removes all MCP entries across IDEs, git hooks, rule files, and `~/.jev-dev` data. |
 
 ---
 
@@ -484,20 +486,37 @@ Add to `~/.gemini/antigravity/mcp_config.json`:
 
 ---
 
-## 🤖 Integration with AI Coding Agents
+## 🤖 Integration with AI Coding Agents & Rule Files
 
-`jev-dev-harness` ships with official agent skills located in `.agents/skills/`:
+`jev-dev-harness` ships with official agent rules and skills for all major coding agents and extensions:
+
 * `jev-context-ranker`: Instructs agents to rank context before loading files.
 * `jev-tool-guard`: Instructs agents to verify shell commands before execution.
 * `jev-patch-reviewer`: Instructs agents to audit git diffs before completing tasks.
 
-These are natively discovered by **Antigravity**, **Codex**, and any agent adhering to standard skill conventions.
+### 📋 Supported IDEs & Agent Rule Files
+The harness automatically generates and audits 7 dedicated agent instruction files so that agents adhere strictly to pre-execution checks and efficiency reporting:
+
+| Agent / Extension | Rule File | Purpose |
+| :--- | :--- | :--- |
+| **Antigravity IDE** | `GEMINI.md` | Injected into Gemini/Antigravity coding sessions |
+| **Codex (Desktop & VS Code)** | `CODEX.md` | Injected into Codex agent workspaces |
+| **Claude Code** | `CLAUDE.md` | Injected into Claude Code CLI & desktop prompts |
+| **VS Code (Cline & Roo Code)** | `.clinerules` | Injected into Cline and Roo Code tasks |
+| **Cursor** | `.cursorrules` | Injected into Cursor Composer & chat |
+| **Windsurf (Codeium)** | `.windsurfrules` | Injected into Cascade agent prompts |
+| **GitHub Copilot (VS Code)** | `.github/copilot-instructions.md` | Injected into Copilot Chat & Agent Mode |
+
+Generate all rules in your project in 1 second:
+```bash
+jev-dev doctor --init-rules
+```
 
 ### ⚡ Post-Task Savings & Efficiency Telemetry
 
-When an AI coding agent (such as **Codex Desktop**, **Antigravity**, **Claude Code**, or **Cursor**) invokes `jev_rank_context` or `jev_review_patch`, the MCP server automatically returns real-time efficiency metrics (`efficiencyReport`). 
+When an AI coding agent (such as **Codex**, **Antigravity**, **Claude Code**, **Cline**, or **Cursor**) invokes `jev_rank_context`, `jev_guard_check`, or `jev_review_patch`, the MCP server automatically returns real-time efficiency metrics (`efficiencyReport`) along with agent instructions. 
 
-Agents can present this summary at the conclusion of each completed task, giving developers immediate feedback on resource savings:
+Agents present this mandatory summary at the conclusion of each completed task, giving developers immediate feedback on resource savings:
 
 ```markdown
 ### ⚡ Eficiência Jev
@@ -523,11 +542,18 @@ npx -y jev-dev dashboard --port 8790 --no-open
 npx -y jev-dev dashboard --json
 ```
 
+<p align="center">
+  <img src="docs/images/dashboard-preview.png" alt="Jev Developer Harness Live Telemetry Web Dashboard" width="100%" />
+</p>
+
 **Dashboard Features:**
-* 🟢 **Active Telemetry & Protection Banner:** Live connection indicator showing active coding agents (Codex Desktop, Antigravity, Claude Code).
-* 📊 **Live Key Metrics:** Live counters for Agent Ops, Tokens Saved, $ Net Saved, Jev Avg & p95 Latency, Tool Guard Interceptions, and Patch Audits.
-* 📈 **Request Distribution:** Visual breakdown of operations handled by Jev across your workspace.
-* ⚡ **Live Operations Stream:** Real-time Server-Sent Events (SSE) feed displaying every tool call made by your agent with latency, token savings, and security verdicts.
+* 🟢 **Active Telemetry & Protection Banner:** Live connection indicator showing active coding agents (Codex Desktop, Antigravity, Claude Code, Trae, VS Code).
+* 🏷️ **Platform Origin Detection & Badges:** Dedicated visual badges displaying which agent/IDE triggered each tool call (Codex, Antigravity, Claude Code, Trae, VS Code Cline/Roo Code, or Terminal CLI).
+* 🔄 **Real-Time Cross-Process Sync:** Server-Sent Events (SSE) and file synchronizer (<500ms) with zero latency impact on agent workflows.
+* 🌐 **Bilingual Interface (i18n):** Instant toggle between English (`US EN`) and Portuguese (`BR PT`).
+* 📊 **Live Key Metrics:** Real-time counters for Agent Ops, Tokens Saved, $ Net Saved, Jev Avg & p95 Latency, Tool Guard Interceptions, and Patch Audits.
+* 📈 **Request Distribution & Gate Verdicts:** Visual breakdown of operations handled by Jev across your workspace.
+* ⚡ **Live Operations Stream:** Real-time stream displaying every tool call made by your agent with latency, token savings, and security verdicts.
 * 🧮 **ROI & Benchmark Simulator:** Integrated team size & pricing calculator to forecast monthly and annual cost savings.
 
 ---
@@ -552,7 +578,7 @@ Create a `.env` file or export environment variables:
 The repository features comprehensive integration and unit test suites:
 
 ```bash
-# Run full Vitest test suite (106 tests)
+# Run full Vitest test suite (142 tests across 22 test suites)
 npm test
 
 # Run benchmark suite (precision, recall, token reduction)
