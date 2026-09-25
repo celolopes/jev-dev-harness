@@ -9,6 +9,7 @@ import {
 } from "../shared/telemetry.js";
 import { printJevBanner } from "./banner.js";
 import { getHarnessVersion } from "../shared/version.js";
+import { ensureGitignoreJevCache, isJevCacheIgnoredInGitignore } from "../shared/ignore.js";
 
 export interface DoctorOptions {
   initRules?: boolean;
@@ -49,6 +50,7 @@ export interface DoctorReport {
     hasClineRules: boolean;
     hasWindsurfRules: boolean;
     hasCopilotRules: boolean;
+    hasJevCacheIgnored: boolean;
   };
   telemetry: {
     filePath: string;
@@ -273,7 +275,17 @@ export async function runDoctorCommand(options: DoctorOptions = {}): Promise<Doc
         console.error(`  ❌ Failed to create ${t.name}: ${(err as Error).message}`);
       }
     }
-    console.log("\n✨ Agent rule files created successfully!\n");
+
+    const gitignoreRes = ensureGitignoreJevCache(cwd);
+    if (gitignoreRes.created) {
+      console.log("  ✓ Created .gitignore (ignoring .jev-cache.json)");
+    } else if (gitignoreRes.modified) {
+      console.log("  ✓ Added .jev-cache.json to .gitignore");
+    } else if (gitignoreRes.ignored) {
+      console.log("  ✓ .gitignore already ignores .jev-cache.json");
+    }
+
+    console.log("\n✨ Agent rule files and gitignore configured successfully!\n");
   }
 
   // 1. Environment
@@ -361,6 +373,7 @@ export async function runDoctorCommand(options: DoctorOptions = {}): Promise<Doc
   const hasClineRules = fs.existsSync(path.join(cwd, ".clinerules"));
   const hasWindsurfRules = fs.existsSync(path.join(cwd, ".windsurfrules"));
   const hasCopilotRules = fs.existsSync(path.join(cwd, ".github", "copilot-instructions.md"));
+  const hasJevCacheIgnored = isJevCacheIgnoredInGitignore(cwd);
 
   // 6. Telemetry & Emit Ping
   const telemetryPath = getTelemetryFilePath();
@@ -405,6 +418,7 @@ export async function runDoctorCommand(options: DoctorOptions = {}): Promise<Doc
       hasClineRules,
       hasWindsurfRules,
       hasCopilotRules,
+      hasJevCacheIgnored,
     },
     telemetry: {
       filePath: telemetryPath,
@@ -451,7 +465,8 @@ export async function runDoctorCommand(options: DoctorOptions = {}): Promise<Doc
   console.log(`  VS Code Cline (.clinerules)   : ${hasClineRules ? "✓ Present" : "○ Missing (run 'jev-dev doctor --init-rules')"}`);
   console.log(`  Cursor (.cursorrules)         : ${hasCursorRules ? "✓ Present" : "○ Missing (run 'jev-dev doctor --init-rules')"}`);
   console.log(`  Windsurf (.windsurfrules)     : ${hasWindsurfRules ? "✓ Present" : "○ Missing (run 'jev-dev doctor --init-rules')"}`);
-  console.log(`  GitHub Copilot (instructions) : ${hasCopilotRules ? "✓ Present" : "○ Missing (run 'jev-dev doctor --init-rules')"}\n`);
+  console.log(`  GitHub Copilot (instructions) : ${hasCopilotRules ? "✓ Present" : "○ Missing (run 'jev-dev doctor --init-rules')"}`);
+  console.log(`  Gitignore (.jev-cache.json)   : ${hasJevCacheIgnored ? "✓ Ignored" : "○ Not ignored (run 'jev-dev doctor --init-rules')"}\n`);
 
   console.log("--- 📊 TELEMETRY & LIVE DASHBOARD ---");
   console.log(`  Telemetry Store:  ${telemetryPath} (${report.telemetry.eventsCount} events recorded)`);

@@ -25,5 +25,7 @@ describe("Doctor CLI Command", () => {
     expect(typeof report.rules.hasClineRules).toBe("boolean");
     expect(typeof report.rules.hasWindsurfRules).toBe("boolean");
     expect(typeof report.rules.hasCopilotRules).toBe("boolean");
+    expect(typeof report.rules.hasJevCacheIgnored).toBe("boolean");
+    expect(report.rules.hasJevCacheIgnored).toBe(true);
   });
 });

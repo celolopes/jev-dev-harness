@@ -4,6 +4,7 @@ import path from "node:path";
 import readline from "node:readline";
 import { SafeJevClient, noul } from "../shared/typesafe-client.js";
 import { getAgentRuleContent } from "./doctor.js";
+import { ensureGitignoreJevCache } from "../shared/ignore.js";
 
 function ask(rl: readline.Interface, query: string): Promise<string> {
   return new Promise((resolve) => rl.question(query, resolve));
@@ -385,6 +386,16 @@ export async function runSetupWizard(options: SetupOptions = {}): Promise<void> 
       } else {
         console.log(`  ✓ Found ${t.name}`);
       }
+    }
+
+    // Ensure .jev-cache.json is ignored in workspace .gitignore
+    const gitignoreRes = ensureGitignoreJevCache(process.cwd());
+    if (gitignoreRes.created) {
+      console.log("  ✓ Created .gitignore (ignoring .jev-cache.json)");
+    } else if (gitignoreRes.modified) {
+      console.log("  ✓ Added .jev-cache.json to .gitignore");
+    } else if (gitignoreRes.ignored) {
+      console.log("  ✓ .gitignore already ignores .jev-cache.json");
     }
 
     // 5. Test connection live if key provided

@@ -224,3 +224,67 @@ export class IgnoreFilter {
     return { ignored: false };
   }
 }
+
+/**
+ * Check whether a .gitignore file in targetDir already ignores .jev-cache.json
+ */
+export function isJevCacheIgnoredInGitignore(targetDir: string = process.cwd()): boolean {
+  const gitignorePath = path.join(targetDir, ".gitignore");
+  if (!fs.existsSync(gitignorePath)) {
+    return false;
+  }
+  try {
+    const content = fs.readFileSync(gitignorePath, "utf8");
+    const lines = content.split(/\r?\n/).map((l) => l.trim());
+    return lines.some(
+      (l) => l === ".jev-cache.json" || l === "/.jev-cache.json" || l === "*.jev-cache.json"
+    );
+  } catch {
+    return false;
+  }
+}
+
+export interface EnsureGitignoreResult {
+  modified: boolean;
+  created: boolean;
+  ignored: boolean;
+}
+
+/**
+ * Ensures .jev-cache.json is included in targetDir's .gitignore.
+ * Appends it with a comment if missing, or creates .gitignore if it doesn't exist.
+ */
+export function ensureGitignoreJevCache(targetDir: string = process.cwd()): EnsureGitignoreResult {
+  const gitignorePath = path.join(targetDir, ".gitignore");
+  if (!fs.existsSync(gitignorePath)) {
+    try {
+      fs.writeFileSync(
+        gitignorePath,
+        "# Jev Developer Harness local runtime cache\n.jev-cache.json\n",
+        "utf8"
+      );
+      return { modified: true, created: true, ignored: true };
+    } catch {
+      return { modified: false, created: false, ignored: false };
+    }
+  }
+
+  try {
+    const content = fs.readFileSync(gitignorePath, "utf8");
+    const lines = content.split(/\r?\n/).map((l) => l.trim());
+    const alreadyIgnored = lines.some(
+      (l) => l === ".jev-cache.json" || l === "/.jev-cache.json" || l === "*.jev-cache.json"
+    );
+    if (alreadyIgnored) {
+      return { modified: false, created: false, ignored: true };
+    }
+
+    const needsNewline =
+      content.length > 0 && !content.endsWith("\n") && !content.endsWith("\r");
+    const toAppend = `${needsNewline ? "\n" : ""}\n# Jev Developer Harness local runtime cache\n.jev-cache.json\n`;
+    fs.appendFileSync(gitignorePath, toAppend, "utf8");
+    return { modified: true, created: false, ignored: true };
+  } catch {
+    return { modified: false, created: false, ignored: false };
+  }
+}
