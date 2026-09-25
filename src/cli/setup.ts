@@ -388,7 +388,7 @@ export async function runSetupWizard(options: SetupOptions = {}): Promise<void> 
       }
     }
 
-    // Ensure .jev-cache.json is ignored in workspace .gitignore
+    // Ensure .jev-cache.json is ignored in workspace .gitignore and untracked from git index
     const gitignoreRes = ensureGitignoreJevCache(process.cwd());
     if (gitignoreRes.created) {
       console.log("  ✓ Created .gitignore (ignoring .jev-cache.json)");
@@ -396,6 +396,9 @@ export async function runSetupWizard(options: SetupOptions = {}): Promise<void> 
       console.log("  ✓ Added .jev-cache.json to .gitignore");
     } else if (gitignoreRes.ignored) {
       console.log("  ✓ .gitignore already ignores .jev-cache.json");
+    }
+    if (gitignoreRes.untracked) {
+      console.log("  ✓ Untracked .jev-cache.json from git index (kept local file intact)");
     }
 
     // 5. Test connection live if key provided

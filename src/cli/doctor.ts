@@ -9,7 +9,11 @@ import {
 } from "../shared/telemetry.js";
 import { printJevBanner } from "./banner.js";
 import { getHarnessVersion } from "../shared/version.js";
-import { ensureGitignoreJevCache, isJevCacheIgnoredInGitignore } from "../shared/ignore.js";
+import {
+  ensureGitignoreJevCache,
+  isJevCacheIgnoredInGitignore,
+  isJevCacheTrackedByGit,
+} from "../shared/ignore.js";
 
 export interface DoctorOptions {
   initRules?: boolean;
@@ -51,6 +55,7 @@ export interface DoctorReport {
     hasWindsurfRules: boolean;
     hasCopilotRules: boolean;
     hasJevCacheIgnored: boolean;
+    hasJevCacheTracked: boolean;
   };
   telemetry: {
     filePath: string;
@@ -284,6 +289,9 @@ export async function runDoctorCommand(options: DoctorOptions = {}): Promise<Doc
     } else if (gitignoreRes.ignored) {
       console.log("  ✓ .gitignore already ignores .jev-cache.json");
     }
+    if (gitignoreRes.untracked) {
+      console.log("  ✓ Untracked .jev-cache.json from git index (kept local file intact)");
+    }
 
     console.log("\n✨ Agent rule files and gitignore configured successfully!\n");
   }
@@ -374,6 +382,7 @@ export async function runDoctorCommand(options: DoctorOptions = {}): Promise<Doc
   const hasWindsurfRules = fs.existsSync(path.join(cwd, ".windsurfrules"));
   const hasCopilotRules = fs.existsSync(path.join(cwd, ".github", "copilot-instructions.md"));
   const hasJevCacheIgnored = isJevCacheIgnoredInGitignore(cwd);
+  const hasJevCacheTracked = isJevCacheTrackedByGit(cwd);
 
   // 6. Telemetry & Emit Ping
   const telemetryPath = getTelemetryFilePath();
@@ -419,6 +428,7 @@ export async function runDoctorCommand(options: DoctorOptions = {}): Promise<Doc
       hasWindsurfRules,
       hasCopilotRules,
       hasJevCacheIgnored,
+      hasJevCacheTracked,
     },
     telemetry: {
       filePath: telemetryPath,
@@ -466,7 +476,11 @@ export async function runDoctorCommand(options: DoctorOptions = {}): Promise<Doc
   console.log(`  Cursor (.cursorrules)         : ${hasCursorRules ? "✓ Present" : "○ Missing (run 'jev-dev doctor --init-rules')"}`);
   console.log(`  Windsurf (.windsurfrules)     : ${hasWindsurfRules ? "✓ Present" : "○ Missing (run 'jev-dev doctor --init-rules')"}`);
   console.log(`  GitHub Copilot (instructions) : ${hasCopilotRules ? "✓ Present" : "○ Missing (run 'jev-dev doctor --init-rules')"}`);
-  console.log(`  Gitignore (.jev-cache.json)   : ${hasJevCacheIgnored ? "✓ Ignored" : "○ Not ignored (run 'jev-dev doctor --init-rules')"}\n`);
+  console.log(`  Gitignore (.jev-cache.json)   : ${hasJevCacheIgnored ? "✓ Ignored" : "○ Not ignored (run 'jev-dev doctor --init-rules')"}`);
+  if (hasJevCacheTracked) {
+    console.log(`  Git Tracking (.jev-cache.json): ⚠ Tracked in git index! Run 'git rm --cached .jev-cache.json' or 'jev-dev doctor --init-rules' to untrack`);
+  }
+  console.log("");
 
   console.log("--- 📊 TELEMETRY & LIVE DASHBOARD ---");
   console.log(`  Telemetry Store:  ${telemetryPath} (${report.telemetry.eventsCount} events recorded)`);

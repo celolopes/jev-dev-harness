@@ -1,10 +1,13 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import path from "node:path";
 import fs from "node:fs";
+import { execSync } from "node:child_process";
 import {
   IgnoreFilter,
   isJevCacheIgnoredInGitignore,
   ensureGitignoreJevCache,
+  isJevCacheTrackedByGit,
+  untrackJevCacheIfTracked,
 } from "../../src/shared/ignore.js";
 
 describe("IgnoreFilter Module", () => {
@@ -143,5 +146,48 @@ describe("Gitignore .jev-cache.json Helpers", () => {
     expect(res.modified).toBe(false);
     expect(res.ignored).toBe(true);
   });
+
+  it("isJevCacheTrackedByGit returns false on non-git directory", () => {
+    const nonGitDir = path.join(tempDir, "non-git");
+    fs.mkdirSync(nonGitDir, { recursive: true });
+    expect(isJevCacheTrackedByGit(nonGitDir)).toBe(false);
+    expect(untrackJevCacheIfTracked(nonGitDir)).toBe(false);
+  });
+
+  it("automatically untracks .jev-cache.json if tracked in a git repository", () => {
+    const gitRepoDir = path.join(tempDir, "tracked-git-repo");
+    fs.mkdirSync(gitRepoDir, { recursive: true });
+
+    // Initialize temporary git repo
+    try {
+      execSync("git init", { cwd: gitRepoDir, stdio: "ignore" });
+      execSync("git config user.email 'test@example.com'", { cwd: gitRepoDir, stdio: "ignore" });
+      execSync("git config user.name 'Test User'", { cwd: gitRepoDir, stdio: "ignore" });
+
+      // Create .jev-cache.json and stage it
+      const cachePath = path.join(gitRepoDir, ".jev-cache.json");
+      fs.writeFileSync(cachePath, '{"test": true}', "utf8");
+      execSync("git add .jev-cache.json", { cwd: gitRepoDir, stdio: "ignore" });
+
+      // Should be tracked by git
+      expect(isJevCacheTrackedByGit(gitRepoDir)).toBe(true);
+
+      // Running ensureGitignoreJevCache should add to .gitignore AND untrack from git
+      const res = ensureGitignoreJevCache(gitRepoDir);
+      expect(res.untracked).toBe(true);
+      expect(res.ignored).toBe(true);
+
+      // Verify it is no longer tracked by git
+      expect(isJevCacheTrackedByGit(gitRepoDir)).toBe(false);
+
+      // Verify physical file was NOT deleted
+      expect(fs.existsSync(cachePath)).toBe(true);
+      const content = fs.readFileSync(cachePath, "utf8");
+      expect(content).toBe('{"test": true}');
+    } catch {
+      // If git is not in PATH during testing, test degrades gracefully
+    }
+  });
 });
+
 

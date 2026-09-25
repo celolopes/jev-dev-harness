@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { execSync } from "node:child_process";
 import ignore, { type Ignore } from "ignore";
 import { isSecretFile } from "./redaction.js";
 
@@ -248,14 +249,52 @@ export interface EnsureGitignoreResult {
   modified: boolean;
   created: boolean;
   ignored: boolean;
+  untracked?: boolean;
+}
+
+/**
+ * Check whether .jev-cache.json is currently tracked in Git's index in targetDir
+ */
+export function isJevCacheTrackedByGit(targetDir: string = process.cwd()): boolean {
+  try {
+    execSync("git ls-files --error-unmatch .jev-cache.json", {
+      cwd: targetDir,
+      stdio: "ignore",
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Untracks .jev-cache.json from Git index while preserving the physical file on disk.
+ * Executes `git rm --cached .jev-cache.json`.
+ */
+export function untrackJevCacheIfTracked(targetDir: string = process.cwd()): boolean {
+  if (!isJevCacheTrackedByGit(targetDir)) {
+    return false;
+  }
+  try {
+    execSync("git rm --cached .jev-cache.json", {
+      cwd: targetDir,
+      stdio: "ignore",
+    });
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /**
  * Ensures .jev-cache.json is included in targetDir's .gitignore.
  * Appends it with a comment if missing, or creates .gitignore if it doesn't exist.
+ * Also automatically untracks .jev-cache.json from Git index if it was previously tracked.
  */
 export function ensureGitignoreJevCache(targetDir: string = process.cwd()): EnsureGitignoreResult {
+  const untracked = untrackJevCacheIfTracked(targetDir);
   const gitignorePath = path.join(targetDir, ".gitignore");
+
   if (!fs.existsSync(gitignorePath)) {
     try {
       fs.writeFileSync(
@@ -263,9 +302,9 @@ export function ensureGitignoreJevCache(targetDir: string = process.cwd()): Ensu
         "# Jev Developer Harness local runtime cache\n.jev-cache.json\n",
         "utf8"
       );
-      return { modified: true, created: true, ignored: true };
+      return { modified: true, created: true, ignored: true, untracked };
     } catch {
-      return { modified: false, created: false, ignored: false };
+      return { modified: false, created: false, ignored: false, untracked };
     }
   }
 
@@ -276,15 +315,15 @@ export function ensureGitignoreJevCache(targetDir: string = process.cwd()): Ensu
       (l) => l === ".jev-cache.json" || l === "/.jev-cache.json" || l === "*.jev-cache.json"
     );
     if (alreadyIgnored) {
-      return { modified: false, created: false, ignored: true };
+      return { modified: false, created: false, ignored: true, untracked };
     }
 
     const needsNewline =
       content.length > 0 && !content.endsWith("\n") && !content.endsWith("\r");
     const toAppend = `${needsNewline ? "\n" : ""}\n# Jev Developer Harness local runtime cache\n.jev-cache.json\n`;
     fs.appendFileSync(gitignorePath, toAppend, "utf8");
-    return { modified: true, created: false, ignored: true };
+    return { modified: true, created: false, ignored: true, untracked };
   } catch {
-    return { modified: false, created: false, ignored: false };
+    return false as any || { modified: false, created: false, ignored: false, untracked };
   }
 }
