@@ -23,6 +23,7 @@ export interface BaseTelemetryEvent {
 
 export interface ContextRankEvent extends BaseTelemetryEvent {
   type: "context_rank";
+  decisionMetrics?: TelemetryMetrics;
   task: string;
   initialCandidates: number;
   selectedFiles: number;
@@ -125,6 +126,10 @@ export interface TelemetrySummary {
 }
 
 export interface TelemetryMetrics {
+  evaluatedByLlm?: number;
+  decisionModels?: string[];
+  reportedCostUsd?: number;
+  costedRequests?: number;
   initialCandidates: number;
   filteredCandidates: number;
   evaluatedByJev: number;
@@ -142,6 +147,10 @@ export interface TelemetryMetrics {
 }
 
 export class TelemetryCollector {
+  evaluatedByLlm = 0;
+  decisionModels = new Set<string>();
+  reportedCostUsd = 0;
+  costedRequests = 0;
   private startTime: number = Date.now();
   private endTime?: number;
 
@@ -206,6 +215,10 @@ export class TelemetryCollector {
 
     return {
       initialCandidates: this.initialCandidates,
+      evaluatedByLlm: this.evaluatedByLlm,
+      decisionModels: [...this.decisionModels].sort(),
+      reportedCostUsd: this.costedRequests > 0 ? this.reportedCostUsd : undefined,
+      costedRequests: this.costedRequests,
       filteredCandidates: this.filteredCandidates,
       evaluatedByJev: this.evaluatedByJev,
       tokensSent: this.tokensSent,

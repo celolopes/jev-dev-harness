@@ -214,6 +214,8 @@ export function createMcpServer(): Server {
 
           recordTelemetryEvent({
             type: "context_rank",
+            provider: result.metrics.provider,
+            decisionMetrics: result.metrics,
             task,
             initialCandidates,
             selectedFiles: selectedCount,

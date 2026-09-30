@@ -101,7 +101,7 @@ npx -y jev-dev compare
 
 ---
 
-## 🔑 Dual-Provider Architecture: Native TypeSafe & OpenRouter
+## 🔑 Providers: Native TypeSafe, Vercel & OpenRouter
 
 `jev-dev-harness` is designed to be accessible to everyone:
 
@@ -115,8 +115,10 @@ npx -y jev-dev compare
    * Takes advantage of Vercel's free credit allowance and free output tokens with zero markup.
    * 👉 **Generate API Key:** [https://vercel.com/d/ai-gateway](https://vercel.com/d/ai-gateway) (Vercel Dashboard → AI Gateway → API Keys)
    * Automatically activated when `AI_GATEWAY_API_KEY` (or `VERCEL_AI_GATEWAY_KEY` / `VERCEL_OIDC_TOKEN`) is configured.
-3. **OpenRouter Emulator (Community & Multi-Model)**:
-   * Emulates Jev's structured System One contract (`noul`, `score`, `choice`) using fast reasoning models (defaults to `deepseek/deepseek-v4-flash`, also supports `openai/gpt-4o-mini`, `anthropic/claude-3.5-haiku`).
+3. **OpenRouter (Native Jev & Explicit LLM Emulation)**:
+   * Defaults to `typesafe/jev-1.13` through `/api/v1/systemone`, with runtime validation and a bounded deadline. Existing explicit model settings are preserved.
+   * Other explicitly selected models use chat emulation and are labeled separately. Jev failures return deterministic fallback, never a silent model switch.
+   * See [native OpenRouter setup, cache, metrics and evaluation](docs/jev/OPENROUTER-NATIVE.md).
    * 👉 **Generate API Key:** [https://openrouter.ai/keys](https://openrouter.ai/keys)
    * Automatically activated when `OPENROUTER_API_KEY` (or keys starting with `sk-or-`) is configured.
 4. **Deterministic Offline Fallback**:
@@ -140,7 +142,7 @@ jev-dev setup
 ```
 
 The wizard guides you through:
-1. **Provider Selection:** Native TypeSafe AI (Recommended), Vercel AI Gateway (Free Tier), OpenRouter (DeepSeek / Claude / GPT), or Offline mode.
+1. **Provider Selection:** Native TypeSafe AI (Recommended), Vercel AI Gateway (Free Tier), OpenRouter (native Jev, or an explicitly selected chat model), or Offline mode.
 2. **API Key Input:** Securely paste your key (automatically validated with a live connection ping).
 3. **Global CLI Availability:** Automatically saves to `.env` and `~/.jev-dev/config.json`, making `jev-dev` commands available in **any directory on your system**.
 4. **Multi-Agent Auto-Configuration:** Automatically detects and registers the Jev MCP server across all installed coding agents on your machine:

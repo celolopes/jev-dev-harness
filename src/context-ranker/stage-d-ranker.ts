@@ -117,8 +117,9 @@ export function executeStageD(
           confidence: jevJudgments.confidence,
           role: jevJudgments.role,
           relevance: jevJudgments.relevanceLabel,
-          reason: `Jev: ${jevJudgments.relevanceLabel} (${(noulProb * 100).toFixed(0)}% match, role: ${jevJudgments.role}) + heuristic: ${(candidate.heuristicScore * 100).toFixed(0)}%`,
-          source: "jev",
+          reason: `${jevJudgments.decisionMode === "llm_emulation" ? "LLM emulation" : "Jev"}: ${jevJudgments.relevanceLabel} (${(noulProb * 100).toFixed(0)}% match, role: ${jevJudgments.role}) + heuristic: ${(candidate.heuristicScore * 100).toFixed(0)}%`,
+          source: jevJudgments.decisionMode ?? "jev",
+          model: jevJudgments.model,
         });
       }
     } else {

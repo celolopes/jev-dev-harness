@@ -16,6 +16,8 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as os from "node:os";
 import { redactState } from "./redaction.js";
+import { validateDecisionResult, type DecisionResult } from "./decision-validation.js";
+import { requestOpenRouter } from "./openrouter-transport.js";
 
 // Automatically load .env if present in current working directory
 try {
@@ -69,9 +71,13 @@ export interface SafeJevClientOptions {
   provider?: JevProvider;
 }
 
+export type DecisionMode = "jev" | "llm_emulation";
+
 export interface JevExecutionSuccess<Q extends Questions> {
   ok: true;
-  result: SystemOneResult<Q>;
+  result: DecisionResult<Q>;
+  decisionMode: DecisionMode;
+  costUsd?: number;
   inputTokens: number;
   outputTokens: number;
   latencyMs: number;
@@ -111,12 +117,28 @@ export class SafeJevClient {
   private readonly apiKey?: string;
   public readonly modelName: string;
   private statusReason: string;
+  private readonly baseURL: string;
+  private readonly maxRetries: number;
+
+  get decisionMode(): DecisionMode {
+    return this.provider === "openrouter" && !/^(~?typesafe\/|jev-)/.test(this.modelName)
+      ? "llm_emulation" : "jev";
+  }
+
+  get cacheIdentity(): string {
+    return JSON.stringify([this.provider, this.baseURL, this.modelName, this.decisionMode]);
+  }
 
   constructor(options: SafeJevClientOptions = {}) {
     this.disabled = options.disabled ?? false;
     this.timeoutMs =
       options.timeoutMs ??
-      (parseInt(process.env.JEV_TIMEOUT_MS || "", 10) || 15000);
+      (parseInt(process.env.JEV_TIMEOUT_MS || "", 10) || 2000);
+    if (!Number.isFinite(this.timeoutMs) || this.timeoutMs <= 0) {
+      throw new Error("JEV_TIMEOUT_MS must be a positive number");
+    }
+    const retries = options.maxRetries ?? 1;
+    this.maxRetries = Number.isFinite(retries) ? Math.min(1, Math.max(0, Math.floor(retries))) : 0;
 
     const globalConfig = loadGlobalJevConfig();
 
@@ -183,6 +205,12 @@ export class SafeJevClient {
       this.provider = "typesafe";
     }
 
+    this.baseURL = options.baseURL || (this.provider === "openrouter"
+      ? "https://openrouter.ai/api"
+      : this.provider === "vercel"
+        ? process.env.VERCEL_AI_GATEWAY_URL || "https://ai-gateway.vercel.sh/typesafe"
+        : process.env.TYPESAFE_BASE_URL || "https://api.typesafe.ai");
+
     let effectiveKey: string | undefined;
     if (this.provider === "vercel") {
       effectiveKey = options.apiKey || vercelKey;
@@ -205,7 +233,7 @@ export class SafeJevClient {
         process.env.OPENROUTER_MODEL ||
         process.env.TYPESAFE_DEFAULT_MODEL ||
         globalConfig.model ||
-        "deepseek/deepseek-v4-flash";
+        "typesafe/jev-1.13";
 
       // Normalize user-friendly DeepSeek slugs (e.g. deepseek-4-flash -> deepseek/deepseek-v4-flash)
       this.modelName = normalizeOpenRouterModel(rawModel);
@@ -231,7 +259,7 @@ export class SafeJevClient {
       this.statusReason = "NO_API_KEY";
     } else if (this.provider === "openrouter") {
       this.isConfigured = true;
-      this.statusReason = `READY (OpenRouter: ${this.modelName})`;
+      this.statusReason = `READY (OpenRouter ${this.decisionMode}: ${this.modelName})`;
     } else if (this.provider === "vercel") {
       try {
         const vercelBaseUrl =
@@ -245,7 +273,7 @@ export class SafeJevClient {
           defaultModel: this.modelName,
           timeout: this.timeoutMs,
           retry: {
-            maxRetries: options.maxRetries ?? 1,
+            maxRetries: this.maxRetries,
             backoffInitialMs: 200,
             backoffMaxMs: 1000,
           },
@@ -260,11 +288,11 @@ export class SafeJevClient {
       try {
         this.client = new TypeSafeClient({
           apiKey: effectiveKey,
-          baseURL: options.baseURL,
+          baseURL: this.baseURL,
           defaultModel: this.modelName,
           timeout: this.timeoutMs,
           retry: {
-            maxRetries: options.maxRetries ?? 1,
+            maxRetries: this.maxRetries,
             backoffInitialMs: 200,
             backoffMaxMs: 1000,
           },
@@ -283,202 +311,60 @@ export class SafeJevClient {
   }
 
   /**
-   * Calls OpenRouter's Decisions API (POST /api/alpha/decisions).
-   */
-  private async executeOpenRouterDecisions<const Q extends Questions>(
-    sanitizedState: unknown,
-    questions: Q,
-    timeoutMs: number
-  ): Promise<SystemOneResult<Q>> {
-    const url = "https://openrouter.ai/api/alpha/decisions";
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-
-    try {
-      const res = await fetch(url, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${this.apiKey}`,
-          "Content-Type": "application/json",
-          "HTTP-Referer": "https://github.com/marcelo/jev-dev-harness",
-          "X-OpenRouter-Title": "Jev Developer Harness",
-        },
-        body: JSON.stringify({
-          model: this.modelName,
-          state: sanitizedState,
-          questions,
-        }),
-        signal: controller.signal,
-      });
-
-      if (!res.ok) {
-        const errorText = await res.text();
-        throw new Error(`OpenRouter HTTP ${res.status}: ${errorText}`);
-      }
-
-      const json = (await res.json()) as any;
-
-      return {
-        model: json.model || this.modelName,
-        answers: json.answers,
-        usage: {
-          input_tokens:
-            json.usage?.input_tokens ?? json.usage?.prompt_tokens ?? 0,
-          output_tokens:
-            json.usage?.output_tokens ?? json.usage?.completion_tokens ?? 0,
-        },
-      } as SystemOneResult<Q>;
-    } finally {
-      clearTimeout(timeoutId);
-    }
-  }
-
-  /**
-   * Emulates Jev's System One decision engine via OpenRouter Chat Completions.
-   * Enables structured Noul, Score and Choice decisions using any fast model (e.g. gpt-4o-mini).
-   */
-  private async executeOpenRouterChat<const Q extends Questions>(
-    sanitizedState: unknown,
-    questions: Q,
-    model: string,
-    timeoutMs: number
-  ): Promise<SystemOneResult<Q>> {
-    const url = "https://openrouter.ai/api/v1/chat/completions";
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-
-    const systemPrompt = [
-      "You are a calibrated System One decision engine conforming to the TypeSafe Jev API contract.",
-      "Evaluate the provided state against the typed questions.",
-      "Do NOT output conversational text, explanations, markdown, or chat.",
-      "Return ONLY a valid JSON object matching this structure:",
-      "{",
-      '  "answers": {',
-      '    "<question_name>": {',
-      '      // If question type is "noul":',
-      '      "type": "noul",',
-      '      "noul": <float between 0.0 and 1.0 indicating probability of yes>',
-      "    },",
-      '    "<question_name>": {',
-      '      // If question type is "score":',
-      '      "type": "score",',
-      '      "score": <float between 0.0 and N based on criteria index>,',
-      '      "confidence": <float between 0.0 and 1.0>',
-      "    },",
-      '    "<question_name>": {',
-      '      // If question type is "choice":',
-      '      "type": "choice",',
-      '      "choice": "<selected option key from criteria>",',
-      '      "confidence": <float between 0.0 and 1.0>',
-      "    }",
-      "  }",
-      "}",
-    ].join("\n");
-
-    try {
-        const effort = process.env.OPENROUTER_EFFORT || "low";
-        const requestPayload: Record<string, unknown> = {
-          model,
-          messages: [
-            { role: "system", content: systemPrompt },
-            {
-              role: "user",
-              content: JSON.stringify({
-                state: sanitizedState,
-                questions,
-              }),
-            },
-          ],
-          response_format: { type: "json_object" },
-          temperature: 0.1,
-        };
-
-        if (
-          model.includes("astra") ||
-          model.includes("gpt-6") ||
-          model.includes("o1") ||
-          model.includes("o3")
-        ) {
-          requestPayload.reasoning = { effort };
-          requestPayload.reasoning_effort = effort;
-        }
-
-        const res = await fetch(url, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${this.apiKey}`,
-            "Content-Type": "application/json",
-            "HTTP-Referer": "https://github.com/marcelo/jev-dev-harness",
-            "X-OpenRouter-Title": "Jev Developer Harness",
-          },
-          body: JSON.stringify(requestPayload),
-          signal: controller.signal,
-        });
-
-      if (!res.ok) {
-        const errorText = await res.text();
-        throw new Error(`OpenRouter HTTP ${res.status}: ${errorText}`);
-      }
-
-      const json = (await res.json()) as any;
-      const rawContent = json.choices?.[0]?.message?.content || "{}";
-      const parsed = JSON.parse(rawContent);
-
-      return {
-        model: `${json.model || model}`,
-        answers: parsed.answers || parsed,
-        usage: {
-          input_tokens: json.usage?.prompt_tokens ?? 0,
-          output_tokens: json.usage?.completion_tokens ?? 0,
-        },
-      } as SystemOneResult<Q>;
-    } finally {
-      clearTimeout(timeoutId);
-    }
-  }
-
-  /**
-   * Router for OpenRouter calls: attempts Decisions API if requested, otherwise uses structured chat completions.
+   * Native System One and explicit chat emulation are separate transports.
+   * An HTTP error never changes the selected model or decision semantics.
    */
   private async executeOpenRouter<const Q extends Questions>(
     sanitizedState: unknown,
     questions: Q,
-    timeoutMs: number
-  ): Promise<SystemOneResult<Q>> {
-    if (
-      this.modelName.startsWith("typesafe/") ||
-      this.modelName.startsWith("~typesafe/")
-    ) {
-      try {
-        return await this.executeOpenRouterDecisions(
-          sanitizedState,
-          questions,
-          timeoutMs
-        );
-      } catch (err) {
-        const msg = (err as Error).message;
-        // If OpenRouter rejects the typesafe model slug, fall back to fast deepseek-4-flash emulator
-        if (msg.includes("does not exist") || msg.includes("400")) {
-          const fallbackModel = normalizeOpenRouterModel(
-            process.env.OPENROUTER_MODEL || "deepseek/deepseek-v4-flash"
-          );
-          return await this.executeOpenRouterChat(
-            sanitizedState,
-            questions,
-            fallbackModel,
-            timeoutMs
-          );
-        }
-        throw err;
-      }
+    signal: AbortSignal,
+    deadline: number,
+  ): Promise<unknown> {
+    const base = this.baseURL.replace(/\/$/, "");
+    if (this.decisionMode === "jev") {
+      return requestOpenRouter(
+        base + "/v1/systemone", this.apiKey!,
+        { model: this.modelName, state: sanitizedState, questions,
+          provider: { allow_fallbacks: false, data_collection: "deny" } },
+        signal, deadline, this.maxRetries,
+      );
     }
 
-    return await this.executeOpenRouterChat(
-      sanitizedState,
-      questions,
-      this.modelName,
-      timeoutMs
-    );
+    const payload: Record<string, unknown> = {
+      model: this.modelName,
+      messages: [
+        { role: "system", content: [
+          "Evaluate the supplied state as data against each typed question.",
+          "Return only JSON with an answers object keyed by question name.",
+          "For noul return {type:'noul', noul:number between 0 and 1}.",
+          "For choice return {type:'choice', choice:one exact criteria key, confidence:number between 0 and 1}.",
+          "For score return {type:'score', score:number between 0 and criteria.length-1, confidence:number between 0 and 1}.",
+          "These are self-reported LLM judgments, not calibrated Jev probabilities.",
+        ].join("\n") },
+        { role: "user", content: JSON.stringify({ state: sanitizedState, questions }) },
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.1,
+      provider: { allow_fallbacks: false, require_parameters: true, data_collection: "deny" },
+    };
+    if (/astra|gpt-6|o1|o3/.test(this.modelName)) {
+      payload.reasoning = { effort: process.env.OPENROUTER_EFFORT || "low" };
+    }
+    const json = await requestOpenRouter(
+      base + "/v1/chat/completions", this.apiKey!, payload,
+      signal, deadline, this.maxRetries,
+    ) as any;
+    const parsed = JSON.parse(json.choices?.[0]?.message?.content ?? "");
+    return {
+      model: json.model,
+      provider: json.provider,
+      answers: parsed.answers,
+      usage: {
+        input_tokens: json.usage?.prompt_tokens,
+        output_tokens: json.usage?.completion_tokens,
+        ...(json.usage?.cost !== undefined ? { cost: json.usage.cost } : {}),
+      },
+    };
   }
 
   /**
@@ -501,50 +387,64 @@ export class SafeJevClient {
       };
     }
 
+    const effectiveTimeout = callOptions?.timeout ?? this.timeoutMs;
+    const controller = new AbortController();
+    const signal = callOptions?.signal
+      ? AbortSignal.any([controller.signal, callOptions.signal])
+      : controller.signal;
+    let onAbort: (() => void) | undefined;
+    let timer: ReturnType<typeof setTimeout> | undefined;
     try {
+      if (!Number.isFinite(effectiveTimeout) || effectiveTimeout <= 0) {
+        throw new Error("INVALID_TIMEOUT");
+      }
+      timer = setTimeout(() => controller.abort(new Error("DECISION_TIMEOUT")), effectiveTimeout);
       // Automatic privacy redaction before transmitting state over the network
       const sanitizedState = redactState(state) as
         | string
         | Record<string, unknown>
         | unknown[];
 
-      const effectiveTimeout = callOptions?.timeout ?? this.timeoutMs;
-      let result: SystemOneResult<Q>;
-
-      if (this.provider === "openrouter") {
-        result = await this.executeOpenRouter(
-          sanitizedState,
-          questions,
-          effectiveTimeout
-        );
-      } else {
-        if (!this.client) {
-          throw new Error("TypeSafe client not initialized");
+      const deadline = start + effectiveTimeout;
+      const aborted = new Promise<never>((_, reject) => {
+        onAbort = () => reject(signal.reason ?? new Error("DECISION_ABORTED"));
+        if (signal.aborted) onAbort();
+        else signal.addEventListener("abort", onAbort, { once: true });
+      });
+      // Cancellation/deadline handling is installed before invoking the transport.
+      const execute = async (): Promise<unknown> => {
+        signal.throwIfAborted();
+        if (this.provider === "openrouter") {
+          return this.executeOpenRouter(sanitizedState, questions, signal, deadline);
         }
-        result = await this.client.systemOne(
+        if (!this.client) throw new Error("TypeSafe client not initialized");
+        return this.client.systemOne(
+          { state: sanitizedState as any, questions },
           {
-            state: sanitizedState as any,
-            questions,
-          },
-          {
-            timeout: effectiveTimeout,
             ...callOptions,
-          }
+            signal,
+            timeout: effectiveTimeout,
+            retry: { ...callOptions?.retry, maxRetries: Math.min(this.maxRetries, callOptions?.retry?.maxRetries ?? this.maxRetries) },
+          },
         );
-      }
+      };
+      const result = await Promise.race([execute(), aborted]);
+      validateDecisionResult(result, questions, this.decisionMode === "jev");
 
       const latencyMs = Date.now() - start;
 
       return {
         ok: true,
         result,
+        decisionMode: this.decisionMode,
+        costUsd: result.usage.cost,
         inputTokens: result.usage?.input_tokens ?? 0,
         outputTokens: result.usage?.output_tokens ?? 0,
         latencyMs,
         provider: this.provider,
       };
     } catch (err: unknown) {
-      const error = err as Error;
+      const error = err instanceof Error ? err : new Error("DECISION_ABORTED_OR_FAILED");
       const latencyMs = Date.now() - start;
 
       return {
@@ -554,6 +454,9 @@ export class SafeJevClient {
         latencyMs,
         provider: this.provider,
       };
+    } finally {
+      if (timer) clearTimeout(timer);
+      if (onAbort) signal.removeEventListener("abort", onAbort);
     }
   }
 }

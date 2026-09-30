@@ -78,7 +78,7 @@ export async function runSetupWizard(options: SetupOptions = {}): Promise<void> 
       console.log("      🔗 Generate key: https://typesafe.ai (Dashboard: https://typesafe.ai/dashboard)");
       console.log("  [2] Vercel AI Gateway (Free Tier credits — access TypeSafe Jev via Vercel)");
       console.log("      🔗 Generate key: https://vercel.com/d/ai-gateway (Dashboard: https://vercel.com/dashboard)");
-      console.log("  [3] OpenRouter / OpenCode (Community — DeepSeek V4, Claude 3.5, GPT-4o-mini)");
+      console.log("  [3] OpenRouter (Native Jev 1.13; optional explicit LLM emulation)");
       console.log("      🔗 Generate key: https://openrouter.ai/keys (or https://openrouter.ai)");
       console.log("  [4] Offline / Deterministic Only (Heuristics & regex — no API key needed)\n");
 
@@ -197,15 +197,15 @@ export async function runSetupWizard(options: SetupOptions = {}): Promise<void> 
       }
 
       if (!model && !options.nonInteractive) {
-        const defaultModel = existingGlobal.model || "deepseek/deepseek-v4-flash";
+        const defaultModel = process.env.OPENROUTER_MODEL || existingEnvVars["OPENROUTER_MODEL"] || (existingGlobal.provider === "openrouter" ? existingGlobal.model : undefined) || "typesafe/jev-1.13";
         console.log(`\n🤖 Target Model for System One judgments (default: ${defaultModel})`);
-        console.log("   Popular choices: deepseek/deepseek-v4-flash, anthropic/claude-3.5-haiku, openai/gpt-4o-mini");
+        console.log("   Native: typesafe/jev-1.13. Other model IDs explicitly enable uncalibrated LLM emulation.");
         const modelInput = (
           await ask(rl, `Enter model slug (default: ${defaultModel}): `)
         ).trim();
         model = modelInput || defaultModel;
-      } else if (!model && existingGlobal.model) {
-        model = existingGlobal.model;
+      } else if (!model) {
+        model = process.env.OPENROUTER_MODEL || existingEnvVars["OPENROUTER_MODEL"] || (existingGlobal.provider === "openrouter" ? existingGlobal.model : undefined) || "typesafe/jev-1.13";
       }
     }
 
@@ -277,7 +277,7 @@ export async function runSetupWizard(options: SetupOptions = {}): Promise<void> 
             provider === "vercel"
               ? `JEV_PROVIDER = "vercel"\nAI_GATEWAY_API_KEY = "${apiKey || ""}"`
               : provider === "openrouter"
-              ? `JEV_PROVIDER = "openrouter"\nOPENROUTER_API_KEY = "${apiKey || ""}"\nOPENROUTER_MODEL = "${model || "deepseek/deepseek-v4-flash"}"`
+              ? `JEV_PROVIDER = "openrouter"\nOPENROUTER_API_KEY = "${apiKey || ""}"\nOPENROUTER_MODEL = "${model || "typesafe/jev-1.13"}"`
               : `JEV_PROVIDER = "typesafe"\nTYPESAFE_API_KEY = "${apiKey || ""}"`
           }\n\n[mcp_servers.jev_dev.tools.jev_rank_context]\napproval_mode = "approve"\n\n[mcp_servers.jev_dev.tools.jev_guard_check]\napproval_mode = "approve"\n\n[mcp_servers.jev_dev.tools.jev_review_patch]\napproval_mode = "approve"\n\n[mcp_servers.jev_dev.tools.jev_lint_semantic]\napproval_mode = "approve"\n`;
           fs.appendFileSync(codexConfigPath, tomlSnippet, "utf8");

@@ -62,6 +62,8 @@ export function createCli(): Command {
 
         recordTelemetryEvent({
           type: "context_rank",
+          provider: result.metrics.provider,
+          decisionMetrics: result.metrics,
           task: result.task,
           initialCandidates: result.metrics.initialCandidates,
           selectedFiles: result.selected.length,
@@ -91,8 +93,8 @@ export function createCli(): Command {
         console.log(
           `Mode:        ${
             result.fallbackUsed
-              ? `[FALLBACK] Deterministic (${result.metrics.fallbackReason || "Active"})`
-              : `[ACTIVE] ${result.metrics.provider === "openrouter" ? "OpenRouter (typesafe/jev-latest)" : "TypeSafe Jev System One"}`
+              ? `[FALLBACK/PARTIAL] ${result.metrics.fallbackReason || "Active"}`
+              : `[ACTIVE] ${result.metrics.provider}: ${result.metrics.decisionModels?.join(", ") || "no remote decisions"}`
           }`
         );
         console.log(`Selected:    ${result.selected.length} file(s)\n`);
@@ -116,6 +118,8 @@ export function createCli(): Command {
         console.log(`  Initial files:     ${result.metrics.initialCandidates}`);
         console.log(`  Filtered files:    ${result.metrics.filteredCandidates}`);
         console.log(`  Evaluated by Jev:  ${result.metrics.evaluatedByJev}`);
+        console.log(`  LLM emulation:     ${result.metrics.evaluatedByLlm ?? 0}`);
+        console.log(`  Reported cost USD: ${result.metrics.reportedCostUsd ?? "unavailable"} (${result.metrics.costedRequests ?? 0} priced responses)`);
         console.log(`  Tokens (in/out):   ${result.metrics.tokensSent} / ${result.metrics.tokensReceived}`);
         console.log(`  Cache hits/misses: ${result.metrics.cacheHits} / ${result.metrics.cacheMisses}`);
         console.log(`  Total latency:     ${result.metrics.latencyMs}ms`);
