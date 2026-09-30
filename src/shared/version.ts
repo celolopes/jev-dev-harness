@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 let cachedVersion: string | null = null;
 let cachedLocation: string | null = null;
@@ -18,9 +19,7 @@ export function getHarnessPackageInfo(): HarnessPackageInfo {
   }
 
   try {
-    let currentDir = path.dirname(
-      new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1")
-    );
+    let currentDir = path.dirname(fileURLToPath(import.meta.url));
     // Walk up up to 5 levels to find jev-dev-harness package.json
     for (let i = 0; i < 5; i++) {
       const candidate = path.join(currentDir, "package.json");
@@ -45,7 +44,7 @@ export function getHarnessPackageInfo(): HarnessPackageInfo {
   }
 
   return {
-    version: cachedVersion || "0.2.7",
+    version: cachedVersion || "0.2.8",
     location: cachedLocation || process.cwd(),
   };
 }
