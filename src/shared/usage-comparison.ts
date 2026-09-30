@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { createHash } from "node:crypto";
+import { importAgentUsage, addAgentUsage, zeroAgentUsage } from "./agent-usage.js";
 
 type JsonObject = Record<string, unknown>;
 const object = (value: unknown, label: string): JsonObject => {
@@ -142,7 +143,7 @@ function selectCodexInterval(parsed: ReturnType<typeof parseCodexRollout>, reque
   }
   const git = object(metadata.git, "Codex initial Git revision");
   const sessionId = text(metadata.id, "session ID");
-  return { sessionId, turnId, initialRevision: text(git.commit_hash, "initial commit hash"),
+  return { harness: "codex", sessionId, turnId, initialRevision: text(git.commit_hash, "initial commit hash"),
     model: turn.model, effort: turn.effort, usage: difference(turn.after, turn.before),
     startedAt: turn.startedAt, endedAt: turn.endedAt!, jevCallsObserved: turn.jevCallsObserved,
     source: { sha256: source.sha256, format: "codex_rollout_jsonl", tokenSnapshots: turn.snapshots } };
@@ -237,7 +238,7 @@ function billing(file: string | undefined, fingerprint: string) {
 }
 
 /** Comparison conditions and quality are explicit attestations, not inferred from tokens. */
-export function compareCodexRuns(manifestFile: string) {
+export function compareUsageRuns(manifestFile: string) {
   const start = Date.now();
   const manifestSource = read(manifestFile);
   const manifest = json(manifestSource.content, "comparison manifest");
@@ -251,6 +252,12 @@ export function compareCodexRuns(manifestFile: string) {
     if (!Array.isArray(spec.rollouts) || spec.rollouts.length === 0) throw new Error("Run requires at least one rollout");
     const runs = spec.rollouts.map(item => {
       const ref = object(item, "rollout reference");
+      if (ref.format === "agent_usage_v1") {
+        const run = importAgentUsage(resolve(ref.path));
+        if (ref.turnId !== undefined && ref.turnId !== run.turnId) throw new Error("Agent interval ID differs from reference");
+        return run;
+      }
+      if (ref.format !== undefined && ref.format !== "codex_rollout_jsonl") throw new Error("Unsupported agent import format");
       return importCodexUsage(resolve(ref.path), ref.turnId === undefined ? undefined : text(ref.turnId, "turn ID"));
     });
     if (runs.some(run => run.initialRevision !== initialRevision)) throw new Error("Initial Git revision differs from comparison baseline");
@@ -264,14 +271,15 @@ export function compareCodexRuns(manifestFile: string) {
         || JSON.stringify([...validationRunIds].sort()) !== JSON.stringify(identities)) throw new Error("Validation receipt does not confirm this task/run");
     const criterionId = text(validation.criterionId, "quality criterion");
     const evidenceReference = text(validation.evidenceReference, "validation evidence reference");
-    const totals = zero();
+    let totals = zeroAgentUsage();
+    const requestIdentities = new Set<string>();
     for (const run of runs) {
-      for (const key of tokenKeys) {
-        totals[key] += run.usage[key];
-        if (!Number.isSafeInteger(totals[key])) throw new Error("Usage total exceeds safe integer range");
+      totals = addAgentUsage(totals, run.usage);
+      if ("events" in run) for (const event of run.events) {
+        const identity = `${event.provider}:${event.requestId}`;
+        if (requestIdentities.has(identity)) throw new Error("Duplicate request across imported intervals");
+        requestIdentities.add(identity);
       }
-      totals.cacheWriteInputTokens = totals.cacheWriteInputTokens === null || run.usage.cacheWriteInputTokens === null
-        ? null : totals.cacheWriteInputTokens + run.usage.cacheWriteInputTokens;
     }
     const harness = mode === "with_jev" && spec.ledgerPath
       ? importHarnessUsage(resolve(spec.ledgerPath), text(spec.measurementRunId, "measurement run ID")) : null;
@@ -288,26 +296,39 @@ export function compareCodexRuns(manifestFile: string) {
   const baselineIds = new Set(baseline.runs.map(run => `${run.sessionId}:${run.turnId}`));
   if (withJev.runs.some(run => baselineIds.has(`${run.sessionId}:${run.turnId}`))) throw new Error("Cannot compare a run to itself");
   if (withJev.runs.some(run => baseline.runs.some(other => other.sessionId === run.sessionId))) {
-    throw new Error("Use independent Codex sessions; reused chat history is not a controlled baseline");
+    throw new Error("Use independent Codex/agent sessions; reused chat history is not a controlled baseline");
   }
-  if (baseline.runs[0]!.model !== withJev.runs[0]!.model || baseline.runs[0]!.effort !== withJev.runs[0]!.effort
+  const baselineRequests = new Set(baseline.runs.flatMap(run => "events" in run
+    ? run.events.map(event => `${event.provider}:${event.requestId}`) : []));
+  if (withJev.runs.some(run => "events" in run && run.events.some(event => baselineRequests.has(`${event.provider}:${event.requestId}`)))) {
+    throw new Error("Cannot compare the same provider request across runs");
+  }
+  if (baseline.runs[0]!.harness !== withJev.runs[0]!.harness
+      || baseline.runs[0]!.model !== withJev.runs[0]!.model || baseline.runs[0]!.effort !== withJev.runs[0]!.effort
       || baseline.validation.criterionId !== withJev.validation.criterionId) throw new Error("Model, reasoning effort or validation criteria differ");
-  const agentTokenDelta = baseline.agentUsage.totalTokens - withJev.agentUsage.totalTokens;
+  const agentTokenDelta = baseline.agentUsage.totalTokens === null || withJev.agentUsage.totalTokens === null
+    ? null : baseline.agentUsage.totalTokens - withJev.agentUsage.totalTokens;
   const harness = withJev.harnessUsage;
-  const pipelineTokenDelta = harness && harness.missingUsage === 0 && withJev.harnessCoverageDeclared
+  const pipelineTokenDelta = agentTokenDelta !== null && harness && harness.missingUsage === 0 && withJev.harnessCoverageDeclared
     ? agentTokenDelta - harness.totalTokens : null;
   const moneyDeltaUsd = baseline.cost && withJev.cost ? baseline.cost.usd - withJev.cost.usd : null;
   const comparisonId = hash(JSON.stringify([taskId, environmentId, baseline.fingerprint, withJev.fingerprint]));
   const summaryMessage = [
     "### ⚡ Eficiência Jev",
-    `- Tarefa: ${taskId}; consumo do agente sem/com Jev: ${baseline.agentUsage.totalTokens}/${withJev.agentUsage.totalTokens} tokens; diferença: ${agentTokenDelta} tokens.`,
-    `- Cache de entrada sem/com Jev: ${baseline.agentUsage.cachedInputTokens}/${withJev.agentUsage.cachedInputTokens} tokens (já incluídos na entrada).`,
+    `- Tarefa: ${taskId}; harness: ${baseline.runs[0]!.harness}; consumo do agente sem/com Jev: ${baseline.agentUsage.totalTokens ?? "não informado"}/${withJev.agentUsage.totalTokens ?? "não informado"} tokens; diferença: ${agentTokenDelta ?? "não medida"}.`,
+    `- Cache de entrada sem/com Jev: ${baseline.agentUsage.cachedInputTokens ?? "não informado"}/${withJev.agentUsage.cachedInputTokens ?? "não informado"} tokens (já incluídos na entrada).`,
     `- Jev adicional: ${harness ? `${harness.totalTokens} tokens reportados; ${harness.missingUsage} chamadas sem uso` : "não informado"}; diferença líquida dos tokens reportados: ${pipelineTokenDelta ?? "não medida"}.`,
     `- Diferença de custo: ${moneyDeltaUsd === null ? "não medida; custo completo não informado para os dois lados" : `US$ ${moneyDeltaUsd} conforme recibos importados`}.`,
     "- Cobertura: intervalos importados; equivalência e validação declaradas no manifesto/recibos. Uma comparação não prova causalidade nem redução de cota da assinatura.",
   ].join("\n");
-  return { schemaVersion: 1, comparisonId, taskId, environmentId, initialRevision,
+  const codexOnly = baseline.runs.concat(withJev.runs).every(run => run.source.format === "codex_rollout_jsonl");
+  return { schemaVersion: codexOnly ? 1 : 2, comparisonId, taskId, environmentId, initialRevision,
     manifestSha256: manifestSource.sha256, baseline, withJev, agentTokenDelta, pipelineTokenDelta,
-    moneyDeltaUsd, savingsStatus: "measured_comparison_with_declared_conditions",
-    scope: "imported_codex_intervals_and_reported_jev_usage", latencyMs: Date.now() - start, summaryMessage };
+    moneyDeltaUsd, savingsStatus: agentTokenDelta === null ? "not_measured" : "measured_comparison_with_declared_conditions",
+    scope: codexOnly
+      ? "imported_codex_intervals_and_reported_jev_usage" : "imported_agent_intervals_and_reported_jev_usage",
+    latencyMs: Date.now() - start, summaryMessage };
 }
+
+/** Backward-compatible entry point; accepts the new explicit agent formats too. */
+export const compareCodexRuns = compareUsageRuns;

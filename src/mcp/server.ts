@@ -14,13 +14,23 @@ import { lintSemantic } from "../semantic-linter/index.js";
 import { guardCheck } from "../tool-guard/index.js";
 import { recordTelemetryEvent, detectPlatform } from "../shared/telemetry.js";
 import { getHarnessVersion } from "../shared/version.js";
-import { compareCodexRuns } from "../shared/usage-comparison.js";
+import { compareUsageRuns, importCodexUsage } from "../shared/usage-comparison.js";
+import { importAgentUsage } from "../shared/agent-usage.js";
 import { withMeasurementRun } from "../shared/measurement-ledger.js";
 
 export const TOOLS: Tool[] = [
   {
+    name: "jev_import_usage",
+    description: "Read reported agent usage from an explicit export (any harness) or Codex rollout. No inference or file writes. Missing counters/costs stay unknown; source and coverage are returned.",
+    inputSchema: { type: "object", properties: {
+      inputPath: { type: "string", description: "Path to a reported usage export." },
+      format: { type: "string", enum: ["agent_usage_v1", "codex_rollout_jsonl"], default: "agent_usage_v1" },
+      turnId: { type: "string", description: "Codex interval ID when needed." },
+    }, required: ["inputPath"] },
+  },
+  {
     name: "jev_compare_usage",
-    description: "Compare observed Codex rollout usage with a validated baseline manifest. Reads only specified files; no new inference. Reports scope, provenance and unknown costs; does not infer savings from file counts.",
+    description: "Compare reported agent usage across harnesses with a validated baseline manifest. Supports Codex and agent_usage_v1 exports. Reports scope, provenance and unknown costs without new inference.",
     inputSchema: { type: "object", properties: {
       manifestPath: { type: "string", description: "Path to a comparison manifest containing paired rollout references and validation receipts." },
     }, required: ["manifestPath"] },
@@ -209,8 +219,16 @@ export function createMcpServer(): Server {
     return withMeasurementRun(args.measurementRunId === undefined ? undefined : String(args.measurementRunId), async () => {
     try {
       switch (name) {
+        case "jev_import_usage": {
+          const inputPath = path.resolve(String(args.inputPath || ""));
+          const format = args.format ?? "agent_usage_v1";
+          if (format !== "agent_usage_v1" && format !== "codex_rollout_jsonl") throw new Error("Unsupported agent import format");
+          const result = format === "codex_rollout_jsonl" ? importCodexUsage(inputPath,
+            args.turnId === undefined ? undefined : String(args.turnId)) : importAgentUsage(inputPath);
+          return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+        }
         case "jev_compare_usage": {
-          const result = compareCodexRuns(path.resolve(String(args.manifestPath || "")));
+          const result = compareUsageRuns(path.resolve(String(args.manifestPath || "")));
           recordTelemetryEvent({ type: "usage_comparison", comparison: result, provider: "offline",
             latencyMs: result.latencyMs, platform: clientPlatform });
           return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };

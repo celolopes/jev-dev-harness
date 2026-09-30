@@ -543,6 +543,12 @@ See the [measured usage workflow](docs/jev/MEASURED-USAGE.md); valid baselines a
 validation receipts are required. Costs and net usage stay unknown without full
 coverage. Original ranking reports do not claim per-task savings automatically.
 
+For Antigravity, TRAE, Cursor, VS Code extensions and other CLIs, use the
+[multi-harness usage bridge](docs/jev/MULTI-HARNESS-USAGE.md): provider adapters,
+`jev-dev efficiency import`, MCP `jev_import_usage` and optional proxy capture.
+Main-agent usage requires an actual export/hook or configurable provider endpoint;
+the MCP connection alone cannot measure private client inference.
+
 Inspect observed usage, cache reuse and recorded operations. Token/money savings have no measured baseline.
 
 Launch the live telemetry web dashboard anytime:

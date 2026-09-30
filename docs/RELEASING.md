@@ -1,5 +1,17 @@
 # Publishing a stable release
 
+## Next prepared version: 0.2.11
+
+The multi-harness bridge is prepared as 0.2.11. Run `npm run release:dry-run`
+on its clean commit before release. Merge/tag/GitHub release are separate release
+actions; npm publication remains manual. Use `v0.2.11` and npm version 0.2.11
+when repeating the procedure below; do not move/reuse `v0.2.10`.
+General usage comparisons use schemaVersion 2 with nullable counters/deltas;
+Codex-only comparisons retain schemaVersion 1. See
+`docs/jev/MULTI-HARNESS-USAGE.md` for migration and coverage limits.
+
+## Previous release: 0.2.10
+
 The harness version is independent of the Jev model version. This release is
 `jev-dev-harness@0.2.10`, with Git tag `v0.2.10` and npm dist-tag `latest`.
 `latest` is an npm distribution pointer, not a Git tag.

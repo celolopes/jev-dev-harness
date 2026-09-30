@@ -1,6 +1,7 @@
 import { Command } from "commander";
 import path from "node:path";
 import os from "node:os";
+import fs from "node:fs";
 import { execSync } from "node:child_process";
 import { rankContext } from "../context-ranker/index.js";
 import { installGitHook, uninstallGitHook } from "../hooks/index.js";
@@ -21,7 +22,8 @@ import { checkForUpdates, printUpdateNotification, clearUpdateCache, compareSemv
 import { recordTelemetryEvent } from "../shared/telemetry.js";
 import { getHarnessVersion } from "../shared/version.js";
 import { beginMeasurement, finishMeasurement } from "../shared/measurement-ledger.js";
-import { compareCodexRuns, listCodexUsage } from "../shared/usage-comparison.js";
+import { compareUsageRuns, importCodexUsage, listCodexUsage } from "../shared/usage-comparison.js";
+import { importAgentUsage, exportAgentUsage } from "../shared/agent-usage.js";
 
 export function createCli(): Command {
   const program = new Command();
@@ -40,7 +42,24 @@ export function createCli(): Command {
     .description("Context management and intelligent selection");
 
   const efficiencyCommand = program.command("efficiency")
-    .description("Measure usage from comparable Codex runs; no synthetic savings");
+    .description("Import and compare reported usage across agent harnesses; no synthetic savings");
+  efficiencyCommand.command("import")
+    .requiredOption("--input <path>", "Agent usage export or Codex rollout")
+    .option("--format <format>", "agent_usage_v1 or codex_rollout_jsonl", "agent_usage_v1")
+    .option("--turn-id <id>", "Codex interval to import")
+    .option("--output <path>", "Write sanitized agent export without overwriting; agent_usage_v1 only")
+    .action(options => {
+      try {
+        if (!["agent_usage_v1", "codex_rollout_jsonl"].includes(options.format)) throw new Error("Unsupported agent import format");
+        const result = options.format === "codex_rollout_jsonl"
+          ? importCodexUsage(path.resolve(options.input), options.turnId) : importAgentUsage(path.resolve(options.input));
+        if (options.output) {
+          if (options.format !== "agent_usage_v1") throw new Error("Codex imports retain their original source format");
+          exportAgentUsage(path.resolve(options.output), result);
+        }
+        console.log(JSON.stringify(result, null, 2));
+      } catch (err) { console.error("Usage import error:", (err as Error).message); process.exitCode = 1; }
+    });
   efficiencyCommand.command("list")
     .option("--sessions-path <path>", "Codex rollout directory", path.join(os.homedir(), ".codex", "sessions"))
     .option("--repo <path>", "Filter by the repository recorded in Codex metadata", ".")
@@ -79,7 +98,7 @@ export function createCli(): Command {
     .option("--no-record", "Do not record the comparison in local telemetry")
     .action((options) => {
       try {
-        const result = compareCodexRuns(path.resolve(options.manifest));
+        const result = compareUsageRuns(path.resolve(options.manifest));
         if (options.record !== false) recordTelemetryEvent({ type: "usage_comparison", comparison: result,
           latencyMs: result.latencyMs, provider: "offline", platform: "Terminal CLI" });
         console.log(options.json ? JSON.stringify(result, null, 2) : result.summaryMessage);
@@ -672,14 +691,31 @@ export function createCli(): Command {
     .option("-p, --port <number>", "Port to listen on", (val) => parseInt(val, 10))
     .option("-u, --upstream <url>", "Upstream base URL")
     .option("--no-routing", "Passthrough only mode (baseline)")
+    .option("--usage-metadata <path>", "Task metadata JSON for measured provider responses")
+    .option("--usage-output <path>", "Write sanitized agent usage on graceful shutdown")
+    .option("--measurement-run-id <id>", "Previously begun Jev overhead ledger")
     .action(async (target, options) => {
       try {
-        await startProxyServer({
+        const proxy = await startProxyServer({
           target: target || "generic",
           port: options.port,
           upstreamBaseUrl: options.upstream,
           routing: options.routing !== false,
+          usageMetadata: options.usageMetadata ? JSON.parse(fs.readFileSync(path.resolve(options.usageMetadata), "utf8")) : undefined,
+          usageOutputPath: options.usageOutput ? path.resolve(options.usageOutput) : undefined,
+          measurementRunId: options.measurementRunId,
         });
+        if (options.usageOutput) {
+          let closing = false;
+          const close = async () => {
+            if (closing) return;
+            closing = true;
+            try { await proxy.close(); }
+            catch (err) { console.error("Usage export error:", (err as Error).message); process.exitCode = 1; }
+          };
+          process.once("SIGINT", close);
+          process.once("SIGTERM", close);
+        }
       } catch (err) {
         console.error("Error starting proxy gateway:", (err as Error).message);
         process.exit(1);

@@ -1,5 +1,7 @@
 # Measured Codex task comparisons
 
+For other clients, see the [multi-harness bridge and collectors](MULTI-HARNESS-USAGE.md).
+
 This workflow compares observed usage, not file-count estimates. It runs locally,
 does not upload rollout content and does not make new model requests. Codex
 rollout JSONL is an observed local format, not a guaranteed public API. Unknown,

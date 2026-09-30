@@ -1,6 +1,6 @@
 {
   "name": "jev-dev-harness",
-  "version": "0.2.10",
+  "version": "0.2.11",
   "description": "Developer Harness with TypeSafe AI / Jev for AI Coding Agents",
   "type": "module",
   "bin": {
@@ -62,7 +62,8 @@
     "CHANGELOG.md",
     "docs/RELEASING.md",
     "docs/jev/OPENROUTER-NATIVE.md",
-    "docs/jev/MEASURED-USAGE.md"
+    "docs/jev/MEASURED-USAGE.md",
+    "docs/jev/MULTI-HARNESS-USAGE.md"
   ],
   "publishConfig": {
     "registry": "https://registry.npmjs.org/",
