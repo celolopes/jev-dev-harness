@@ -28,9 +28,10 @@ Check that 0.2.10 has not already been published before uploading:
 ```sh
 npm whoami
 npm view jev-dev-harness versions --json
-git tag -a v0.2.10 -m "Release 0.2.10"
+git checkout main
+git pull --ff-only origin main
+git describe --exact-match --tags HEAD
 npm run release:publish
-git push origin v0.2.10
 npm view jev-dev-harness@0.2.10 version
 npm dist-tag ls jev-dev-harness
 ```
@@ -39,10 +40,12 @@ Run these commands separately and stop on any error. Publish only the clean,
 validated commit tagged above. `release:publish` runs `npm publish --tag latest`;
 `publishConfig` also pins the public npm registry and `latest` for plain
 `npm publish`. A successful publication should show `latest: 0.2.10`.
-If publication fails, resolve the authentication or registry error before pushing
-the tag. Do not move an existing published tag or reuse a published version.
+Before publishing, confirm that HEAD is the clean validated `v0.2.10` commit.
+If publication fails, resolve the authentication or registry error and retry
+the same artifact. Do not move an existing tag or reuse a published version.
 
-After publication, create a GitHub release from `v0.2.10` using the changelog.
+For this release, the merge, `v0.2.10` tag and GitHub Latest release are prepared
+before the manual npm publication. Do not recreate the tag or release.
 There is no automatic npm publication workflow; merging code or pushing a tag
 alone does not publish the package.
 
@@ -60,8 +63,9 @@ version/tag. Prereleases should use a separate process and npm tag such as `next
 
 ## Update local installations
 
-0.2.10 is prepared here; publishing, tagging, releases and merging require a
-separate release task. 0.2.9 is already published and must not be overwritten.
+The 0.2.10 GitHub release is prepared for manual npm publication. Until that
+publication succeeds, npm `latest` still points to the previously published
+version. 0.2.9 is already published and must not be overwritten.
 
 ```sh
 npm install -g jev-dev-harness@latest
