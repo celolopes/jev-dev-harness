@@ -1,5 +1,6 @@
 import { Command } from "commander";
 import path from "node:path";
+import os from "node:os";
 import { execSync } from "node:child_process";
 import { rankContext } from "../context-ranker/index.js";
 import { installGitHook, uninstallGitHook } from "../hooks/index.js";
@@ -19,6 +20,8 @@ import { runVersionCommand } from "./version.js";
 import { checkForUpdates, printUpdateNotification, clearUpdateCache, compareSemver } from "../shared/update-checker.js";
 import { recordTelemetryEvent } from "../shared/telemetry.js";
 import { getHarnessVersion } from "../shared/version.js";
+import { beginMeasurement, finishMeasurement } from "../shared/measurement-ledger.js";
+import { compareCodexRuns, listCodexUsage } from "../shared/usage-comparison.js";
 
 export function createCli(): Command {
   const program = new Command();
@@ -35,6 +38,56 @@ export function createCli(): Command {
   const contextCommand = program
     .command("context")
     .description("Context management and intelligent selection");
+
+  const efficiencyCommand = program.command("efficiency")
+    .description("Measure usage from comparable Codex runs; no synthetic savings");
+  efficiencyCommand.command("list")
+    .option("--sessions-path <path>", "Codex rollout directory", path.join(os.homedir(), ".codex", "sessions"))
+    .option("--repo <path>", "Filter by the repository recorded in Codex metadata", ".")
+    .option("--limit <number>", "Maximum completed intervals", value => Number(value), 20)
+    .option("--include-internal", "Include internal Codex reviewer intervals", false)
+    .option("--json", "Output paths, counters and provenance without chat content", false)
+    .action((options) => {
+      try {
+        const result = listCodexUsage(path.resolve(options.sessionsPath), path.resolve(options.repo), options.limit, options.includeInternal);
+        if (options.json) console.log(JSON.stringify(result, null, 2));
+        else {
+          console.table(result.intervals.map(run => ({ session: run.sessionId, turn: run.turnId,
+            startedAt: run.startedAt, model: run.model, revision: run.initialRevision,
+            tokens: run.usage.totalTokens, cachedInput: run.usage.cachedInputTokens })));
+          console.log(`Scanned ${result.filesScanned} files; ${result.unavailableIntervals} unavailable intervals. Baseline equivalence is not inferred.`);
+        }
+      } catch (err) {
+        console.error("Usage discovery error:", (err as Error).message);
+        process.exitCode = 1;
+      }
+    });
+  for (const operation of ["begin", "finish"] as const) {
+    efficiencyCommand.command(operation).requiredOption("--run-id <id>", "Unique measurement run ID")
+      .action((options) => {
+        try {
+          console.log(operation === "begin" ? beginMeasurement(options.runId) : finishMeasurement(options.runId));
+        } catch (err) {
+          console.error("Measurement error:", (err as Error).message);
+          process.exitCode = 1;
+        }
+      });
+  }
+  efficiencyCommand.command("compare")
+    .requiredOption("--manifest <path>", "Manifest with rollout intervals and validation receipts")
+    .option("--json", "Return observed usage and provenance as JSON", false)
+    .option("--no-record", "Do not record the comparison in local telemetry")
+    .action((options) => {
+      try {
+        const result = compareCodexRuns(path.resolve(options.manifest));
+        if (options.record !== false) recordTelemetryEvent({ type: "usage_comparison", comparison: result,
+          latencyMs: result.latencyMs, provider: "offline", platform: "Terminal CLI" });
+        console.log(options.json ? JSON.stringify(result, null, 2) : result.summaryMessage);
+      } catch (err) {
+        console.error("Usage comparison error:", (err as Error).message);
+        process.exitCode = 1;
+      }
+    });
 
   contextCommand
     .command("rank")

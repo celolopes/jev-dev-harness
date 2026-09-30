@@ -6,3 +6,5 @@ export * from "./typesafe-client.js";
 export * from "./update-checker.js";
 
 export * from "./efficiency.js";
+export * from "./measurement-ledger.js";
+export * from "./usage-comparison.js";

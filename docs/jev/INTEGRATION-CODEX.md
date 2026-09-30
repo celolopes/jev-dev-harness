@@ -2,6 +2,12 @@
 
 This guide describes how to configure and invoke the **Jev Context Ranker** within an **OpenAI Codex** environment (CLI, Desktop, or extension).
 
+For observed task usage and paired baselines, follow
+[Measured Codex usage](MEASURED-USAGE.md). The comparison reads local rollout
+counters and run-scoped Jev ledgers; MCP ranking alone cannot measure total
+Codex task savings. Add `measurementRunId` to every Jev call only while collecting
+an explicitly begun experiment.
+
 ---
 
 ## 1. Discovery and Compatibility

@@ -18,6 +18,7 @@ import * as os from "node:os";
 import { redactState } from "./redaction.js";
 import { validateDecisionResult, type DecisionResult } from "./decision-validation.js";
 import { requestOpenRouter } from "./openrouter-transport.js";
+import { startUsageMeasurement } from "./measurement-ledger.js";
 
 // Automatically load .env if present in current working directory
 try {
@@ -394,6 +395,8 @@ export class SafeJevClient {
       : controller.signal;
     let onAbort: (() => void) | undefined;
     let timer: ReturnType<typeof setTimeout> | undefined;
+    const completeMeasurement = startUsageMeasurement(this.provider, this.modelName);
+    let measuredUsage: { inputTokens: number; outputTokens: number; costUsd?: number } | null = null;
     try {
       if (!Number.isFinite(effectiveTimeout) || effectiveTimeout <= 0) {
         throw new Error("INVALID_TIMEOUT");
@@ -430,6 +433,8 @@ export class SafeJevClient {
       };
       const result = await Promise.race([execute(), aborted]);
       validateDecisionResult(result, questions, this.decisionMode === "jev");
+      measuredUsage = { inputTokens: result.usage.input_tokens,
+        outputTokens: result.usage.output_tokens, costUsd: result.usage.cost };
 
       const latencyMs = Date.now() - start;
 
@@ -457,6 +462,7 @@ export class SafeJevClient {
     } finally {
       if (timer) clearTimeout(timer);
       if (onAbort) signal.removeEventListener("abort", onAbort);
+      completeMeasurement?.(measuredUsage);
     }
   }
 }

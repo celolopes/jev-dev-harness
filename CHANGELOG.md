@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.10 — 2026-09-30
+
+- Add offline Codex rollout discovery/import and paired usage comparisons with
+  exact cumulative counters, cache/reasoning breakdowns, source fingerprints and
+  validation receipts. Unknown overhead/cost stays unknown; negative deltas remain.
+- Add opt-in run-scoped Jev usage ledgers across model calls, the CLI efficiency
+  workflow and MCP `jev_compare_usage`. No prompts or credentials in ledgers.
+- Show the latest comparison separately in the dashboard without accumulating
+  comparisons as proven savings. See `docs/jev/MEASURED-USAGE.md` for coverage,
+  declared conditions, billing receipts and baseline setup.
+
 ## 0.2.9 — 2026-09-30
 
 - Replace synthetic token/dollar savings with factual context counts, cache reuse,

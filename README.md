@@ -536,6 +536,13 @@ Agents report observed counts and usage, distinguishing unknown savings from mea
 
 ### 🌐 Live Telemetry Web Dashboard (`jev-dev dashboard`)
 
+For measured comparisons of actual Codex task runs, use `jev-dev efficiency list`
+and `jev-dev efficiency compare --manifest comparison.json`, or MCP
+`jev_compare_usage`. Collection of additional Jev usage is opt-in by run ID.
+See the [measured usage workflow](docs/jev/MEASURED-USAGE.md); valid baselines and
+validation receipts are required. Costs and net usage stay unknown without full
+coverage. Original ranking reports do not claim per-task savings automatically.
+
 Inspect observed usage, cache reuse and recorded operations. Token/money savings have no measured baseline.
 
 Launch the live telemetry web dashboard anytime:

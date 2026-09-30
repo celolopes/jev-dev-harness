@@ -1,7 +1,7 @@
 # Publishing a stable release
 
 The harness version is independent of the Jev model version. This release is
-`jev-dev-harness@0.2.9`, with Git tag `v0.2.9` and npm dist-tag `latest`.
+`jev-dev-harness@0.2.10`, with Git tag `v0.2.10` and npm dist-tag `latest`.
 `latest` is an npm distribution pointer, not a Git tag.
 
 ## Prepare and validate
@@ -20,29 +20,29 @@ The publish dry run executes version checks, type checking, build and tests via
 list and ensure it contains the compiled entry points, binaries and no secrets.
 The dry run does not upload a package or move the npm `latest` pointer.
 
-## Publish 0.2.9
+## Publish 0.2.10
 
 Use your npm maintainer account; complete login/2FA locally. Do not commit tokens.
-Check that 0.2.9 has not already been published before uploading:
+Check that 0.2.10 has not already been published before uploading:
 
 ```sh
 npm whoami
 npm view jev-dev-harness versions --json
-git tag -a v0.2.9 -m "Release 0.2.9"
+git tag -a v0.2.10 -m "Release 0.2.10"
 npm run release:publish
-git push origin v0.2.9
-npm view jev-dev-harness@0.2.9 version
+git push origin v0.2.10
+npm view jev-dev-harness@0.2.10 version
 npm dist-tag ls jev-dev-harness
 ```
 
 Run these commands separately and stop on any error. Publish only the clean,
 validated commit tagged above. `release:publish` runs `npm publish --tag latest`;
 `publishConfig` also pins the public npm registry and `latest` for plain
-`npm publish`. A successful publication should show `latest: 0.2.9`.
+`npm publish`. A successful publication should show `latest: 0.2.10`.
 If publication fails, resolve the authentication or registry error before pushing
 the tag. Do not move an existing published tag or reuse a published version.
 
-After publication, create a GitHub release from `v0.2.9` using the changelog.
+After publication, create a GitHub release from `v0.2.10` using the changelog.
 There is no automatic npm publication workflow; merging code or pushing a tag
 alone does not publish the package.
 
@@ -60,8 +60,8 @@ version/tag. Prereleases should use a separate process and npm tag such as `next
 
 ## Update local installations
 
-0.2.9 is prepared here; publishing, tagging, releases and merging require a
-separate release task. 0.2.8 is already published and must not be overwritten.
+0.2.10 is prepared here; publishing, tagging, releases and merging require a
+separate release task. 0.2.9 is already published and must not be overwritten.
 
 ```sh
 npm install -g jev-dev-harness@latest
@@ -115,3 +115,10 @@ For a pinned npx command, update its package version to 0.2.9 after publication.
 Fully quit and reopen Codex to start a new MCP process; verify its version and
 `jev_rank_context` output has `schemaVersion: 2`. Avoid reusing an old report as
 evidence. These instructions do not change any other project automatically.
+
+## Measured usage (0.2.10)
+
+The new `efficiency` CLI and `jev_compare_usage` MCP tool require the build
+containing 0.2.10. See [the workflow](jev/MEASURED-USAGE.md) for paired runs,
+scoped ledgers, declared coverage and validation/billing receipts. Do not claim
+measured savings from ranking alone or republish 0.2.9 with the new source.
