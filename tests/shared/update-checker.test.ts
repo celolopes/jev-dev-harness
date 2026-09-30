@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import {
   compareSemver,
   checkForUpdates,
@@ -47,22 +47,35 @@ describe("Update Checker Module", () => {
   });
 
   describe("printUpdateNotification", () => {
-    it("does not throw when printing notification", () => {
-      expect(() => {
+    it("prints an available update without leaking fixture output to the test log", () => {
+      const log = vi.spyOn(console, "log").mockImplementation(() => {});
+      try {
         printUpdateNotification({
           currentVersion: "0.1.3",
           latestVersion: "0.1.4",
           updateAvailable: true,
         });
-      }).not.toThrow();
+        const output = log.mock.calls.map(([line]) => line).join("\n");
+        expect(output).toContain("Update available: 0.1.3 → 0.1.4");
+        expect(output).toContain("jev-dev update");
+        expect(output).toContain("npm i -g jev-dev-harness");
+      } finally {
+        log.mockRestore();
+      }
+    });
 
-      expect(() => {
+    it("prints nothing when no update is available", () => {
+      const log = vi.spyOn(console, "log").mockImplementation(() => {});
+      try {
         printUpdateNotification({
           currentVersion: "0.1.3",
           latestVersion: "0.1.3",
           updateAvailable: false,
         });
-      }).not.toThrow();
+        expect(log).not.toHaveBeenCalled();
+      } finally {
+        log.mockRestore();
+      }
     });
   });
 });
