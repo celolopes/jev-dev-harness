@@ -82,6 +82,10 @@ npx -y jev-dev compare
 
 ## ⚡ Key Modules & CLI Commands
 
+Maintainers: see [the release guide](docs/RELEASING.md) for version checks,
+Git release tags and publishing to npm `latest`. Release notes are in
+[CHANGELOG.md](CHANGELOG.md).
+
 | Module / Command | Purpose |
 | :--- | :--- |
 | `jev-dev version` | Inspects currently installed harness version, latest on npm registry, package path, runtime details, and install type. |

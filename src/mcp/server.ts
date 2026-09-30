@@ -12,6 +12,7 @@ import { reviewPatchPipeline } from "../patch-reviewer/index.js";
 import { lintSemantic } from "../semantic-linter/index.js";
 import { guardCheck } from "../tool-guard/index.js";
 import { recordTelemetryEvent, detectPlatform } from "../shared/telemetry.js";
+import { getHarnessVersion } from "../shared/version.js";
 
 export const TOOLS: Tool[] = [
   {
@@ -169,7 +170,7 @@ export function createMcpServer(): Server {
   const server = new Server(
     {
       name: "jev-dev-harness",
-      version: "0.1.0",
+      version: getHarnessVersion(),
     },
     {
       capabilities: {
