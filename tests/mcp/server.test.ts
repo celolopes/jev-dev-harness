@@ -8,6 +8,16 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 
 describe("MCP Server", () => {
+  it("rejects a missing comparison manifest without inventing savings", async () => {
+    const server = createMcpServer();
+    // @ts-expect-error accessing internal request handler for testing
+    const handler = server._requestHandlers.get(CallToolRequestSchema.shape.method.value);
+    const result = await handler({ method: "tools/call", params: {
+      name: "jev_compare_usage", arguments: { manifestPath: "missing-comparison-test-file.json" } } });
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain("Error executing jev_compare_usage");
+    expect(result.content[0].text).not.toContain("economizados");
+  });
   it("does not claim command/diff audits or savings for an isolated ranking", async () => {
     const metrics = new TelemetryCollector().getMetrics();
     const rank = vi.spyOn(contextRanker, "rankContext").mockResolvedValue({
@@ -27,13 +37,14 @@ describe("MCP Server", () => {
       expect(report.instructionForAgent).not.toContain("Comandos e diffs auditados");
     } finally { rank.mockRestore(); }
   });
-  it("exposes all 5 core tools in TOOLS list", () => {
+  it("exposes ranking, checks and measured usage comparison in TOOLS list", () => {
     const toolNames = TOOLS.map((t) => t.name);
     expect(toolNames).toContain("jev_rank_context");
     expect(toolNames).toContain("jev_rank_tools");
     expect(toolNames).toContain("jev_guard_check");
     expect(toolNames).toContain("jev_review_patch");
     expect(toolNames).toContain("jev_lint_semantic");
+    expect(toolNames).toContain("jev_compare_usage");
   });
 
   it("handles ListTools request correctly", async () => {
@@ -43,7 +54,7 @@ describe("MCP Server", () => {
     expect(handler).toBeDefined();
 
     const result = await handler({ method: "tools/list", params: {} });
-    expect(result.tools.length).toBe(5);
+    expect(result.tools.length).toBe(6);
   });
 
   it("handles CallTool request for jev_guard_check", async () => {

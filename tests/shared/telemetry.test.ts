@@ -62,6 +62,19 @@ describe("Telemetry Module", () => {
     expect((events[0] as any).tokensSaved).toBe(22000);
   });
 
+  it("shows the latest comparison without accumulating repeated savings", () => {
+    const comparison = { comparisonId: "same-pair", taskId: "task", agentTokenDelta: 100,
+      pipelineTokenDelta: 80, moneyDeltaUsd: null, summaryMessage: "observed pair" };
+    for (let i = 0; i < 2; i++) recordTelemetryEvent({ type: "usage_comparison",
+      comparison: comparison as any, latencyMs: 1, provider: "offline" });
+    const summary = getTelemetrySummary();
+    expect(summary.latestComparison).toEqual(comparison);
+    expect(summary.byType.usage_comparison).toBe(2);
+    expect(summary.totalTokensSaved).toBeNull();
+    expect(summary.estimatedDollarsSaved).toBeNull();
+    expect(summary.byType.lint_semantic).toBe(0);
+  });
+
   it("records guard_check events for allowed and blocked commands", () => {
     recordTelemetryEvent({
       type: "guard_check",

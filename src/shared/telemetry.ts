@@ -2,6 +2,7 @@ import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
 import { EventEmitter } from "events";
+import type { compareCodexRuns } from "./usage-comparison.js";
 
 export type TelemetryEventType =
   | "context_rank"
@@ -9,7 +10,8 @@ export type TelemetryEventType =
   | "patch_review"
   | "lint_semantic"
   | "tool_rank"
-  | "proxy_turn";
+  | "proxy_turn"
+  | "usage_comparison";
 
 export interface BaseTelemetryEvent {
   id: string;
@@ -84,7 +86,13 @@ export type TelemetryEvent =
   | PatchReviewEvent
   | LintSemanticEvent
   | ToolRankEvent
-  | ProxyTurnEvent;
+  | ProxyTurnEvent
+  | UsageComparisonEvent;
+
+export interface UsageComparisonEvent extends BaseTelemetryEvent {
+  type: "usage_comparison";
+  comparison: ReturnType<typeof compareCodexRuns>;
+}
 
 export interface TelemetrySummary {
   totalEvents: number;
@@ -92,6 +100,7 @@ export interface TelemetrySummary {
   totalTokensSaved: null;
   estimatedDollarsSaved: null;
   savingsStatus: "not_measured";
+  latestComparison: ReturnType<typeof compareCodexRuns> | null;
   usage: {
     scope: "context_rank_validated_responses";
     eventsWithUsage: number;
@@ -112,6 +121,7 @@ export interface TelemetrySummary {
     lint_semantic: number;
     tool_rank: number;
     proxy_turn: number;
+    usage_comparison: number;
   };
   guardStats: {
     totalChecked: number;
@@ -287,6 +297,8 @@ function detectDefaultHarness(type: TelemetryEventType, eventData: any): string 
   switch (type) {
     case "context_rank":
       return "Context Ranker";
+    case "usage_comparison":
+      return "Usage Comparison";
     case "guard_check":
       return "Tool Guard";
     case "patch_review":
@@ -431,6 +443,7 @@ export function recordTelemetryEvent(
     | Omit<LintSemanticEvent, "id" | "timestamp">
     | Omit<ToolRankEvent, "id" | "timestamp">
     | Omit<ProxyTurnEvent, "id" | "timestamp">
+    | Omit<UsageComparisonEvent, "id" | "timestamp">
 ): TelemetryEvent | null {
   try {
     const harness = eventData.harness || detectDefaultHarness(eventData.type, eventData);
@@ -525,6 +538,7 @@ export function getTelemetrySummary(): TelemetrySummary {
     lint_semantic: 0,
     tool_rank: 0,
     proxy_turn: 0,
+    usage_comparison: 0,
   };
 
   const guardStats = {
@@ -583,6 +597,8 @@ export function getTelemetrySummary(): TelemetrySummary {
       } else usage.eventsWithoutUsage++;
       contextStats.totalRankings++;
       contextStats.totalReductionPct += event.reductionPct || 0;
+    } else if (event.type === "usage_comparison") {
+      byType.usage_comparison++;
     } else if (event.type === "guard_check") {
       byType.guard_check++;
       guardStats.totalChecked++;
@@ -641,6 +657,7 @@ export function getTelemetrySummary(): TelemetrySummary {
     totalTokensSaved: null,
     estimatedDollarsSaved: null,
     savingsStatus: "not_measured",
+    latestComparison: events.find((event): event is UsageComparisonEvent => event.type === "usage_comparison")?.comparison ?? null,
     usage,
     avgLatencyMs,
     p95LatencyMs,

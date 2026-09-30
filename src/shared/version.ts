@@ -44,7 +44,7 @@ export function getHarnessPackageInfo(): HarnessPackageInfo {
   }
 
   return {
-    version: cachedVersion || "0.2.9",
+    version: cachedVersion || "0.2.10",
     location: cachedLocation || process.cwd(),
   };
 }

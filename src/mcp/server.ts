@@ -14,8 +14,17 @@ import { lintSemantic } from "../semantic-linter/index.js";
 import { guardCheck } from "../tool-guard/index.js";
 import { recordTelemetryEvent, detectPlatform } from "../shared/telemetry.js";
 import { getHarnessVersion } from "../shared/version.js";
+import { compareCodexRuns } from "../shared/usage-comparison.js";
+import { withMeasurementRun } from "../shared/measurement-ledger.js";
 
 export const TOOLS: Tool[] = [
+  {
+    name: "jev_compare_usage",
+    description: "Compare observed Codex rollout usage with a validated baseline manifest. Reads only specified files; no new inference. Reports scope, provenance and unknown costs; does not infer savings from file counts.",
+    inputSchema: { type: "object", properties: {
+      manifestPath: { type: "string", description: "Path to a comparison manifest containing paired rollout references and validation receipts." },
+    }, required: ["manifestPath"] },
+  },
   {
     name: "jev_rank_context",
     description:
@@ -167,6 +176,11 @@ export const TOOLS: Tool[] = [
   },
 ];
 
+for (const tool of TOOLS) {
+  tool.inputSchema.properties = { ...tool.inputSchema.properties,
+    measurementRunId: { type: "string", description: "Optional previously begun measurement run ID to record new model usage without prompts or credentials." } };
+}
+
 export function createMcpServer(): Server {
   const server = new Server(
     {
@@ -192,8 +206,15 @@ export function createMcpServer(): Server {
       clientName: server.getClientVersion()?.name,
     });
 
+    return withMeasurementRun(args.measurementRunId === undefined ? undefined : String(args.measurementRunId), async () => {
     try {
       switch (name) {
+        case "jev_compare_usage": {
+          const result = compareCodexRuns(path.resolve(String(args.manifestPath || "")));
+          recordTelemetryEvent({ type: "usage_comparison", comparison: result, provider: "offline",
+            latencyMs: result.latencyMs, platform: clientPlatform });
+          return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+        }
         case "jev_rank_context": {
           const task = String(args.task || "");
           const repoPath = args.repoPath ? path.resolve(String(args.repoPath)) : process.cwd();
@@ -433,6 +454,7 @@ export function createMcpServer(): Server {
         ],
       };
     }
+    });
   });
 
   return server;

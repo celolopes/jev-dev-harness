@@ -178,6 +178,10 @@
       </div>
 
       <p id="measuredUsage" class="text-xs text-slate-400">Reported context-rank usage: not informed.</p>
+      <div class="border border-slate-800 bg-slate-900/90 rounded-2xl p-5 space-y-2">
+        <h3 class="text-sm font-bold text-white" id="comparisonTitle">Measured task comparison</h3>
+        <pre id="measuredComparison" class="whitespace-pre-wrap text-xs text-slate-300">No paired execution imported. Savings are not measured.</pre>
+      </div>
       <!-- Distribution & Operations Breakdown (Mirroring Jev Gateway UI) -->
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <!-- What happened to each request -->
@@ -685,6 +689,11 @@
           if (usageEl) usageEl.innerText = usage
             ? `${currentLang === 'pt' ? 'Uso reportado (ranking de contexto)' : 'Reported usage (context ranking)'}: ${usage.inputTokens}/${usage.outputTokens} tokens; ${usage.newModelCalls} calls; USD ${usage.reportedCostUsd ?? (currentLang === 'pt' ? 'não informado' : 'not informed')} (${usage.costedRequests}/${usage.newModelCalls} cost coverage); ${usage.eventsWithUsage}/${usage.eventsWithUsage + usage.eventsWithoutUsage} events with usage. Validated responses only; unreported retries/failures excluded.`
             : (currentLang === 'pt' ? 'Uso reportado: não informado.' : 'Reported usage: not informed.');
+          const comparisonTitle = document.getElementById('comparisonTitle');
+          if (comparisonTitle) comparisonTitle.innerText = currentLang === 'pt' ? 'Comparação medida por tarefa' : 'Measured task comparison';
+          const comparisonEl = document.getElementById('measuredComparison');
+          if (comparisonEl) comparisonEl.textContent = summary.latestComparison?.summaryMessage
+            || (currentLang === 'pt' ? 'Nenhum par de execuções importado. Economia não medida.' : 'No paired execution imported. Savings are not measured.');
 
           const latEl = document.getElementById('metricLatency');
           if (latEl) latEl.innerText = summary.avgLatencyMs ? `${summary.avgLatencyMs} ms` : '-- ms';
@@ -731,7 +740,7 @@
           const pRank = Math.round((rankCount / total) * 100);
           const pGuard = Math.round((guardCount / total) * 100);
           const pPatch = Math.round((patchCount / total) * 100);
-          const pLint = Math.max(0, 100 - pRank - pGuard - pPatch);
+          const pLint = Math.round((lintCount / total) * 100);
 
           const barRank = document.getElementById('barRank');
           if (barRank) barRank.style.width = `${pRank}%`;
@@ -877,7 +886,12 @@
           </div>
         `;
 
-        if (e.type === 'context_rank') {
+        if (e.type === 'usage_comparison') {
+          typeBadge = '<span class="px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400">USAGE_COMPARISON</span>';
+          detail = `<span class="text-slate-300">${escapeHtml(e.comparison?.taskId || '')}</span>`;
+          outcome = `<span class="text-cyan-300">${escapeHtml(String(e.comparison?.agentTokenDelta ?? '?'))} token delta (agent scope)</span>`;
+          statusBadge = '<span class="text-slate-400">IMPORTED PAIR</span>';
+        } else if (e.type === 'context_rank') {
           typeBadge = '<span class="px-2 py-0.5 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20 font-bold">CONTEXT_RANK</span>';
           detail = `<span class="text-slate-300 truncate max-w-xs block" title="${escapeHtml(e.task)}">${escapeHtml(e.task || (currentLang === 'pt' ? 'Ranqueamento de contexto' : 'File context ranking'))}</span>`;
           outcome = `<span class="text-purple-300 font-semibold">${e.selectedFiles} selected / ${e.initialCandidates} found ${currentLang === 'pt' ? 'arquivos' : 'files'} (-${e.reductionPct}%)</span>`;
