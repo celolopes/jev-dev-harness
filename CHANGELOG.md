@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.11 — 2026-09-30
+
+- Add shared agent usage imports/comparisons for Antigravity, TRAE, Cursor,
+  VS Code extensions and CLI exporters, with explicit source/coverage.
+- Normalize OpenAI, Anthropic cache, Gemini thinking and Cursor event usage;
+  preserve unknown breakdowns/costs and reject duplicate or overlapping requests.
+- Add MCP `jev_import_usage`, CLI `efficiency import`, public export APIs and
+  optional proxy JSON/SSE capture without retaining prompts or changing response bytes.
+- Preserve Codex manifest compatibility; document hook/export setup and native
+  integration limits instead of claiming universal automatic capture.
+
 ## 0.2.10 — 2026-09-30
 
 - Add offline Codex rollout discovery/import and paired usage comparisons with

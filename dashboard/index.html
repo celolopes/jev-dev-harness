@@ -888,8 +888,12 @@
 
         if (e.type === 'usage_comparison') {
           typeBadge = '<span class="px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400">USAGE_COMPARISON</span>';
-          detail = `<span class="text-slate-300">${escapeHtml(e.comparison?.taskId || '')}</span>`;
-          outcome = `<span class="text-cyan-300">${escapeHtml(String(e.comparison?.agentTokenDelta ?? '?'))} token delta (agent scope)</span>`;
+          const comparedHarness = e.comparison?.baseline?.runs?.[0]?.harness;
+          detail = `<span class="text-slate-300">${escapeHtml(e.comparison?.taskId || '')}${comparedHarness ? ` (${escapeHtml(comparedHarness)})` : ''}</span>`;
+          const deltaLabel = e.comparison?.agentTokenDelta == null
+            ? (currentLang === 'pt' ? 'não medida' : 'not measured')
+            : `${e.comparison.agentTokenDelta} token delta (agent scope)`;
+          outcome = `<span class="text-cyan-300">${escapeHtml(deltaLabel)}</span>`;
           statusBadge = '<span class="text-slate-400">IMPORTED PAIR</span>';
         } else if (e.type === 'context_rank') {
           typeBadge = '<span class="px-2 py-0.5 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20 font-bold">CONTEXT_RANK</span>';

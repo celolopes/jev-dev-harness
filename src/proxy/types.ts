@@ -7,6 +7,10 @@ export interface ProxyOptions {
   timeoutMs?: number;
   routing?: boolean;
   quiet?: boolean;
+  /** Opt-in bridge metadata. The owner must declare complete/partial task coverage. */
+  usageMetadata?: Record<string, unknown>;
+  usageOutputPath?: string;
+  measurementRunId?: string;
 }
 
 export type RoutingMode = "forced" | "hint" | "direct" | "none" | "passthrough";

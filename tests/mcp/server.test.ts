@@ -54,7 +54,7 @@ describe("MCP Server", () => {
     expect(handler).toBeDefined();
 
     const result = await handler({ method: "tools/list", params: {} });
-    expect(result.tools.length).toBe(6);
+    expect(result.tools.length).toBe(7);
   });
 
   it("handles CallTool request for jev_guard_check", async () => {

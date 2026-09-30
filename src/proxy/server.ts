@@ -1,5 +1,10 @@
 import * as http from "node:http";
 import { URL } from "node:url";
+import { randomUUID } from "node:crypto";
+import fs from "node:fs";
+import { exportAgentUsage, parseAgentUsage, unknownAgentUsage } from "../shared/agent-usage.js";
+import { withMeasurementRun } from "../shared/measurement-ledger.js";
+import { ResponseUsageObserver } from "./usage-observer.js";
 import { SafeJevClient } from "../shared/typesafe-client.js";
 import { recordTelemetryEvent } from "../shared/telemetry.js";
 import { decideRoute } from "./router.js";
@@ -26,7 +31,7 @@ const DEFAULT_UPSTREAMS: Record<ProxyAgentTarget, string> = {
  */
 export async function startProxyServer(options: ProxyOptions = {}): Promise<ProxyServerInstance> {
   const target: ProxyAgentTarget = options.target || "generic";
-  const port = options.port || DEFAULT_PORTS[target] || 8790;
+  const port = options.port ?? DEFAULT_PORTS[target] ?? 8790;
   const upstreamBaseUrl =
     options.upstreamBaseUrl ||
     process.env.JEV_UPSTREAM_BASE_URL ||
@@ -34,6 +39,14 @@ export async function startProxyServer(options: ProxyOptions = {}): Promise<Prox
     "https://api.openai.com";
   const quiet = options.quiet ?? false;
   const routingEnabled = options.routing !== false;
+  if (Boolean(options.usageMetadata) !== Boolean(options.usageOutputPath)) throw new Error("Provide usageMetadata and usageOutputPath together");
+  if (options.usageMetadata && routingEnabled && options.usageMetadata.jevCallsObserved !== true) throw new Error("A measured baseline must use --no-routing; declare Jev enabled otherwise");
+  if (options.usageOutputPath && fs.existsSync(options.usageOutputPath)) throw new Error("Usage export already exists");
+  const usageEvents: Array<Record<string, unknown>> = [];
+  const usageStartedAt = new Date().toISOString();
+  if (options.usageMetadata) parseAgentUsage({ ...options.usageMetadata,
+    schemaVersion: 1, kind: "agent_usage", status: "completed", startedAt: usageStartedAt, endedAt: usageStartedAt,
+    events: [{ requestId: "validate-metadata", provider: "unknown", format: "normalized", usage: null }] });
 
   const jevClient = new SafeJevClient({
     timeoutMs: options.timeoutMs || 4000,
@@ -60,6 +73,9 @@ export async function startProxyServer(options: ProxyOptions = {}): Promise<Prox
     const chunks: Buffer[] = [];
     req.on("data", (chunk) => chunks.push(chunk));
     req.on("end", async () => {
+      const requestId = randomUUID();
+      let captured = { usage: unknownAgentUsage(), costUsd: undefined as number | undefined };
+      let requestModelMatches = true;
       try {
         const rawBody = Buffer.concat(chunks).toString("utf-8");
         let parsedBody: any = null;
@@ -79,7 +95,10 @@ export async function startProxyServer(options: ProxyOptions = {}): Promise<Prox
 
         if (isJson && parsedBody) {
           // Ask Jev to decide
-          decision = await decideRoute(parsedBody, target, jevClient, routingEnabled);
+          const requestModel = parsedBody.model ?? /\/models\/([^/:?]+)/.exec(reqUrl)?.[1];
+          requestModelMatches = !options.usageMetadata || requestModel === options.usageMetadata.model;
+          decision = await withMeasurementRun(options.measurementRunId,
+            () => decideRoute(parsedBody, target, jevClient, routingEnabled));
 
           if (decision.mode === "forced" && decision.tool) {
             if (target === "codex" && parsedBody.input) {
@@ -159,14 +178,21 @@ export async function startProxyServer(options: ProxyOptions = {}): Promise<Prox
         });
 
         res.writeHead(upstreamRes.status, resHeaders);
+        const observer = options.usageMetadata ? new ResponseUsageObserver(
+          upstreamRes.headers.get("content-type")?.includes("text/event-stream") ?? false) : undefined;
 
         if (upstreamRes.body) {
           const reader = upstreamRes.body.getReader();
           while (true) {
             const { done, value } = await reader.read();
             if (done) break;
+            observer?.push(value);
             res.write(value);
           }
+        }
+        if (observer && upstreamRes.ok && requestModelMatches) {
+          const result = observer.finish();
+          if (!result.model || result.model === options.usageMetadata?.model) captured = { usage: result.usage, costUsd: result.costUsd };
         }
         res.end();
       } catch (err) {
@@ -177,6 +203,9 @@ export async function startProxyServer(options: ProxyOptions = {}): Promise<Prox
           res.writeHead(502, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ error: "Bad Gateway", message: (err as Error).message }));
         }
+      } finally {
+        if (options.usageMetadata) usageEvents.push({ requestId, provider: new URL(upstreamBaseUrl).hostname,
+          format: "normalized", usage: captured.usage, costUsd: captured.costUsd });
       }
     });
   });
@@ -196,12 +225,19 @@ export async function startProxyServer(options: ProxyOptions = {}): Promise<Prox
       }
 
       resolve({
-        port,
+        port: (server.address() as { port: number }).port,
         target,
         upstreamBaseUrl,
         close: () =>
-          new Promise<void>((resClose) => {
-            server.close(() => resClose());
+          new Promise<void>((resClose, rejectClose) => {
+            server.close(() => {
+              try {
+                if (options.usageOutputPath) exportAgentUsage(options.usageOutputPath, { ...options.usageMetadata,
+                  schemaVersion: 1, kind: "agent_usage", status: "completed", startedAt: usageStartedAt,
+                  endedAt: new Date().toISOString(), events: usageEvents });
+                resClose();
+              } catch (error) { rejectClose(error); }
+            });
           }),
       });
     });
