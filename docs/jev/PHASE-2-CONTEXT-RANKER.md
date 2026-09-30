@@ -84,11 +84,11 @@ The harness executes the **Deterministic Fallback**:
 
 Evaluated on the synthetic test suite (`tests/benchmark/context-ranker.bench.ts`):
 
-| Task Domain | Precision@3 | Recall@3 | File Reduction | Token Reduction | Latency (Fallback) |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **Auth / JWT** | 66.7% | 100.0% | 88.2% | 88.2% | 20ms |
-| **Database / SQL** | 66.7% | 100.0% | 88.2% | 88.2% | 8ms |
-| **Billing / Stripe** | 33.3% | 50.0% | 94.1% | 94.1% | 8ms |
+| Task Domain | Precision@3 | Recall@3 | File Reduction  | Latency (Fallback) |
+| :--- | :--- | :--- | :--- | :--- |
+| **Auth / JWT** | 66.7% | 100.0% | 88.2% | 20ms |
+| **Database / SQL** | 66.7% | 100.0% | 88.2% | 8ms |
+| **Billing / Stripe** | 33.3% | 50.0% | 94.1% | 8ms |
 
-* Average token savings: **> 88%**.
+* Token/money savings: **not measured**. Historical fixed tokens-per-file estimates were not measurements.
 * Candidate reduction: **> 88%**.

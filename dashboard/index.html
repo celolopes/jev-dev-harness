@@ -110,7 +110,7 @@
               <h2 class="text-2xl font-bold text-white tracking-tight" data-i18n="status_banner_title">Active Telemetry & Protection</h2>
             </div>
             <p id="liveStatusSubtext" class="text-xs md:text-sm text-slate-300">
-              Jev optimized <strong id="liveDecidedCount" class="text-emerald-300">0</strong> requests across your coding agents.
+              Jev recorded <strong id="liveDecidedCount" class="text-emerald-300">0</strong> requests across your coding agents.
             </p>
             <div class="text-[11px] text-slate-400 font-mono flex flex-wrap items-center gap-2 pt-1">
               <span><span data-i18n="status_model">Model:</span> <span class="text-slate-200">TypeSafe Jev System One</span></span>
@@ -141,18 +141,18 @@
           <p class="text-[10px] text-slate-400 mt-1" data-i18n="card_ops_sub">Through harness</p>
         </div>
 
-        <!-- Card 2: Tokens Saved -->
+        <!-- Card 2: Token savings -->
         <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 shadow-sm">
-          <div class="text-[11px] font-semibold text-purple-400 uppercase tracking-wider mb-1" data-i18n="card_tokens_title">Tokens Saved</div>
-          <div id="metricTokensSaved" class="text-2xl font-extrabold text-purple-300 font-mono">0</div>
-          <p id="metricTokensSavedSub" class="text-[10px] text-slate-400 mt-1" data-i18n="card_tokens_sub">~92% context cut</p>
+          <div class="text-[11px] font-semibold text-purple-400 uppercase tracking-wider mb-1" data-i18n="card_tokens_title">Token savings</div>
+          <div id="metricTokensSaved" class="text-2xl font-extrabold text-purple-300 font-mono">Not measured</div>
+          <p id="metricTokensSavedSub" class="text-[10px] text-slate-400 mt-1" data-i18n="card_tokens_sub">No measured baseline</p>
         </div>
 
         <!-- Card 3: Cash Saved -->
         <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 shadow-sm">
-          <div class="text-[11px] font-semibold text-emerald-400 uppercase tracking-wider mb-1" data-i18n="card_cash_title">$ Net Saved</div>
-          <div id="metricDollarsSaved" class="text-2xl font-extrabold text-emerald-300 font-mono">$0.00</div>
-          <p class="text-[10px] text-slate-400 mt-1" data-i18n="card_cash_sub">vs LLM input waste</p>
+          <div class="text-[11px] font-semibold text-emerald-400 uppercase tracking-wider mb-1" data-i18n="card_cash_title">Money savings</div>
+          <div id="metricDollarsSaved" class="text-2xl font-extrabold text-emerald-300 font-mono">Not measured</div>
+          <p class="text-[10px] text-slate-400 mt-1" data-i18n="card_cash_sub">No measured baseline</p>
         </div>
 
         <!-- Card 4: Jev Latency -->
@@ -177,6 +177,7 @@
         </div>
       </div>
 
+      <p id="measuredUsage" class="text-xs text-slate-400">Reported context-rank usage: not informed.</p>
       <!-- Distribution & Operations Breakdown (Mirroring Jev Gateway UI) -->
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <!-- What happened to each request -->
@@ -228,8 +229,8 @@
               <span id="gateEscalatedVal" class="text-amber-400 font-bold">0 escalated</span>
             </div>
             <div class="flex justify-between items-center p-2 rounded-lg bg-slate-950/60 border border-slate-800">
-              <span class="text-slate-400" data-i18n="verdicts_reduction_label">Context Reduction Rate:</span>
-              <span id="gateAvgReductionVal" class="text-purple-400 font-bold">92.4%</span>
+              <span class="text-slate-400" data-i18n="verdicts_reduction_label">File selection reduction:</span>
+              <span id="gateAvgReductionVal" class="text-purple-400 font-bold">--</span>
             </div>
           </div>
           <div class="text-[11px] text-slate-500 text-right" data-i18n="verdicts_engine">
@@ -288,7 +289,7 @@
               <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
               <span data-i18n="calc_title">Interactive ROI & Dollar Savings Calculator</span>
             </h2>
-            <p class="text-xs md:text-sm text-slate-400" data-i18n="calc_subtitle">Simulate monthly and annual savings based on your team size and model usage.</p>
+            <p class="text-xs md:text-sm text-slate-400" data-i18n="calc_subtitle">Hypothetical simulation using fixed assumptions (85,000 vs 6,500 tokens/prompt). Not measured telemetry or evidence of savings.</p>
           </div>
           <span class="px-3 py-1 rounded-full text-xs font-mono bg-emerald-500/10 text-emerald-300 border border-emerald-500/20" data-i18n="calc_badge">
             Interactive Model
@@ -396,7 +397,7 @@
                 <td class="py-3.5 px-4 font-semibold text-white" data-i18n="matrix_r1_feat">Context Discovery</td>
                 <td class="py-3.5 px-4 text-slate-400 bg-red-950/5 border-x border-slate-800" data-i18n="matrix_r1_without">Dumps 40–90 files into prompt. High "lost in the middle" rate.</td>
                 <td class="py-3.5 px-4 text-emerald-200 bg-emerald-950/5 font-medium" data-i18n="matrix_r1_with">4-stage ranker isolates the exact 3–5 crucial files.</td>
-                <td class="py-3.5 px-4 font-semibold text-purple-300" data-i18n="matrix_r1_adv">92%–94% token cut, pinpoint code grounding.</td>
+                <td class="py-3.5 px-4 font-semibold text-purple-300" data-i18n="matrix_r1_adv">Selected file counts; token savings not measured.</td>
               </tr>
               <tr class="hover:bg-slate-800/30">
                 <td class="py-3.5 px-4 font-semibold text-white" data-i18n="matrix_r2_feat">Shell Command Execution</td>
@@ -465,10 +466,10 @@
         btn_refresh: 'Refresh',
         card_ops_title: 'Agent Ops',
         card_ops_sub: 'Through harness',
-        card_tokens_title: 'Tokens Saved',
-        card_tokens_sub: '~92% context cut',
-        card_cash_title: '$ Net Saved',
-        card_cash_sub: 'vs LLM input waste',
+        card_tokens_title: 'Token savings',
+        card_tokens_sub: 'No measured baseline',
+        card_cash_title: 'Money savings',
+        card_cash_sub: 'No measured baseline',
         card_latency_title: 'Avg Latency',
         card_guard_title: 'Tool Guard',
         card_patch_title: 'Patch Audits',
@@ -480,7 +481,7 @@
         verdicts_title: 'Safety & Gate Verdicts',
         verdicts_cmd_label: 'Destructive Commands Blocked:',
         verdicts_patch_label: 'Patches Escalated / Blocked:',
-        verdicts_reduction_label: 'Context Reduction Rate:',
+        verdicts_reduction_label: 'File selection reduction:',
         verdicts_engine: 'Deterministic rule gates + Jev System One',
         stream_title: 'Live Operations Stream',
         stream_listening: 'Listening for agent tool calls...',
@@ -494,7 +495,7 @@
         th_status: 'Status',
         table_empty: 'No telemetry events recorded yet. Run a prompt in Codex Desktop or Antigravity to see live data here!',
         calc_title: 'Interactive ROI & Dollar Savings Calculator',
-        calc_subtitle: 'Simulate monthly and annual savings based on your team size and model usage.',
+        calc_subtitle: 'Hypothetical simulation using fixed assumptions (85,000 vs 6,500 tokens/prompt). Not measured telemetry or evidence of savings.',
         calc_badge: 'Interactive Model',
         calc_team_label: 'Team Size (Engineers with AI Agents)',
         calc_team_solo: '1 solo',
@@ -522,10 +523,10 @@
         matrix_r1_feat: 'Context Discovery',
         matrix_r1_without: 'Dumps 40–90 files into prompt. High "lost in the middle" rate.',
         matrix_r1_with: '4-stage ranker isolates the exact 3–5 crucial files.',
-        matrix_r1_adv: '92%–94% token cut, pinpoint code grounding.',
+        matrix_r1_adv: 'Selected file counts; token savings not measured.',
         matrix_r2_feat: 'Shell Command Execution',
         matrix_r2_without: 'LLM executes terminal commands blindly (risk of `rm -rf`, `git reset`).',
-        matrix_r2_with: '<1ms lexical classifier + Jev evaluator for unknown syntax.',
+        matrix_r2_with: 'Lexical classifier + optional evaluator; measured latency per operation.',
         matrix_r2_adv: '100% deterministic guard blocking destructive actions.',
         matrix_r3_feat: 'Git Diff & Patch Audit',
         matrix_r3_without: 'Manual developer review or waiting minutes for remote CI runs.',
@@ -548,10 +549,10 @@
         btn_refresh: 'Atualizar',
         card_ops_title: 'Operações de IA',
         card_ops_sub: 'Via harness',
-        card_tokens_title: 'Tokens Economizados',
-        card_tokens_sub: '~92% de corte de contexto',
-        card_cash_title: 'Economia Líquida',
-        card_cash_sub: 'vs desperdício em LLMs',
+        card_tokens_title: 'Economia de tokens',
+        card_tokens_sub: 'Sem baseline medido',
+        card_cash_title: 'Economia de dinheiro',
+        card_cash_sub: 'Sem baseline medido',
         card_latency_title: 'Latência Média',
         card_guard_title: 'Guarda de Comandos',
         card_patch_title: 'Auditorias de Patch',
@@ -563,7 +564,7 @@
         verdicts_title: 'Vereditos de Segurança & Portões',
         verdicts_cmd_label: 'Comandos Destrutivos Bloqueados:',
         verdicts_patch_label: 'Patches Escalados / Bloqueados:',
-        verdicts_reduction_label: 'Taxa de Redução de Contexto:',
+        verdicts_reduction_label: 'Redução na seleção de arquivos:',
         verdicts_engine: 'Regras determinísticas + Jev System One',
         stream_title: 'Fluxo de Operações em Tempo Real',
         stream_listening: 'Escutando chamadas de ferramentas dos agentes...',
@@ -577,7 +578,7 @@
         th_status: 'Status',
         table_empty: 'Nenhum evento de telemetria registrado ainda. Execute um prompt no Codex Desktop ou Antigravity para ver os dados ao vivo aqui!',
         calc_title: 'Calculadora Interativa de ROI e Economia Financeira',
-        calc_subtitle: 'Simule a economia mensal e anual com base no tamanho da sua equipe e modelos de IA.',
+        calc_subtitle: 'Simulação hipotética com premissas fixas (85.000 vs 6.500 tokens/prompt). Não é telemetria medida nem comprovação de economia.',
         calc_badge: 'Modelo Interativo',
         calc_team_label: 'Tamanho da Equipe (Engenheiros com Agentes IA)',
         calc_team_solo: '1 solo',
@@ -605,10 +606,10 @@
         matrix_r1_feat: 'Descoberta de Contexto',
         matrix_r1_without: 'Despeja 40–90 arquivos no prompt. Alta taxa de perda de atenção ("lost in the middle").',
         matrix_r1_with: 'Ranker em 4 estágios isola com precisão os 3–5 arquivos cruciais.',
-        matrix_r1_adv: 'Redução de 92%–94% de tokens, precisão máxima de contexto.',
+        matrix_r1_adv: 'Contagem de arquivos selecionados; economia de tokens não medida.',
         matrix_r2_feat: 'Execução de Comandos de Shell',
         matrix_r2_without: 'LLM executa comandos às cegas no terminal (risco de `rm -rf`, `git reset`).',
-        matrix_r2_with: 'Classificador léxico <1ms + avaliador Jev para comandos desconhecidos.',
+        matrix_r2_with: 'Classificador léxico + avaliador opcional; latência medida por operação.',
         matrix_r2_adv: 'Guarda 100% determinístico que bloqueia ações destrutivas.',
         matrix_r3_feat: 'Auditoria de Diffs & Patches Git',
         matrix_r3_without: 'Revisão manual do dev ou minutos de espera em pipelines lentos de CI.',
@@ -667,18 +668,23 @@
           const subtextEl = document.getElementById('liveStatusSubtext');
           if (subtextEl) {
             subtextEl.innerHTML = currentLang === 'pt'
-              ? `O Jev otimizou <strong id="liveDecidedCount" class="text-emerald-300">${summary.totalEvents}</strong> requisições em todos os seus agentes de codificação.`
-              : `Jev optimized <strong id="liveDecidedCount" class="text-emerald-300">${summary.totalEvents}</strong> requests across your coding agents.`;
+              ? `O Jev registrou <strong id="liveDecidedCount" class="text-emerald-300">${summary.totalEvents}</strong> eventos em todos os seus agentes de codificação.`
+              : `Jev recorded <strong id="liveDecidedCount" class="text-emerald-300">${summary.totalEvents}</strong> events across your coding agents.`;
           }
 
           const totalEl = document.getElementById('metricTotalEvents');
           if (totalEl) totalEl.innerText = summary.totalEvents;
 
           const tokensEl = document.getElementById('metricTokensSaved');
-          if (tokensEl) tokensEl.innerText = `${(summary.totalTokensSaved || 0).toLocaleString(currentLang === 'pt' ? 'pt-BR' : 'en-US')}`;
+          if (tokensEl) tokensEl.innerText = currentLang === 'pt' ? 'Não medida' : 'Not measured';
 
           const dollarsEl = document.getElementById('metricDollarsSaved');
-          if (dollarsEl) dollarsEl.innerText = `$${(summary.estimatedDollarsSaved || 0).toFixed(2)}`;
+          if (dollarsEl) dollarsEl.innerText = currentLang === 'pt' ? 'Não medida' : 'Not measured';
+          const usageEl = document.getElementById('measuredUsage');
+          const usage = summary.usage;
+          if (usageEl) usageEl.innerText = usage
+            ? `${currentLang === 'pt' ? 'Uso reportado (ranking de contexto)' : 'Reported usage (context ranking)'}: ${usage.inputTokens}/${usage.outputTokens} tokens; ${usage.newModelCalls} calls; USD ${usage.reportedCostUsd ?? (currentLang === 'pt' ? 'não informado' : 'not informed')} (${usage.costedRequests}/${usage.newModelCalls} cost coverage); ${usage.eventsWithUsage}/${usage.eventsWithUsage + usage.eventsWithoutUsage} events with usage. Validated responses only; unreported retries/failures excluded.`
+            : (currentLang === 'pt' ? 'Uso reportado: não informado.' : 'Reported usage: not informed.');
 
           const latEl = document.getElementById('metricLatency');
           if (latEl) latEl.innerText = summary.avgLatencyMs ? `${summary.avgLatencyMs} ms` : '-- ms';
@@ -713,7 +719,7 @@
             : `${summary.patchStats?.escalated || 0} escalated (${summary.patchStats?.approved || 0} approved)`;
 
           const gateRedEl = document.getElementById('gateAvgReductionVal');
-          if (gateRedEl) gateRedEl.innerText = summary.contextStats?.avgReductionPct ? `${summary.contextStats.avgReductionPct}%` : '92.4%';
+          if (gateRedEl) gateRedEl.innerText = summary.contextStats?.avgReductionPct ? `${summary.contextStats.avgReductionPct}%` : '--';
 
           // Stacked Bar
           const total = summary.totalEvents || 1;
@@ -874,7 +880,7 @@
         if (e.type === 'context_rank') {
           typeBadge = '<span class="px-2 py-0.5 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20 font-bold">CONTEXT_RANK</span>';
           detail = `<span class="text-slate-300 truncate max-w-xs block" title="${escapeHtml(e.task)}">${escapeHtml(e.task || (currentLang === 'pt' ? 'Ranqueamento de contexto' : 'File context ranking'))}</span>`;
-          outcome = `<span class="text-purple-300 font-semibold">${e.selectedFiles}/${e.initialCandidates} ${currentLang === 'pt' ? 'arquivos' : 'files'} (-${e.reductionPct}%)</span>`;
+          outcome = `<span class="text-purple-300 font-semibold">${e.selectedFiles} selected / ${e.initialCandidates} found ${currentLang === 'pt' ? 'arquivos' : 'files'} (-${e.reductionPct}%)</span>`;
           statusBadge = `<span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">${currentLang === 'pt' ? 'RANQUEADO' : 'RANKED'}</span>`;
         } else if (e.type === 'guard_check') {
           typeBadge = '<span class="px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 font-bold">TOOL_GUARD</span>';
@@ -898,7 +904,7 @@
         } else if (e.type === 'proxy_turn') {
           typeBadge = `<span class="px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 font-bold">PROXY_${escapeHtml((e.agent || 'GATEWAY').toUpperCase())}</span>`;
           detail = `<span class="text-slate-300 font-mono text-[11px]">${e.tool ? `tool: ${escapeHtml(e.tool)}` : 'turn routing'}</span>`;
-          outcome = `<span class="text-cyan-300 font-semibold">Mode: ${escapeHtml(e.mode?.toUpperCase() || 'PASSTHROUGH')}${e.tokensSaved ? ` (+${e.tokensSaved} tok)` : ''}</span>`;
+          outcome = `<span class="text-cyan-300 font-semibold">Mode: ${escapeHtml(e.mode?.toUpperCase() || 'PASSTHROUGH')}</span>`;
           statusBadge = (e.mode === 'forced' || e.mode === 'hint')
             ? `<span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">${currentLang === 'pt' ? 'ROTEADO' : 'ROUTED'}</span>`
             : `<span class="px-2 py-0.5 rounded bg-slate-500/10 text-slate-400 border border-slate-500/20">PASS</span>`;

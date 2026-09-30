@@ -104,6 +104,8 @@ export function printTerminalComparison(json = false): void {
     console.log(
       JSON.stringify(
         {
+          status: "hypothetical_simulation_not_measured",
+          assumptions: { tokensWithout: 85000, tokensWith: 6500, costPerMillionUsd: 3 },
           benchmarks: COMPARISON_METRICS,
           roi5Engineers: roi5,
           roi20Engineers: roi20,
@@ -115,7 +117,8 @@ export function printTerminalComparison(json = false): void {
     return;
   }
 
-  printJevBanner("📊 BENCHMARK & ROI COMPARISON REPORT");
+  printJevBanner("📊 HYPOTHETICAL COMPARISON (NOT MEASURED)");
+  console.log("Fixed illustrative assumptions: 85,000 vs 6,500 tokens/prompt; USD 3/million. Not observed savings or performance.\n");
 
   console.log("┌" + "─".repeat(27) + "┬" + "─".repeat(28) + "┬" + "─".repeat(30) + "┐");
   console.log("│ METRIC                    │ WITHOUT JEV-DEV            │ WITH JEV-DEV-HARNESS (ROI)   │");
@@ -130,17 +133,13 @@ export function printTerminalComparison(json = false): void {
 
   console.log("└" + "─".repeat(27) + "┴" + "─".repeat(28) + "┴" + "─".repeat(30) + "┘\n");
 
-  console.log("💰 FINANCIAL IMPACT & TOKEN REDUCTION (Claude 3.5 Sonnet / GPT-4o):");
+  console.log("💰 HYPOTHETICAL COST/TOKEN SIMULATION (FIXED ASSUMPTIONS):");
   console.log("─".repeat(88));
   console.log(` • Average Context Token Cut:  ${roi5.tokenReductionPct}% fewer tokens sent to LLMs`);
   console.log(` • Team of 5 Engineers:        $${roi5.monthlySavings.toLocaleString("en-US")} / month saved  ($${roi5.annualSavings.toLocaleString("en-US")} / year)`);
   console.log(` • Team of 20 Engineers:       $${roi20.monthlySavings.toLocaleString("en-US")} / month saved  ($${roi20.annualSavings.toLocaleString("en-US")} / year)`);
-  console.log(` • Safety & Security Impact:   Zero accidental shell destruction (rm -rf / git reset)`);
-  console.log(` • Secrets Leak Prevention:    Zero unredacted credentials committed to repository`);
   console.log("─".repeat(88) + "\n");
 
-  console.log("⚡ VERDICT:");
-  console.log("  Without Jev: LLMs suffer from context bloat, slow generation, high costs, and no safety.");
-  console.log("  With Jev:    Surgical 3-5 file context, 4x-6x faster turns, sub-second guards, and 90%+ cost reduction.\n");
+  console.log("Simulation only; validate any savings against a measured baseline.");
   console.log("=".repeat(88) + "\n");
 }

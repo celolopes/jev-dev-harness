@@ -5,6 +5,7 @@ import { TelemetryCollector } from "../../src/shared/telemetry.js";
 import { executeStageC } from "../../src/context-ranker/stage-c-jev.js";
 import { executeStageD } from "../../src/context-ranker/stage-d-ranker.js";
 import type { HeuristicCandidate } from "../../src/context-ranker/types.js";
+import { buildContextEfficiencyReport } from "../../src/shared/efficiency.js";
 
 const candidate: HeuristicCandidate = {
   relativePath: "src/auth.ts", absolutePath: "/repo/src/auth.ts", size: 100,
@@ -30,6 +31,38 @@ const result = (model = "typesafe/jev-1.13", mode: "jev" | "llm_emulation" = "je
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); vi.useRealTimers(); });
 
 describe("Context decision cache and budget", () => {
+  it("retains native response tokens/cost and missing provider cost", async () => {
+    const body = {
+      model: "typesafe/jev-1.13-20260917",
+      answers: {
+        relevant_to_task: { type: "noul", noul: 0.9 },
+        role: { type: "choice", choice: "implementation", confidence: 0.9,
+          probabilities: { implementation: 1, test: 0, configuration: 0, database: 0, documentation: 0, generated: 0, unrelated: 0, other: 0 } },
+        relevance: { type: "score", score: 4, confidence: 0.9,
+          probabilities: { 0: 0, 1: 0, 2: 0, 3: 0, 4: 1 } },
+      },
+      usage: { input_tokens: 721, output_tokens: 43, cost: 0.000123 } as Record<string, number>,
+    };
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify(body), { status: 200 })));
+    const first = new TelemetryCollector();
+    await executeStageC(options.task, [candidate], makeClient(), new JevCache({ enabled: false }), first, options);
+    expect(buildContextEfficiencyReport(first.getMetrics())).toMatchObject({
+      newModelCalls: 1, validatedResponses: 1, reportedCostUsd: 0.000123,
+      newTokens: { input: 721, output: 43 }, costCoverage: { costedRequests: 1, newModelCalls: 1 } });
+    delete body.usage.cost;
+    const second = new TelemetryCollector();
+    await executeStageC(options.task, [candidate], makeClient(), new JevCache({ enabled: false }), second, options);
+    expect(buildContextEfficiencyReport(second.getMetrics())).toMatchObject({ reportedCostUsd: null, newModelCalls: 1 });
+  });
+  it("does not attribute heuristic processing to Jev inference", async () => {
+    const client = makeClient();
+    const call = vi.spyOn(client, "systemOne");
+    const telemetry = new TelemetryCollector();
+    await executeStageC(options.task, [candidate], client, new JevCache(), telemetry, { ...options, useJev: false });
+    expect(call).not.toHaveBeenCalled();
+    expect(telemetry.getMetrics()).toMatchObject({ evaluatedCandidates: 1, newModelCalls: 0,
+      evaluatedByJev: 0, evaluatedByLlm: 0, tokensSent: 0, tokensReceived: 0, fallbackUsed: true });
+  });
   it("reuses only matching model/provider/question contracts and does not double-count cost", async () => {
     const cache = new JevCache();
     const client = makeClient();
@@ -43,6 +76,10 @@ describe("Context decision cache and budget", () => {
     expect(first.toMetrics().reportedCostUsd).toBe(0.001);
     expect(second.toMetrics().reportedCostUsd).toBeUndefined();
     expect(second.toMetrics().tokensSent).toBe(0);
+    expect(first.toMetrics().newModelCalls).toBe(1);
+    expect(second.toMetrics().newModelCalls).toBe(0);
+    expect(second.toMetrics().costedRequests).toBe(0);
+    expect(second.toMetrics().tokensReceived).toBe(0);
     expect(second.toMetrics().decisionModels).toEqual(["typesafe/jev-1.13"]);
 
     for (const other of [makeClient("typesafe/jev-1.14"), makeClient("typesafe/jev-1.13", "typesafe")]) {

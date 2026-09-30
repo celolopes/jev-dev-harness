@@ -91,7 +91,7 @@ describe("Telemetry Module", () => {
     expect((events[1] as any).allowed).toBe(true);
   });
 
-  it("calculates comprehensive telemetry summary and dollar savings", () => {
+  it("preserves legacy events without claiming measured savings", () => {
     // Event 1: Context rank
     recordTelemetryEvent({
       type: "context_rank",
@@ -138,9 +138,9 @@ describe("Telemetry Module", () => {
     const summary = getTelemetrySummary();
 
     expect(summary.totalEvents).toBe(4);
-    expect(summary.totalTokensSaved).toBe(50000);
-    // 50k tokens at $3.00/M is $0.15
-    expect(summary.estimatedDollarsSaved).toBe(0.15);
+    expect(summary.totalTokensSaved).toBeNull();
+    expect(summary.estimatedDollarsSaved).toBeNull();
+    expect(summary.usage.eventsWithoutUsage).toBe(1);
     expect(summary.byType.context_rank).toBe(1);
     expect(summary.byType.guard_check).toBe(2);
     expect(summary.byType.patch_review).toBe(1);
@@ -158,6 +158,20 @@ describe("Telemetry Module", () => {
   });
 
   it("emits events in real time to telemetryEmitter", () => {
+    const decisionMetrics = {
+      newModelCalls: 2, validatedResponses: 2, tokensSent: 500, tokensReceived: 30,
+      reportedCostUsd: 0.0001, costedRequests: 1,
+    };
+    recordTelemetryEvent({ type: "context_rank", task: "Partial cost", initialCandidates: 10,
+      selectedFiles: 2, reductionPct: 80, latencyMs: 10,
+      decisionMetrics: decisionMetrics as any });
+    recordTelemetryEvent({ type: "context_rank", task: "Cached", initialCandidates: 10,
+      selectedFiles: 2, reductionPct: 80, latencyMs: 10,
+      decisionMetrics: { ...decisionMetrics, newModelCalls: 0, validatedResponses: 0,
+        tokensSent: 0, tokensReceived: 0, reportedCostUsd: undefined, costedRequests: 0 } as any });
+    expect(getTelemetrySummary().usage).toMatchObject({ newModelCalls: 2,
+      validatedResponses: 2, inputTokens: 500, outputTokens: 30,
+      reportedCostUsd: 0.0001, costedRequests: 1, eventsWithUsage: 2 });
     let receivedEvent: TelemetryEvent | null = null;
     const listener = (event: TelemetryEvent) => {
       receivedEvent = event;

@@ -53,14 +53,13 @@ describe("Context Ranker Benchmark Suite", () => {
     }
   });
 
-  it("evaluates Precision@K, Recall@K, file reduction and token savings", async () => {
+  it("evaluates Precision@K, Recall@K and file selection counts", async () => {
     const k = 3;
     const results: Array<{
       task: string;
       precision: number;
       recall: number;
       fileReductionPct: number;
-      tokenReductionPct: number;
       latencyMs: number;
     }> = [];
 
@@ -87,28 +86,18 @@ describe("Context Ranker Benchmark Suite", () => {
         (((totalFiles - selectedCount) / totalFiles) * 100).toFixed(1)
       );
 
-      // Estimated token savings:
-      // Baseline: passing entire repo context (~350 tokens per file)
-      // Harness: passing only top-K selected files
-      const fullRepoTokens = totalFiles * 350;
-      const selectedTokens = selectedCount * 350;
-      const tokenReductionPct = Number(
-        (((fullRepoTokens - selectedTokens) / fullRepoTokens) * 100).toFixed(1)
-      );
 
       results.push({
         task: bCase.task.slice(0, 35) + "...",
         precision,
         recall,
         fileReductionPct,
-        tokenReductionPct,
         latencyMs: res.metrics.latencyMs,
       });
 
       expect(precision).toBeGreaterThan(0.3);
       expect(recall).toBeGreaterThanOrEqual(0.5);
       expect(fileReductionPct).toBeGreaterThan(70);
-      expect(tokenReductionPct).toBeGreaterThan(70);
     }
 
     console.log("\n=======================================================");

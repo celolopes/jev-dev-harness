@@ -96,7 +96,7 @@ describe("Tool Ranker & Pruner", () => {
       expect(result.selected.length).toBeLessThanOrEqual(2);
       expect(result.selected[0].name).toBe("read_file");
       expect(result.pruned).toContain("stripe_charge");
-      expect(result.metrics.tokensSaved).toBeGreaterThan(0);
+      expect(result.metrics.tokensSaved).toBeNull();
       expect(result.metrics.reductionPct).toBeGreaterThanOrEqual(50);
     });
   });

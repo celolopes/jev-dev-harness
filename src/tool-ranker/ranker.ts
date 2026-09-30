@@ -91,7 +91,7 @@ export async function rankTools(options: ToolRankOptions): Promise<ToolRankResul
         initialTools: 0,
         selectedTools: 0,
         prunedTools: 0,
-        tokensSaved: 0,
+        tokensSaved: null,
         reductionPct: 0,
         latencyMs: Date.now() - startTime,
         shardsCount: 0,
@@ -218,8 +218,8 @@ export async function rankTools(options: ToolRankOptions): Promise<ToolRankResul
     }
   }
 
-  // 7. Calculate savings (~350 tokens per tool schema pruned)
-  const tokensSaved = pruned.length * 350;
+  // No tokenized baseline is available for this selection.
+  const tokensSaved = null;
   const reductionPct =
     initialCount > 0 ? Math.round(((initialCount - selected.length) / initialCount) * 100) : 0;
   const latencyMs = Date.now() - startTime;
@@ -230,7 +230,6 @@ export async function rankTools(options: ToolRankOptions): Promise<ToolRankResul
     task,
     initialTools: initialCount,
     selectedTools: selected.length,
-    tokensSaved,
     reductionPct,
     latencyMs,
     harness: "Tool Ranker",

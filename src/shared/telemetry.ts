@@ -27,7 +27,8 @@ export interface ContextRankEvent extends BaseTelemetryEvent {
   task: string;
   initialCandidates: number;
   selectedFiles: number;
-  tokensSaved: number;
+  /** @deprecated Legacy estimate, never a measured saving. */
+  tokensSaved?: number;
   reductionPct: number;
 }
 
@@ -62,7 +63,8 @@ export interface ToolRankEvent extends BaseTelemetryEvent {
   task: string;
   initialTools: number;
   selectedTools: number;
-  tokensSaved: number;
+  /** @deprecated Legacy estimate, never a measured saving. */
+  tokensSaved?: number;
   reductionPct: number;
 }
 
@@ -71,7 +73,8 @@ export interface ProxyTurnEvent extends BaseTelemetryEvent {
   agent: string; // "codex" | "claude" | "opencode" | "gemini" | "generic"
   mode: string;  // "forced" | "hint" | "direct" | "none" | "passthrough"
   tool?: string;
-  tokensSaved: number;
+  /** @deprecated Legacy estimate, never a measured saving. */
+  tokensSaved?: number;
   confidence?: number;
 }
 
@@ -85,8 +88,21 @@ export type TelemetryEvent =
 
 export interface TelemetrySummary {
   totalEvents: number;
-  totalTokensSaved: number;
-  estimatedDollarsSaved: number;
+  /** @deprecated No valid baseline exists; unknown, not zero. */
+  totalTokensSaved: null;
+  estimatedDollarsSaved: null;
+  savingsStatus: "not_measured";
+  usage: {
+    scope: "context_rank_validated_responses";
+    eventsWithUsage: number;
+    eventsWithoutUsage: number;
+    newModelCalls: number;
+    validatedResponses: number;
+    inputTokens: number;
+    outputTokens: number;
+    reportedCostUsd: number | null;
+    costedRequests: number;
+  };
   avgLatencyMs: number;
   p95LatencyMs: number;
   byType: {
@@ -126,6 +142,10 @@ export interface TelemetrySummary {
 }
 
 export interface TelemetryMetrics {
+  evaluatedCandidates?: number;
+  /** Logical systemOne calls; transport retries are not counted here. */
+  newModelCalls?: number;
+  validatedResponses?: number;
   evaluatedByLlm?: number;
   decisionModels?: string[];
   reportedCostUsd?: number;
@@ -147,6 +167,9 @@ export interface TelemetryMetrics {
 }
 
 export class TelemetryCollector {
+  evaluatedCandidates = 0;
+  newModelCalls = 0;
+  validatedResponses = 0;
   evaluatedByLlm = 0;
   decisionModels = new Set<string>();
   reportedCostUsd = 0;
@@ -214,6 +237,9 @@ export class TelemetryCollector {
         : 0;
 
     return {
+      evaluatedCandidates: this.evaluatedCandidates,
+      newModelCalls: this.newModelCalls,
+      validatedResponses: this.validatedResponses,
       initialCandidates: this.initialCandidates,
       evaluatedByLlm: this.evaluatedByLlm,
       decisionModels: [...this.decisionModels].sort(),
@@ -484,7 +510,11 @@ export function getTelemetryEvents(limit = 100): TelemetryEvent[] {
 export function getTelemetrySummary(): TelemetrySummary {
   const events = getTelemetryEvents(1000); // Sample up to 1000 recent events
 
-  let totalTokensSaved = 0;
+  const usage: TelemetrySummary["usage"] = {
+    scope: "context_rank_validated_responses", eventsWithUsage: 0, eventsWithoutUsage: 0,
+    newModelCalls: 0, validatedResponses: 0, inputTokens: 0, outputTokens: 0,
+    reportedCostUsd: null, costedRequests: 0,
+  };
   let totalLatency = 0;
   const latencies: number[] = [];
 
@@ -539,7 +569,18 @@ export function getTelemetrySummary(): TelemetrySummary {
 
     if (event.type === "context_rank") {
       byType.context_rank++;
-      totalTokensSaved += event.tokensSaved || 0;
+      const metrics = event.decisionMetrics;
+      if (metrics?.newModelCalls !== undefined) {
+        usage.eventsWithUsage++;
+        usage.newModelCalls += metrics.newModelCalls;
+        usage.validatedResponses += metrics.validatedResponses ?? 0;
+        usage.inputTokens += metrics.tokensSent;
+        usage.outputTokens += metrics.tokensReceived;
+        if ((metrics.costedRequests ?? 0) > 0 && metrics.reportedCostUsd !== undefined) {
+          usage.reportedCostUsd = (usage.reportedCostUsd ?? 0) + metrics.reportedCostUsd;
+          usage.costedRequests += metrics.costedRequests!;
+        }
+      } else usage.eventsWithoutUsage++;
       contextStats.totalRankings++;
       contextStats.totalReductionPct += event.reductionPct || 0;
     } else if (event.type === "guard_check") {
@@ -561,13 +602,11 @@ export function getTelemetrySummary(): TelemetrySummary {
       byType.lint_semantic++;
     } else if (event.type === "tool_rank") {
       byType.tool_rank++;
-      totalTokensSaved += event.tokensSaved || 0;
       toolStats.totalRankings++;
       toolStats.toolsPruned += (event.initialTools - event.selectedTools);
       toolStats.totalReductionPct += event.reductionPct || 0;
     } else if (event.type === "proxy_turn") {
       byType.proxy_turn++;
-      totalTokensSaved += event.tokensSaved || 0;
       proxyStats.totalTurns++;
       if (event.mode === "forced" || event.mode === "hint" || event.mode === "direct") {
         proxyStats.routed++;
@@ -597,13 +636,12 @@ export function getTelemetrySummary(): TelemetrySummary {
     toolStats.avgReductionPct = Math.round((toolStats.totalReductionPct / toolStats.totalRankings) * 10) / 10;
   }
 
-  // $3.00 per million input tokens (standard Claude 3.5 Sonnet / GPT-4o input cost)
-  const estimatedDollarsSaved = Math.round((totalTokensSaved / 1_000_000) * 3.0 * 100) / 100;
-
   return {
     totalEvents,
-    totalTokensSaved,
-    estimatedDollarsSaved,
+    totalTokensSaved: null,
+    estimatedDollarsSaved: null,
+    savingsStatus: "not_measured",
+    usage,
     avgLatencyMs,
     p95LatencyMs,
     byType,
