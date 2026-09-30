@@ -42,6 +42,7 @@ export async function runProviderCommand(target?: string): Promise<void> {
   console.log("=".repeat(74) + "\n");
   console.log(`  Active Provider:  ${client.provider.toUpperCase()}`);
   console.log(`  Model / Target:   ${client.modelName}`);
+  console.log(`  Decision Mode:    ${client.decisionMode}`);
   console.log(`  Reason / Status:  ${client.getReason()}`);
 
   const start = Date.now();
@@ -53,7 +54,7 @@ export async function runProviderCommand(target?: string): Promise<void> {
     const latency = Date.now() - start;
 
     if (testRes.ok) {
-      console.log(`  Live Health Ping: ✓ CONNECTED (${latency}ms) via ${testRes.provider}`);
+      console.log(`  Live Health Ping: ✓ CONNECTED (${latency}ms) via ${testRes.provider} (${testRes.result.model}, ${testRes.decisionMode})`);
     } else {
       console.log(`  Live Health Ping: ℹ Fallback active (${testRes.reason})`);
     }
@@ -64,7 +65,7 @@ export async function runProviderCommand(target?: string): Promise<void> {
   console.log("\n💡 Available Providers:");
   console.log("  • typesafe    👉 Native TypeSafe AI (https://typesafe.ai)");
   console.log("  • vercel      👉 Vercel AI Gateway Free Tier (https://vercel.com/d/ai-gateway)");
-  console.log("  • openrouter  👉 OpenRouter Multi-Model (https://openrouter.ai)");
+  console.log("  • openrouter  👉 OpenRouter Native Jev / Explicit LLM Emulation (https://openrouter.ai)");
   console.log("  • offline     👉 Deterministic regex & heuristics\n");
   console.log("To switch instantly, run:");
   console.log("  npx jev-dev provider <typesafe | vercel | openrouter | offline>");

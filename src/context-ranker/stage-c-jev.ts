@@ -49,7 +49,7 @@ export async function executeStageC(
   telemetry: TelemetryCollector,
   options: RankContextOptions
 ): Promise<StageCEvaluation[]> {
-  const evaluations: StageCEvaluation[] = [];
+  const evaluations: StageCEvaluation[] = new Array(candidates.length);
 
   // If Jev is explicitly disabled or unconfigured, bypass immediately to fallback
   if (options.useJev === false || !client.isConfigured) {
@@ -74,20 +74,40 @@ export async function executeStageC(
     ),
   };
 
-  // Evaluate candidates concurrently to reduce latency from 40s+ to <3s
+  const budgetMs = options.decisionBudgetMs
+    ?? Number(process.env.JEV_STAGE_C_TIMEOUT_MS || client.timeoutMs);
+  const concurrency = options.decisionConcurrency
+    ?? Number(process.env.JEV_CONCURRENCY || 4);
+  if (!Number.isFinite(budgetMs) || budgetMs <= 0
+      || !Number.isInteger(concurrency) || concurrency < 1) {
+    telemetry.recordFallback("INVALID_STAGE_C_LIMITS");
+    return candidates.map(candidate => ({ candidate, fromCache: false }));
+  }
+  const deadline = Date.now() + budgetMs;
+  // Floating aliases can change weights without changing the request's model ID.
+  const cacheable = !/latest|preview|^~|^typesafe-ai\/jev$/.test(client.modelName);
+  const cacheVersion = JSON.stringify(["context-v2", client.cacheIdentity, questions]);
+  const trackJudgment = (judgment: JevJudgments) => {
+    if (judgment.decisionMode === "llm_emulation") telemetry.evaluatedByLlm++;
+    else telemetry.evaluatedByJev++;
+    if (judgment.model) telemetry.decisionModels.add(judgment.model);
+    telemetry.addConfidence(judgment.confidence);
+  };
+
+  // Bound concurrency and share one budget across all candidates.
   const evaluateCandidate = async (candidate: HeuristicCandidate): Promise<StageCEvaluation> => {
     const cacheKey = JevCache.createKey(
       task,
       candidate.relativePath,
-      candidate.snippet || ""
+      JSON.stringify([candidate.snippet || "", candidate.extension, candidate.size, candidate.matchedSymbols]),
+      cacheVersion,
     );
 
     // 1. Check cache first
-    const cached = cache.get<JevJudgments>(cacheKey);
+    const cached = cacheable ? cache.get<JevJudgments>(cacheKey) : null;
     if (cached) {
       telemetry.cacheHits++;
-      telemetry.evaluatedByJev++;
-      telemetry.addConfidence(cached.confidence);
+      trackJudgment(cached);
       return {
         candidate,
         jevJudgments: cached,
@@ -110,23 +130,40 @@ export async function executeStageC(
     };
 
     // 3. Send batched questions to Jev
-    const response = await client.systemOne(state, questions);
+    const remainingMs = deadline - Date.now();
+    if (remainingMs <= 0) {
+      telemetry.recordFallback("STAGE_C_DEADLINE");
+      return { candidate, fromCache: false };
+    }
+    const response = await client.systemOne(state, questions, {
+      timeout: Math.min(client.timeoutMs, remainingMs),
+    });
 
     if (response.ok) {
-      telemetry.evaluatedByJev++;
       telemetry.addTokens(response.inputTokens, response.outputTokens);
+      if (response.costUsd !== undefined) {
+        telemetry.reportedCostUsd += response.costUsd;
+        telemetry.costedRequests++;
+      }
 
       const answers = response.result.answers;
-      const relevantNoul = answers.relevant_to_task?.noul ?? 0.5;
-      const relevanceScore = answers.relevance?.score ?? 0;
-      const roleChoice = (answers.role?.choice as CandidateRole) || "other";
-
-      // Confidence from choice and score
-      const roleConf = answers.role?.confidence ?? 0.8;
-      const scoreConf = answers.relevance?.confidence ?? 0.8;
+      const relevantNoul = answers.relevant_to_task?.noul;
+      const relevanceScore = answers.relevance?.score;
+      const roleChoice = answers.role?.choice as CandidateRole;
+      const roleConf = answers.role?.confidence;
+      const scoreConf = answers.relevance?.confidence;
+      const validNumber = (n: unknown, max: number): n is number =>
+        typeof n === "number" && Number.isFinite(n) && n >= 0 && n <= max;
+      if (answers.relevant_to_task?.type !== "noul" || answers.relevance?.type !== "score"
+          || answers.role?.type !== "choice" || !validNumber(relevantNoul, 1)
+          || !validNumber(relevanceScore, RELEVANCE_RUBRIC.length - 1)
+          || !validNumber(roleConf, 1) || !validNumber(scoreConf, 1)
+          || !Object.hasOwn(ROLE_OPTIONS, roleChoice)) {
+        telemetry.recordFallback("INVALID_RANKING_RESPONSE");
+        telemetry.errors++;
+        return { candidate, fromCache: false };
+      }
       const avgConf = Number(((roleConf + scoreConf) / 2).toFixed(4));
-
-      telemetry.addConfidence(avgConf);
 
       const rubricIdx = Math.min(
         RELEVANCE_RUBRIC.length - 1,
@@ -135,6 +172,8 @@ export async function executeStageC(
       const relevanceLabel = RELEVANCE_RUBRIC[rubricIdx]!.split(":")[0]!;
 
       const judgments: JevJudgments = {
+        decisionMode: response.decisionMode ?? client.decisionMode,
+        model: response.result.model,
         relevantToTask: Number(relevantNoul.toFixed(4)),
         relevanceScore: Number(relevanceScore.toFixed(2)),
         relevanceLabel,
@@ -143,7 +182,8 @@ export async function executeStageC(
       };
 
       // Cache judgment
-      cache.set(cacheKey, judgments);
+      if (cacheable) cache.set(cacheKey, judgments);
+      trackJudgment(judgments);
 
       return {
         candidate,
@@ -161,8 +201,13 @@ export async function executeStageC(
     }
   };
 
-  const results = await Promise.all(candidates.map(evaluateCandidate));
-  evaluations.push(...results);
+  let nextIndex = 0;
+  await Promise.all(Array.from({ length: Math.min(concurrency, candidates.length) }, async () => {
+    while (nextIndex < candidates.length) {
+      const index = nextIndex++;
+      evaluations[index] = await evaluateCandidate(candidates[index]!);
+    }
+  }));
 
   cache.save();
   return evaluations;

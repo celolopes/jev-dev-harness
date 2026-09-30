@@ -25,6 +25,8 @@ export interface HeuristicCandidate extends CandidateFile {
 }
 
 export interface JevJudgments {
+  decisionMode?: "jev" | "llm_emulation";
+  model?: string;
   relevantToTask: number; // Noul: 0 to 1
   relevanceScore: number; // Score: 0 to 4
   relevanceLabel: string;
@@ -39,7 +41,8 @@ export interface RankedCandidate {
   role: CandidateRole;
   relevance?: string;
   reason: string;
-  source: "jev" | "deterministic_fallback";
+  source: "jev" | "llm_emulation" | "deterministic_fallback";
+  model?: string;
 }
 
 export interface RankContextOptions {
@@ -55,6 +58,8 @@ export interface RankContextOptions {
   customIgnorePatterns?: string[];
   maxFileSizeBytes?: number;
   cacheFilePath?: string;
+  decisionBudgetMs?: number; // Total Stage C deadline, including queued candidates
+  decisionConcurrency?: number; // Maximum in-flight requests (default: 4)
 }
 
 export interface RankContextResult {

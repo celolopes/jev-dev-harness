@@ -107,7 +107,7 @@ describe("SafeJevClient Module", () => {
     const origFetch = globalThis.fetch;
     try {
       globalThis.fetch = async (url, init) => {
-        expect(url.toString()).toBe("https://openrouter.ai/api/alpha/decisions");
+        expect(url.toString()).toBe("https://openrouter.ai/api/v1/systemone");
         const body = JSON.parse(init?.body as string);
         expect(body.model).toBe("typesafe/jev-latest");
         expect(body.questions.auth_check).toBeDefined();
@@ -175,7 +175,7 @@ describe("SafeJevClient Module", () => {
         );
       };
 
-      const client = new SafeJevClient({ apiKey: "sk-or-v1-mock-openrouter-key" });
+      const client = new SafeJevClient({ apiKey: "sk-or-v1-mock-openrouter-key", defaultModel: "deepseek/deepseek-v4-flash" });
       expect(client.provider).toBe("openrouter");
       expect(client.modelName).toBe("deepseek/deepseek-v4-flash");
 
@@ -250,5 +250,4 @@ describe("SafeJevClient Module", () => {
       expect(client.getReason()).toBe("READY (Vercel AI Gateway: typesafe-ai/jev)");
     });
   });
-
 
