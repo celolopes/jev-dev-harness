@@ -118,7 +118,6 @@ export async function startProxyServer(options: ProxyOptions = {}): Promise<Prox
             agent: target,
             mode: decision.mode,
             tool: (decision as any).tool,
-            tokensSaved: decision.mode === "forced" || decision.mode === "hint" ? 450 : 0,
             confidence: (decision as any).confidence,
             latencyMs: decision.latencyMs || 0,
             harness: `Proxy (${target})`,

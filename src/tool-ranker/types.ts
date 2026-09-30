@@ -65,7 +65,8 @@ export interface ToolRankMetrics {
   initialTools: number;
   selectedTools: number;
   prunedTools: number;
-  tokensSaved: number;
+  /** No tokenized baseline is available. */
+  tokensSaved: null;
   reductionPct: number;
   latencyMs: number;
   shardsCount: number;

@@ -72,7 +72,7 @@ export function getAgentRuleContent(): string {
   return `# Jev Developer Harness — Diretrizes de Operação do Agente
 
 Este projeto é monitorado e acelerado pelo **Jev Developer Harness** (\`jev-dev-harness\`).
-Como agente de codificação de IA, siga rigorosamente o fluxo de trabalho abaixo para garantir proteção de integridade, economia massiva de tokens e auditoria contínua:
+Como agente de codificação de IA, siga rigorosamente o fluxo de trabalho abaixo para garantir proteção de integridade, relatórios factuais e verificações explícitas:
 
 ---
 
@@ -110,9 +110,10 @@ Ao concluir qualquer tarefa de código, análise ou modificação em qualquer ID
 
 \`\`\`markdown
 ### ⚡ Eficiência Jev
-- **Contexto Otimizado:** [X] arquivos selecionados cirurgicamente de [Y] analisados ([Z]% de redução).
-- **Economia Estimada:** ~[N] tokens economizados nesta tarefa (~$[V]).
-- **Segurança & Velocidade:** Comandos e diffs auditados pelo Jev System One (<1s).
+- **Contexto:** entradas encontradas; candidatos após filtros; candidatos avaliados; arquivos selecionados (somente valores retornados).
+- **Modelo e uso:** provider/modelo; decisões em cache; chamadas novas; tokens novos; custo reportado e cobertura. Ausente: não informado. Sem chamadas novas: nenhuma chamada nova ao modelo.
+- **Execução:** latência medida; fallback; verificações/auditorias efetivamente executadas e seu escopo. Cache e heurística não são inferência nova.
+- **Economia de tokens/dinheiro:** não medida sem comparação válida com baseline.
 \`\`\`
 `;
 }

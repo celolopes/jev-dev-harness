@@ -67,7 +67,6 @@ export function createCli(): Command {
           task: result.task,
           initialCandidates: result.metrics.initialCandidates,
           selectedFiles: result.selected.length,
-          tokensSaved: Math.round((result.metrics.initialCandidates - result.selected.length) * 800),
           reductionPct:
             result.metrics.initialCandidates > 0
               ? Math.round(
@@ -117,7 +116,9 @@ export function createCli(): Command {
         console.log("--- METRICS & TELEMETRY ---");
         console.log(`  Initial files:     ${result.metrics.initialCandidates}`);
         console.log(`  Filtered files:    ${result.metrics.filteredCandidates}`);
-        console.log(`  Evaluated by Jev:  ${result.metrics.evaluatedByJev}`);
+        console.log(`  Candidates evaluated: ${result.metrics.evaluatedCandidates}`);
+        console.log(`  Jev decisions (incl. cache): ${result.metrics.evaluatedByJev}`);
+        console.log(`  New logical model calls: ${result.metrics.newModelCalls === 0 ? "none" : result.metrics.newModelCalls}`);
         console.log(`  LLM emulation:     ${result.metrics.evaluatedByLlm ?? 0}`);
         console.log(`  Reported cost USD: ${result.metrics.reportedCostUsd ?? "unavailable"} (${result.metrics.costedRequests ?? 0} priced responses)`);
         console.log(`  Tokens (in/out):   ${result.metrics.tokensSent} / ${result.metrics.tokensReceived}`);
@@ -576,7 +577,7 @@ export function createCli(): Command {
         console.log(`Task:        ${result.task}`);
         console.log(`Provider:    ${result.metrics.provider || "TypeSafe Jev System One"}`);
         console.log(`Selected:    ${result.selected.length} / ${result.metrics.initialTools} tools (-${result.metrics.reductionPct}%)`);
-        console.log(`Saved:       ~${result.metrics.tokensSaved.toLocaleString()} tokens/turn\n`);
+        console.log("Savings:     not measured (no baseline)\n");
 
         if (result.selected.length === 0) {
           console.log("  No tools matched the required criteria.\n");

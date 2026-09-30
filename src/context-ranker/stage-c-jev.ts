@@ -49,6 +49,7 @@ export async function executeStageC(
   telemetry: TelemetryCollector,
   options: RankContextOptions
 ): Promise<StageCEvaluation[]> {
+  telemetry.evaluatedCandidates = candidates.length;
   const evaluations: StageCEvaluation[] = new Array(candidates.length);
 
   // If Jev is explicitly disabled or unconfigured, bypass immediately to fallback
@@ -135,11 +136,13 @@ export async function executeStageC(
       telemetry.recordFallback("STAGE_C_DEADLINE");
       return { candidate, fromCache: false };
     }
+    telemetry.newModelCalls++;
     const response = await client.systemOne(state, questions, {
       timeout: Math.min(client.timeoutMs, remainingMs),
     });
 
     if (response.ok) {
+      telemetry.validatedResponses++;
       telemetry.addTokens(response.inputTokens, response.outputTokens);
       if (response.costUsd !== undefined) {
         telemetry.reportedCostUsd += response.costUsd;

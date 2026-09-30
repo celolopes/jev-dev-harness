@@ -36,7 +36,7 @@ Large Language Models (LLMs) are exceptional at generative synthesis and reasoni
          ▼                                    ▼                                    ▼
    [Context Ranker]                   [Tool Call Guard]                    [Patch Reviewer]
   Selects surgical 3-5               Intercepts shell commands            Audits git diffs before
-  relevant files (<90% tokens)        in <1ms (blocks destructive)         commits (secrets, scope, auth)
+  relevant files (ranked)        with measured latency         commits (secrets, scope, auth)
          │                                    │                                    │
          └────────────────────────────────────┼────────────────────────────────────┘
                                               ▼
@@ -57,6 +57,8 @@ How much faster, cheaper, and safer is programming with an AI coding agent (Code
 
 ### 💡 Key Benchmarks at a Glance
 
+The following legacy comparison values are hypothetical assumptions, not measured benchmarks or savings. No valid token/cost baseline has been collected.
+
 | Metric | Without Jev (Vanilla Agent) | With Jev Developer Harness | Impact / Savings |
 | :--- | :--- | :--- | :--- |
 | **Context Tokens / Task** | ~75,000 - 120,000 tokens | 4,200 - 7,800 tokens | **92.4% token cut** |
@@ -68,7 +70,7 @@ How much faster, cheaper, and safer is programming with an AI coding agent (Code
 
 ### 📟 Real-Time Terminal Benchmark (`jev-dev compare`)
 
-Run the live comparison anytime in your terminal with zero install:
+Run the hypothetical simulation anytime in your terminal with zero install:
 
 ```bash
 npx -y jev-dev compare
@@ -89,13 +91,13 @@ Git release tags and publishing to npm `latest`. Release notes are in
 | Module / Command | Purpose |
 | :--- | :--- |
 | `jev-dev version` | Inspects currently installed harness version, latest on npm registry, package path, runtime details, and install type. |
-| `jev-dev context rank` | Selects the top 3-5 crucial files for a task, reducing token bloat by 88%–94%. |
+| `jev-dev context rank` | Selects the top 3-5 crucial files for a task, reporting selection counts and validated response usage. |
 | `jev-dev guard check` | Intercepts commands in <1ms, categorizing operations into `read-only`, `modify-local`, `destructive-local`, `network`, or `production-sensitive`. |
 | `jev-dev patch review` | Fast triage of git diffs before commit/PR. Detects scope creep, credential exposure, database mutations, and missing tests. |
 | `jev-dev lint semantic` | Automated architectural drift detection in GitHub Actions CI (prevents UI/database mixing, dangerous migrations, etc.). |
 | `jev-dev hooks install` | 1-click installer for git pre-commit safety gate. Blocks commits containing leaked credentials or critical regression risk. |
 | `jev-dev mcp` | Standard Model Context Protocol (stdio) exposing all 4 tools to Cursor, Claude Desktop, Antigravity, VS Code. |
-| `jev-dev compare` | Live comparison of agent speed, token reduction, and dollar savings with vs. without Jev. |
+| `jev-dev compare` | Hypothetical simulation (not measured telemetry) of token and cost assumptions with vs. without Jev. |
 | `jev-dev dashboard` | Real-time web dashboard with SSE streaming, platform origin detection, and interactive ROI simulator. |
 | `jev-dev doctor` | System health check: AI connectivity ping, MCP integrations, telemetry status, and auto-generates 7 agent rule files (`--init-rules`). |
 | `jev-dev setup` | 1-minute interactive CLI wizard to configure providers and auto-register agents. Supports `-y` for non-interactive execution. |
@@ -397,7 +399,7 @@ Built-in rules:
 
 ### Available MCP Tools
 
-1. **`jev_rank_context`**: Intelligent context selector that ranks codebase files by relevance for a given task, cutting prompt tokens by up to 94%.
+1. **`jev_rank_context`**: Intelligent context selector that ranks codebase files by relevance for a given task, with factual counts and usage; savings are not measured.
 2. **`jev_guard_check`**: Pre-execution security filter that classifies shell commands (`read-only`, `modify-local`, `destructive-local`, `network`, `production-sensitive`) and blocks risky execution.
 3. **`jev_review_patch`**: Fast patch auditor that checks git diffs for regressions, scope creep, auth/database modifications, and exposed secrets.
 4. **`jev_lint_semantic`**: Semantic architectural linter that tests diffs against modularity, security, and migration rules.
@@ -522,18 +524,19 @@ jev-dev doctor --init-rules
 
 When an AI coding agent (such as **Codex**, **Antigravity**, **Claude Code**, **Cline**, or **Cursor**) invokes `jev_rank_context`, `jev_guard_check`, or `jev_review_patch`, the MCP server automatically returns real-time efficiency metrics (`efficiencyReport`) along with agent instructions. 
 
-Agents present this mandatory summary at the conclusion of each completed task, giving developers immediate feedback on resource savings:
+Agents report observed counts and usage, distinguishing unknown savings from measured execution:
 
 ```markdown
 ### ⚡ Eficiência Jev
-- **Contexto Otimizado:** 4 arquivos selecionados cirurgicamente de 84 analisados (~95% de redução).
-- **Economia Estimada:** ~68.000 tokens economizados nesta tarefa (~$0.20).
-- **Segurança & Velocidade:** Comandos e diffs auditados em tempo real pelo Jev System One (<1s).
+- **Contexto:** entradas encontradas; candidatos após filtros; candidatos avaliados; arquivos selecionados.
+- **Modelo e uso:** provider/modelo, cache, chamadas novas, tokens reportados e custo com cobertura; custo ausente: não informado.
+- **Execução:** latência e fallback; auditorias apenas quando executadas, com seu escopo.
+- **Economia de tokens/dinheiro:** não medida sem baseline válido.
 ```
 
 ### 🌐 Live Telemetry Web Dashboard (`jev-dev dashboard`)
 
-Want to inspect your accumulated savings, token reductions, and real-time operations visually?
+Inspect observed usage, cache reuse and recorded operations. Token/money savings have no measured baseline.
 
 Launch the live telemetry web dashboard anytime:
 
@@ -557,10 +560,10 @@ npx -y jev-dev dashboard --json
 * 🏷️ **Platform Origin Detection & Badges:** Dedicated visual badges displaying which agent/IDE triggered each tool call (Codex, Antigravity, Claude Code, Trae, VS Code Cline/Roo Code, or Terminal CLI).
 * 🔄 **Real-Time Cross-Process Sync:** Server-Sent Events (SSE) and file synchronizer (<500ms) with zero latency impact on agent workflows.
 * 🌐 **Bilingual Interface (i18n):** Instant toggle between English (`US EN`) and Portuguese (`BR PT`).
-* 📊 **Live Key Metrics:** Real-time counters for Agent Ops, Tokens Saved, $ Net Saved, Jev Avg & p95 Latency, Tool Guard Interceptions, and Patch Audits.
+* 📊 **Live Key Metrics:** Real-time counters for Agent Ops, unknown savings, reported context usage with coverage, Avg & p95 Latency, Tool Guard Interceptions, and Patch Audits.
 * 📈 **Request Distribution & Gate Verdicts:** Visual breakdown of operations handled by Jev across your workspace.
-* ⚡ **Live Operations Stream:** Real-time stream displaying every tool call made by your agent with latency, token savings, and security verdicts.
-* 🧮 **ROI & Benchmark Simulator:** Integrated team size & pricing calculator to forecast monthly and annual cost savings.
+* ⚡ **Live Operations Stream:** Real-time stream displaying every tool call made by your agent with latency, file/tool counts, and security verdicts.
+* 🧮 **ROI & Benchmark Simulator:** Integrated team size & pricing calculator using fixed hypothetical assumptions; it is not measured telemetry.
 
 ---
 
@@ -587,7 +590,7 @@ The repository features comprehensive integration and unit test suites:
 # Run full Vitest test suite (142 tests across 22 test suites)
 npm test
 
-# Run benchmark suite (precision, recall, token reduction)
+# Run benchmark suite (precision, recall, file selection counts)
 npm run bench
 
 # Run TypeScript typecheck

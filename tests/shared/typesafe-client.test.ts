@@ -1,10 +1,18 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import {
   SafeJevClient,
   noul,
   score,
   choice,
 } from "../../src/shared/typesafe-client.js";
+
+// Provider-default assertions must not read the developer's global model/config.
+beforeEach(() => {
+  vi.stubEnv("JEV_CONFIG_FILE", "non-existent-config.json");
+  vi.stubEnv("VERCEL_MODEL", "");
+  vi.stubEnv("TYPESAFE_DEFAULT_MODEL", "");
+});
+afterEach(() => vi.unstubAllEnvs());
 
 describe("SafeJevClient Module", () => {
   it("initializes in fallback mode when no API key is provided", async () => {

@@ -1,4 +1,6 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
+import * as contextRanker from "../../src/context-ranker/index.js";
+import { TelemetryCollector } from "../../src/shared/telemetry.js";
 import { createMcpServer, TOOLS } from "../../src/mcp/server.js";
 import {
   CallToolRequestSchema,
@@ -6,6 +8,25 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 
 describe("MCP Server", () => {
+  it("does not claim command/diff audits or savings for an isolated ranking", async () => {
+    const metrics = new TelemetryCollector().getMetrics();
+    const rank = vi.spyOn(contextRanker, "rankContext").mockResolvedValue({
+      task: "test", repoPath: "/repo", selected: [], metrics,
+      fallbackUsed: false, timestamp: new Date().toISOString(),
+    });
+    try {
+      const server = createMcpServer();
+      // @ts-expect-error accessing internal request handler for testing
+      const handler = server._requestHandlers.get(CallToolRequestSchema.shape.method.value);
+      const response = await handler({ method: "tools/call", params: { name: "jev_rank_context", arguments: { task: "test" } } });
+      const report = JSON.parse(response.content[0].text).efficiencyReport;
+      expect(report).toMatchObject({ entriesFound: 0, newModelCalls: 0,
+        reportedCostUsd: null, tokenSavings: null, moneySavings: null,
+        commandAudit: "not_executed", diffAudit: "not_executed" });
+      expect(report).not.toHaveProperty("estimatedTokensSaved");
+      expect(report.instructionForAgent).not.toContain("Comandos e diffs auditados");
+    } finally { rank.mockRestore(); }
+  });
   it("exposes all 5 core tools in TOOLS list", () => {
     const toolNames = TOOLS.map((t) => t.name);
     expect(toolNames).toContain("jev_rank_context");
