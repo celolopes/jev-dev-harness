@@ -79,8 +79,8 @@ export interface JevExecutionSuccess<Q extends Questions> {
   result: DecisionResult<Q>;
   decisionMode: DecisionMode;
   costUsd?: number;
-  inputTokens: number;
-  outputTokens: number;
+  inputTokens: number | null;
+  outputTokens: number | null;
   latencyMs: number;
   provider: JevProvider;
 }
@@ -249,7 +249,7 @@ export class SafeJevClient {
       this.modelName =
         options.defaultModel ||
         process.env.TYPESAFE_DEFAULT_MODEL ||
-        "jev-latest";
+        "jev-1.13.0";
     }
 
     if (this.disabled) {
@@ -271,6 +271,8 @@ export class SafeJevClient {
         this.client = new TypeSafeClient({
           apiKey: effectiveKey,
           baseURL: vercelBaseUrl,
+          // Keep gateway transport behavior stable until zstd support is verified.
+          compression: false,
           defaultModel: this.modelName,
           timeout: this.timeoutMs,
           retry: {
@@ -290,6 +292,7 @@ export class SafeJevClient {
         this.client = new TypeSafeClient({
           apiKey: effectiveKey,
           baseURL: this.baseURL,
+          compression: false,
           defaultModel: this.modelName,
           timeout: this.timeoutMs,
           retry: {
@@ -396,7 +399,7 @@ export class SafeJevClient {
     let onAbort: (() => void) | undefined;
     let timer: ReturnType<typeof setTimeout> | undefined;
     const completeMeasurement = startUsageMeasurement(this.provider, this.modelName);
-    let measuredUsage: { inputTokens: number; outputTokens: number; costUsd?: number } | null = null;
+    let measuredUsage: { inputTokens: number | null; outputTokens: number | null; costUsd?: number } | null = null;
     try {
       if (!Number.isFinite(effectiveTimeout) || effectiveTimeout <= 0) {
         throw new Error("INVALID_TIMEOUT");
@@ -417,6 +420,9 @@ export class SafeJevClient {
       // Cancellation/deadline handling is installed before invoking the transport.
       const execute = async (): Promise<unknown> => {
         signal.throwIfAborted();
+        if (Object.values(questions).some(question => !["noul", "choice", "score"].includes(question.type))) {
+          throw new Error("UNSUPPORTED_QUESTION_TYPE");
+        }
         if (this.provider === "openrouter") {
           return this.executeOpenRouter(sanitizedState, questions, signal, deadline);
         }
@@ -434,7 +440,7 @@ export class SafeJevClient {
       const result = await Promise.race([execute(), aborted]);
       validateDecisionResult(result, questions, this.decisionMode === "jev");
       measuredUsage = { inputTokens: result.usage.input_tokens,
-        outputTokens: result.usage.output_tokens, costUsd: result.usage.cost };
+        outputTokens: result.usage.output_tokens, costUsd: result.usage.cost ?? undefined };
 
       const latencyMs = Date.now() - start;
 
@@ -442,9 +448,9 @@ export class SafeJevClient {
         ok: true,
         result,
         decisionMode: this.decisionMode,
-        costUsd: result.usage.cost,
-        inputTokens: result.usage?.input_tokens ?? 0,
-        outputTokens: result.usage?.output_tokens ?? 0,
+        costUsd: result.usage.cost ?? undefined,
+        inputTokens: result.usage.input_tokens,
+        outputTokens: result.usage.output_tokens,
         latencyMs,
         provider: this.provider,
       };

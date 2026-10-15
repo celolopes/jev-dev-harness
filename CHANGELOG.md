@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.2.12 — 2026-10-15
+
+- Upgrade TypeSafe SDK to 0.7.0 and require Node.js 22+. Preserve uncompressed
+  transport during migration and keep images, Box and long-context features disabled.
+- Pin the native default to jev-1.13.0; retain explicit model overrides and existing
+  OpenRouter/Vercel IDs. Do not promote the Jev 1.14 preview automatically.
+- Accept null token counters without discarding valid decisions. Preserve unknown
+  totals and per-direction coverage in telemetry, reports, dashboard and ledgers;
+  missing usage blocks net token comparisons while reported cost stays independent.
+- Add an opt-in reproducible PT/EN model evaluation and its sanitized live evidence.
+  Both models passed 42/42 synthetic checks; this is not a production acceptance
+  test, cost comparison or measured task-savings baseline.
+
 ## 0.2.11 — 2026-09-30
 
 - Add shared agent usage imports/comparisons for Antigravity, TRAE, Cursor,

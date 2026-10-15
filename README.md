@@ -549,6 +549,10 @@ For Antigravity, TRAE, Cursor, VS Code extensions and other CLIs, use the
 Main-agent usage requires an actual export/hook or configurable provider endpoint;
 the MCP connection alone cannot measure private client inference.
 
+For the SDK 0.7 migration, nullable token contract and the controlled Jev 1.14
+smoke evaluation, see [model evaluation](docs/jev/JEV-1.14-EVALUATION.md).
+The native default remains pinned to Jev 1.13.0; this update does not promote 1.14.
+
 Inspect observed usage, cache reuse and recorded operations. Token/money savings have no measured baseline.
 
 Launch the live telemetry web dashboard anytime:

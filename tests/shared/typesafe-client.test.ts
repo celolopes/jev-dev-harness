@@ -211,7 +211,7 @@ describe("SafeJevClient Module", () => {
 
         const client = new SafeJevClient();
         expect(client.provider).toBe("typesafe");
-        expect(client.modelName).toBe("jev-latest");
+        expect(client.modelName).toBe("jev-1.13.0");
       } finally {
         if (origTypeSafe) process.env.TYPESAFE_API_KEY = origTypeSafe;
         else delete process.env.TYPESAFE_API_KEY;

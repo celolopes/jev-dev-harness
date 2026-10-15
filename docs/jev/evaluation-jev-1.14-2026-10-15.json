@@ -1,0 +1,1731 @@
+{
+  "schemaVersion": 1,
+  "startedAt": "2026-10-15T11:54:29.697Z",
+  "endedAt": "2026-10-15T11:54:50.316Z",
+  "repetitions": 3,
+  "fixtureSha256": "fac906405d6d88b975b6ff441a102ad1a40af72fa88f83e56b8d698428e3c945",
+  "provider": "typesafe",
+  "transportRetries": 0,
+  "timeoutMs": 5000,
+  "cache": "disabled; direct uncached calls",
+  "experimentalFeatures": false,
+  "productionDefault": "jev-1.13.0",
+  "promotionDecision": "not_promoted",
+  "scope": "synthetic labeled smoke evaluation; not a production benchmark or task savings baseline",
+  "summaries": {
+    "jev-1.13.0": {
+      "requests": 42,
+      "passed": 42,
+      "fallbacks": 0,
+      "resolvedModelMismatches": 0,
+      "byLanguage": {
+        "pt": {
+          "passed": 21,
+          "total": 21
+        },
+        "en": {
+          "passed": 21,
+          "total": 21
+        }
+      },
+      "meanLatencyMs": 252.21428571428572,
+      "p95LatencyMs": 315,
+      "reportedInputTokens": 18546,
+      "reportedOutputTokens": 2826,
+      "reportedCostUsd": null,
+      "costedRequests": 0
+    },
+    "jev-1.14.0": {
+      "requests": 42,
+      "passed": 42,
+      "fallbacks": 0,
+      "resolvedModelMismatches": 0,
+      "byLanguage": {
+        "pt": {
+          "passed": 21,
+          "total": 21
+        },
+        "en": {
+          "passed": 21,
+          "total": 21
+        }
+      },
+      "meanLatencyMs": 238.5952380952381,
+      "p95LatencyMs": 257,
+      "reportedInputTokens": 18546,
+      "reportedOutputTokens": 2826,
+      "reportedCostUsd": null,
+      "costedRequests": 0
+    }
+  },
+  "rows": [
+    {
+      "caseId": "rank-auth-en",
+      "kind": "ranking",
+      "language": "en",
+      "repeat": 0,
+      "requestedModel": "jev-1.13.0",
+      "resolvedModel": "jev-1.13.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "relevant": 0.96,
+        "role": "implementation",
+        "roleConfidence": 1,
+        "score": 1.97,
+        "scoreConfidence": 0.97
+      },
+      "latencyMs": 315,
+      "inputTokens": 472,
+      "outputTokens": 79,
+      "costUsd": null
+    },
+    {
+      "caseId": "rank-auth-en",
+      "kind": "ranking",
+      "language": "en",
+      "repeat": 0,
+      "requestedModel": "jev-1.14.0",
+      "resolvedModel": "jev-1.14.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "relevant": 0.95,
+        "role": "implementation",
+        "roleConfidence": 1,
+        "score": 1.99,
+        "scoreConfidence": 0.98
+      },
+      "latencyMs": 248,
+      "inputTokens": 472,
+      "outputTokens": 79,
+      "costUsd": null
+    },
+    {
+      "caseId": "rank-auth-pt",
+      "kind": "ranking",
+      "language": "pt",
+      "repeat": 0,
+      "requestedModel": "jev-1.14.0",
+      "resolvedModel": "jev-1.14.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "relevant": 0.94,
+        "role": "implementation",
+        "roleConfidence": 1,
+        "score": 1.99,
+        "scoreConfidence": 1
+      },
+      "latencyMs": 227,
+      "inputTokens": 485,
+      "outputTokens": 79,
+      "costUsd": null
+    },
+    {
+      "caseId": "rank-auth-pt",
+      "kind": "ranking",
+      "language": "pt",
+      "repeat": 0,
+      "requestedModel": "jev-1.13.0",
+      "resolvedModel": "jev-1.13.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "relevant": 0.94,
+        "role": "implementation",
+        "roleConfidence": 1,
+        "score": 1.99,
+        "scoreConfidence": 1
+      },
+      "latencyMs": 253,
+      "inputTokens": 485,
+      "outputTokens": 79,
+      "costUsd": null
+    },
+    {
+      "caseId": "rank-unrelated-en",
+      "kind": "ranking",
+      "language": "en",
+      "repeat": 0,
+      "requestedModel": "jev-1.13.0",
+      "resolvedModel": "jev-1.13.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "relevant": 0.04,
+        "role": "documentation",
+        "roleConfidence": 0.99,
+        "score": 0,
+        "scoreConfidence": 1
+      },
+      "latencyMs": 248,
+      "inputTokens": 469,
+      "outputTokens": 79,
+      "costUsd": null
+    },
+    {
+      "caseId": "rank-unrelated-en",
+      "kind": "ranking",
+      "language": "en",
+      "repeat": 0,
+      "requestedModel": "jev-1.14.0",
+      "resolvedModel": "jev-1.14.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "relevant": 0.05,
+        "role": "documentation",
+        "roleConfidence": 0.97,
+        "score": 0,
+        "scoreConfidence": 1
+      },
+      "latencyMs": 241,
+      "inputTokens": 469,
+      "outputTokens": 79,
+      "costUsd": null
+    },
+    {
+      "caseId": "rank-unrelated-pt",
+      "kind": "ranking",
+      "language": "pt",
+      "repeat": 0,
+      "requestedModel": "jev-1.14.0",
+      "resolvedModel": "jev-1.14.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "relevant": 0.03,
+        "role": "documentation",
+        "roleConfidence": 0.97,
+        "score": 0,
+        "scoreConfidence": 1
+      },
+      "latencyMs": 238,
+      "inputTokens": 484,
+      "outputTokens": 79,
+      "costUsd": null
+    },
+    {
+      "caseId": "rank-unrelated-pt",
+      "kind": "ranking",
+      "language": "pt",
+      "repeat": 0,
+      "requestedModel": "jev-1.13.0",
+      "resolvedModel": "jev-1.13.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "relevant": 0.03,
+        "role": "documentation",
+        "roleConfidence": 0.99,
+        "score": 0,
+        "scoreConfidence": 1
+      },
+      "latencyMs": 239,
+      "inputTokens": 484,
+      "outputTokens": 79,
+      "costUsd": null
+    },
+    {
+      "caseId": "rank-test-en",
+      "kind": "ranking",
+      "language": "en",
+      "repeat": 0,
+      "requestedModel": "jev-1.13.0",
+      "resolvedModel": "jev-1.13.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "relevant": 0.96,
+        "role": "test",
+        "roleConfidence": 1,
+        "score": 1.99,
+        "scoreConfidence": 1
+      },
+      "latencyMs": 237,
+      "inputTokens": 484,
+      "outputTokens": 79,
+      "costUsd": null
+    },
+    {
+      "caseId": "rank-test-en",
+      "kind": "ranking",
+      "language": "en",
+      "repeat": 0,
+      "requestedModel": "jev-1.14.0",
+      "resolvedModel": "jev-1.14.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "relevant": 0.94,
+        "role": "test",
+        "roleConfidence": 1,
+        "score": 1.98,
+        "scoreConfidence": 0.95
+      },
+      "latencyMs": 255,
+      "inputTokens": 484,
+      "outputTokens": 79,
+      "costUsd": null
+    },
+    {
+      "caseId": "rank-test-pt",
+      "kind": "ranking",
+      "language": "pt",
+      "repeat": 0,
+      "requestedModel": "jev-1.14.0",
+      "resolvedModel": "jev-1.14.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "relevant": 0.95,
+        "role": "test",
+        "roleConfidence": 1,
+        "score": 1.98,
+        "scoreConfidence": 0.98
+      },
+      "latencyMs": 245,
+      "inputTokens": 498,
+      "outputTokens": 79,
+      "costUsd": null
+    },
+    {
+      "caseId": "rank-test-pt",
+      "kind": "ranking",
+      "language": "pt",
+      "repeat": 0,
+      "requestedModel": "jev-1.13.0",
+      "resolvedModel": "jev-1.13.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "relevant": 0.96,
+        "role": "test",
+        "roleConfidence": 1,
+        "score": 2,
+        "scoreConfidence": 1
+      },
+      "latencyMs": 237,
+      "inputTokens": 498,
+      "outputTokens": 79,
+      "costUsd": null
+    },
+    {
+      "caseId": "guard-read-en",
+      "kind": "guard",
+      "language": "en",
+      "repeat": 0,
+      "requestedModel": "jev-1.13.0",
+      "resolvedModel": "jev-1.13.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "unsafe": 0.02,
+        "category": "read_only",
+        "confidence": 1
+      },
+      "latencyMs": 269,
+      "inputTokens": 395,
+      "outputTokens": 58,
+      "costUsd": null
+    },
+    {
+      "caseId": "guard-read-en",
+      "kind": "guard",
+      "language": "en",
+      "repeat": 0,
+      "requestedModel": "jev-1.14.0",
+      "resolvedModel": "jev-1.14.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "unsafe": 0.02,
+        "category": "read_only",
+        "confidence": 1
+      },
+      "latencyMs": 232,
+      "inputTokens": 395,
+      "outputTokens": 58,
+      "costUsd": null
+    },
+    {
+      "caseId": "guard-read-pt",
+      "kind": "guard",
+      "language": "pt",
+      "repeat": 0,
+      "requestedModel": "jev-1.14.0",
+      "resolvedModel": "jev-1.14.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "unsafe": 0.02,
+        "category": "read_only",
+        "confidence": 1
+      },
+      "latencyMs": 240,
+      "inputTokens": 407,
+      "outputTokens": 58,
+      "costUsd": null
+    },
+    {
+      "caseId": "guard-read-pt",
+      "kind": "guard",
+      "language": "pt",
+      "repeat": 0,
+      "requestedModel": "jev-1.13.0",
+      "resolvedModel": "jev-1.13.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "unsafe": 0.02,
+        "category": "read_only",
+        "confidence": 1
+      },
+      "latencyMs": 249,
+      "inputTokens": 407,
+      "outputTokens": 58,
+      "costUsd": null
+    },
+    {
+      "caseId": "guard-delete-en",
+      "kind": "guard",
+      "language": "en",
+      "repeat": 0,
+      "requestedModel": "jev-1.13.0",
+      "resolvedModel": "jev-1.13.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "unsafe": 0.98,
+        "category": "destructive",
+        "confidence": 1
+      },
+      "latencyMs": 251,
+      "inputTokens": 410,
+      "outputTokens": 59,
+      "costUsd": null
+    },
+    {
+      "caseId": "guard-delete-en",
+      "kind": "guard",
+      "language": "en",
+      "repeat": 0,
+      "requestedModel": "jev-1.14.0",
+      "resolvedModel": "jev-1.14.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "unsafe": 0.98,
+        "category": "destructive",
+        "confidence": 1
+      },
+      "latencyMs": 247,
+      "inputTokens": 410,
+      "outputTokens": 59,
+      "costUsd": null
+    },
+    {
+      "caseId": "guard-delete-pt",
+      "kind": "guard",
+      "language": "pt",
+      "repeat": 0,
+      "requestedModel": "jev-1.14.0",
+      "resolvedModel": "jev-1.14.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "unsafe": 0.99,
+        "category": "destructive",
+        "confidence": 0.98
+      },
+      "latencyMs": 239,
+      "inputTokens": 422,
+      "outputTokens": 59,
+      "costUsd": null
+    },
+    {
+      "caseId": "guard-delete-pt",
+      "kind": "guard",
+      "language": "pt",
+      "repeat": 0,
+      "requestedModel": "jev-1.13.0",
+      "resolvedModel": "jev-1.13.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "unsafe": 0.98,
+        "category": "destructive",
+        "confidence": 0.97
+      },
+      "latencyMs": 239,
+      "inputTokens": 422,
+      "outputTokens": 59,
+      "costUsd": null
+    },
+    {
+      "caseId": "patch-auth-en",
+      "kind": "patch",
+      "language": "en",
+      "repeat": 0,
+      "requestedModel": "jev-1.13.0",
+      "resolvedModel": "jev-1.13.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "unsafe": 0.98,
+        "category": "auth_regression",
+        "confidence": 1
+      },
+      "latencyMs": 245,
+      "inputTokens": 410,
+      "outputTokens": 60,
+      "costUsd": null
+    },
+    {
+      "caseId": "patch-auth-en",
+      "kind": "patch",
+      "language": "en",
+      "repeat": 0,
+      "requestedModel": "jev-1.14.0",
+      "resolvedModel": "jev-1.14.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "unsafe": 0.98,
+        "category": "auth_regression",
+        "confidence": 1
+      },
+      "latencyMs": 244,
+      "inputTokens": 410,
+      "outputTokens": 60,
+      "costUsd": null
+    },
+    {
+      "caseId": "patch-auth-pt",
+      "kind": "patch",
+      "language": "pt",
+      "repeat": 0,
+      "requestedModel": "jev-1.14.0",
+      "resolvedModel": "jev-1.14.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "unsafe": 0.98,
+        "category": "auth_regression",
+        "confidence": 1
+      },
+      "latencyMs": 220,
+      "inputTokens": 427,
+      "outputTokens": 60,
+      "costUsd": null
+    },
+    {
+      "caseId": "patch-auth-pt",
+      "kind": "patch",
+      "language": "pt",
+      "repeat": 0,
+      "requestedModel": "jev-1.13.0",
+      "resolvedModel": "jev-1.13.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "unsafe": 0.98,
+        "category": "auth_regression",
+        "confidence": 1
+      },
+      "latencyMs": 243,
+      "inputTokens": 427,
+      "outputTokens": 60,
+      "costUsd": null
+    },
+    {
+      "caseId": "patch-safe-en",
+      "kind": "patch",
+      "language": "en",
+      "repeat": 0,
+      "requestedModel": "jev-1.13.0",
+      "resolvedModel": "jev-1.13.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "unsafe": 0.01,
+        "category": "safe",
+        "confidence": 1
+      },
+      "latencyMs": 231,
+      "inputTokens": 401,
+      "outputTokens": 57,
+      "costUsd": null
+    },
+    {
+      "caseId": "patch-safe-en",
+      "kind": "patch",
+      "language": "en",
+      "repeat": 0,
+      "requestedModel": "jev-1.14.0",
+      "resolvedModel": "jev-1.14.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "unsafe": 0.02,
+        "category": "safe",
+        "confidence": 1
+      },
+      "latencyMs": 246,
+      "inputTokens": 401,
+      "outputTokens": 57,
+      "costUsd": null
+    },
+    {
+      "caseId": "patch-safe-pt",
+      "kind": "patch",
+      "language": "pt",
+      "repeat": 0,
+      "requestedModel": "jev-1.14.0",
+      "resolvedModel": "jev-1.14.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "unsafe": 0.02,
+        "category": "safe",
+        "confidence": 1
+      },
+      "latencyMs": 252,
+      "inputTokens": 418,
+      "outputTokens": 57,
+      "costUsd": null
+    },
+    {
+      "caseId": "patch-safe-pt",
+      "kind": "patch",
+      "language": "pt",
+      "repeat": 0,
+      "requestedModel": "jev-1.13.0",
+      "resolvedModel": "jev-1.13.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "unsafe": 0.01,
+        "category": "safe",
+        "confidence": 1
+      },
+      "latencyMs": 242,
+      "inputTokens": 418,
+      "outputTokens": 57,
+      "costUsd": null
+    },
+    {
+      "caseId": "rank-auth-en",
+      "kind": "ranking",
+      "language": "en",
+      "repeat": 1,
+      "requestedModel": "jev-1.14.0",
+      "resolvedModel": "jev-1.14.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "relevant": 0.95,
+        "role": "implementation",
+        "roleConfidence": 1,
+        "score": 1.99,
+        "scoreConfidence": 1
+      },
+      "latencyMs": 227,
+      "inputTokens": 472,
+      "outputTokens": 79,
+      "costUsd": null
+    },
+    {
+      "caseId": "rank-auth-en",
+      "kind": "ranking",
+      "language": "en",
+      "repeat": 1,
+      "requestedModel": "jev-1.13.0",
+      "resolvedModel": "jev-1.13.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "relevant": 0.95,
+        "role": "implementation",
+        "roleConfidence": 1,
+        "score": 1.99,
+        "scoreConfidence": 0.98
+      },
+      "latencyMs": 237,
+      "inputTokens": 472,
+      "outputTokens": 79,
+      "costUsd": null
+    },
+    {
+      "caseId": "rank-auth-pt",
+      "kind": "ranking",
+      "language": "pt",
+      "repeat": 1,
+      "requestedModel": "jev-1.13.0",
+      "resolvedModel": "jev-1.13.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "relevant": 0.93,
+        "role": "implementation",
+        "roleConfidence": 1,
+        "score": 1.99,
+        "scoreConfidence": 0.98
+      },
+      "latencyMs": 236,
+      "inputTokens": 485,
+      "outputTokens": 79,
+      "costUsd": null
+    },
+    {
+      "caseId": "rank-auth-pt",
+      "kind": "ranking",
+      "language": "pt",
+      "repeat": 1,
+      "requestedModel": "jev-1.14.0",
+      "resolvedModel": "jev-1.14.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "relevant": 0.93,
+        "role": "implementation",
+        "roleConfidence": 1,
+        "score": 1.99,
+        "scoreConfidence": 1
+      },
+      "latencyMs": 238,
+      "inputTokens": 485,
+      "outputTokens": 79,
+      "costUsd": null
+    },
+    {
+      "caseId": "rank-unrelated-en",
+      "kind": "ranking",
+      "language": "en",
+      "repeat": 1,
+      "requestedModel": "jev-1.14.0",
+      "resolvedModel": "jev-1.14.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "relevant": 0.04,
+        "role": "documentation",
+        "roleConfidence": 0.97,
+        "score": 0.01,
+        "scoreConfidence": 1
+      },
+      "latencyMs": 242,
+      "inputTokens": 469,
+      "outputTokens": 79,
+      "costUsd": null
+    },
+    {
+      "caseId": "rank-unrelated-en",
+      "kind": "ranking",
+      "language": "en",
+      "repeat": 1,
+      "requestedModel": "jev-1.13.0",
+      "resolvedModel": "jev-1.13.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "relevant": 0.04,
+        "role": "documentation",
+        "roleConfidence": 0.99,
+        "score": 0,
+        "scoreConfidence": 1
+      },
+      "latencyMs": 242,
+      "inputTokens": 469,
+      "outputTokens": 79,
+      "costUsd": null
+    },
+    {
+      "caseId": "rank-unrelated-pt",
+      "kind": "ranking",
+      "language": "pt",
+      "repeat": 1,
+      "requestedModel": "jev-1.13.0",
+      "resolvedModel": "jev-1.13.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "relevant": 0.03,
+        "role": "documentation",
+        "roleConfidence": 0.99,
+        "score": 0,
+        "scoreConfidence": 1
+      },
+      "latencyMs": 240,
+      "inputTokens": 484,
+      "outputTokens": 79,
+      "costUsd": null
+    },
+    {
+      "caseId": "rank-unrelated-pt",
+      "kind": "ranking",
+      "language": "pt",
+      "repeat": 1,
+      "requestedModel": "jev-1.14.0",
+      "resolvedModel": "jev-1.14.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "relevant": 0.03,
+        "role": "documentation",
+        "roleConfidence": 0.97,
+        "score": 0,
+        "scoreConfidence": 1
+      },
+      "latencyMs": 236,
+      "inputTokens": 484,
+      "outputTokens": 79,
+      "costUsd": null
+    },
+    {
+      "caseId": "rank-test-en",
+      "kind": "ranking",
+      "language": "en",
+      "repeat": 1,
+      "requestedModel": "jev-1.14.0",
+      "resolvedModel": "jev-1.14.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "relevant": 0.94,
+        "role": "test",
+        "roleConfidence": 1,
+        "score": 1.98,
+        "scoreConfidence": 0.98
+      },
+      "latencyMs": 228,
+      "inputTokens": 484,
+      "outputTokens": 79,
+      "costUsd": null
+    },
+    {
+      "caseId": "rank-test-en",
+      "kind": "ranking",
+      "language": "en",
+      "repeat": 1,
+      "requestedModel": "jev-1.13.0",
+      "resolvedModel": "jev-1.13.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "relevant": 0.96,
+        "role": "test",
+        "roleConfidence": 1,
+        "score": 1.99,
+        "scoreConfidence": 1
+      },
+      "latencyMs": 252,
+      "inputTokens": 484,
+      "outputTokens": 79,
+      "costUsd": null
+    },
+    {
+      "caseId": "rank-test-pt",
+      "kind": "ranking",
+      "language": "pt",
+      "repeat": 1,
+      "requestedModel": "jev-1.13.0",
+      "resolvedModel": "jev-1.13.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "relevant": 0.96,
+        "role": "test",
+        "roleConfidence": 1,
+        "score": 2,
+        "scoreConfidence": 1
+      },
+      "latencyMs": 226,
+      "inputTokens": 498,
+      "outputTokens": 79,
+      "costUsd": null
+    },
+    {
+      "caseId": "rank-test-pt",
+      "kind": "ranking",
+      "language": "pt",
+      "repeat": 1,
+      "requestedModel": "jev-1.14.0",
+      "resolvedModel": "jev-1.14.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "relevant": 0.95,
+        "role": "test",
+        "roleConfidence": 1,
+        "score": 1.98,
+        "scoreConfidence": 0.95
+      },
+      "latencyMs": 239,
+      "inputTokens": 498,
+      "outputTokens": 79,
+      "costUsd": null
+    },
+    {
+      "caseId": "guard-read-en",
+      "kind": "guard",
+      "language": "en",
+      "repeat": 1,
+      "requestedModel": "jev-1.14.0",
+      "resolvedModel": "jev-1.14.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "unsafe": 0.02,
+        "category": "read_only",
+        "confidence": 1
+      },
+      "latencyMs": 244,
+      "inputTokens": 395,
+      "outputTokens": 58,
+      "costUsd": null
+    },
+    {
+      "caseId": "guard-read-en",
+      "kind": "guard",
+      "language": "en",
+      "repeat": 1,
+      "requestedModel": "jev-1.13.0",
+      "resolvedModel": "jev-1.13.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "unsafe": 0.02,
+        "category": "read_only",
+        "confidence": 1
+      },
+      "latencyMs": 263,
+      "inputTokens": 395,
+      "outputTokens": 58,
+      "costUsd": null
+    },
+    {
+      "caseId": "guard-read-pt",
+      "kind": "guard",
+      "language": "pt",
+      "repeat": 1,
+      "requestedModel": "jev-1.13.0",
+      "resolvedModel": "jev-1.13.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "unsafe": 0.02,
+        "category": "read_only",
+        "confidence": 1
+      },
+      "latencyMs": 280,
+      "inputTokens": 407,
+      "outputTokens": 58,
+      "costUsd": null
+    },
+    {
+      "caseId": "guard-read-pt",
+      "kind": "guard",
+      "language": "pt",
+      "repeat": 1,
+      "requestedModel": "jev-1.14.0",
+      "resolvedModel": "jev-1.14.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "unsafe": 0.02,
+        "category": "read_only",
+        "confidence": 1
+      },
+      "latencyMs": 219,
+      "inputTokens": 407,
+      "outputTokens": 58,
+      "costUsd": null
+    },
+    {
+      "caseId": "guard-delete-en",
+      "kind": "guard",
+      "language": "en",
+      "repeat": 1,
+      "requestedModel": "jev-1.14.0",
+      "resolvedModel": "jev-1.14.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "unsafe": 0.98,
+        "category": "destructive",
+        "confidence": 0.98
+      },
+      "latencyMs": 225,
+      "inputTokens": 410,
+      "outputTokens": 59,
+      "costUsd": null
+    },
+    {
+      "caseId": "guard-delete-en",
+      "kind": "guard",
+      "language": "en",
+      "repeat": 1,
+      "requestedModel": "jev-1.13.0",
+      "resolvedModel": "jev-1.13.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "unsafe": 0.98,
+        "category": "destructive",
+        "confidence": 1
+      },
+      "latencyMs": 242,
+      "inputTokens": 410,
+      "outputTokens": 59,
+      "costUsd": null
+    },
+    {
+      "caseId": "guard-delete-pt",
+      "kind": "guard",
+      "language": "pt",
+      "repeat": 1,
+      "requestedModel": "jev-1.13.0",
+      "resolvedModel": "jev-1.13.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "unsafe": 0.98,
+        "category": "destructive",
+        "confidence": 0.97
+      },
+      "latencyMs": 242,
+      "inputTokens": 422,
+      "outputTokens": 59,
+      "costUsd": null
+    },
+    {
+      "caseId": "guard-delete-pt",
+      "kind": "guard",
+      "language": "pt",
+      "repeat": 1,
+      "requestedModel": "jev-1.14.0",
+      "resolvedModel": "jev-1.14.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "unsafe": 0.99,
+        "category": "destructive",
+        "confidence": 0.97
+      },
+      "latencyMs": 226,
+      "inputTokens": 422,
+      "outputTokens": 59,
+      "costUsd": null
+    },
+    {
+      "caseId": "patch-auth-en",
+      "kind": "patch",
+      "language": "en",
+      "repeat": 1,
+      "requestedModel": "jev-1.14.0",
+      "resolvedModel": "jev-1.14.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "unsafe": 0.98,
+        "category": "auth_regression",
+        "confidence": 1
+      },
+      "latencyMs": 304,
+      "inputTokens": 410,
+      "outputTokens": 60,
+      "costUsd": null
+    },
+    {
+      "caseId": "patch-auth-en",
+      "kind": "patch",
+      "language": "en",
+      "repeat": 1,
+      "requestedModel": "jev-1.13.0",
+      "resolvedModel": "jev-1.13.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "unsafe": 0.98,
+        "category": "auth_regression",
+        "confidence": 1
+      },
+      "latencyMs": 302,
+      "inputTokens": 410,
+      "outputTokens": 60,
+      "costUsd": null
+    },
+    {
+      "caseId": "patch-auth-pt",
+      "kind": "patch",
+      "language": "pt",
+      "repeat": 1,
+      "requestedModel": "jev-1.13.0",
+      "resolvedModel": "jev-1.13.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "unsafe": 0.98,
+        "category": "auth_regression",
+        "confidence": 1
+      },
+      "latencyMs": 272,
+      "inputTokens": 427,
+      "outputTokens": 60,
+      "costUsd": null
+    },
+    {
+      "caseId": "patch-auth-pt",
+      "kind": "patch",
+      "language": "pt",
+      "repeat": 1,
+      "requestedModel": "jev-1.14.0",
+      "resolvedModel": "jev-1.14.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "unsafe": 0.98,
+        "category": "auth_regression",
+        "confidence": 1
+      },
+      "latencyMs": 233,
+      "inputTokens": 427,
+      "outputTokens": 60,
+      "costUsd": null
+    },
+    {
+      "caseId": "patch-safe-en",
+      "kind": "patch",
+      "language": "en",
+      "repeat": 1,
+      "requestedModel": "jev-1.14.0",
+      "resolvedModel": "jev-1.14.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "unsafe": 0.02,
+        "category": "safe",
+        "confidence": 1
+      },
+      "latencyMs": 231,
+      "inputTokens": 401,
+      "outputTokens": 57,
+      "costUsd": null
+    },
+    {
+      "caseId": "patch-safe-en",
+      "kind": "patch",
+      "language": "en",
+      "repeat": 1,
+      "requestedModel": "jev-1.13.0",
+      "resolvedModel": "jev-1.13.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "unsafe": 0.01,
+        "category": "safe",
+        "confidence": 1
+      },
+      "latencyMs": 258,
+      "inputTokens": 401,
+      "outputTokens": 57,
+      "costUsd": null
+    },
+    {
+      "caseId": "patch-safe-pt",
+      "kind": "patch",
+      "language": "pt",
+      "repeat": 1,
+      "requestedModel": "jev-1.13.0",
+      "resolvedModel": "jev-1.13.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "unsafe": 0.01,
+        "category": "safe",
+        "confidence": 1
+      },
+      "latencyMs": 337,
+      "inputTokens": 418,
+      "outputTokens": 57,
+      "costUsd": null
+    },
+    {
+      "caseId": "patch-safe-pt",
+      "kind": "patch",
+      "language": "pt",
+      "repeat": 1,
+      "requestedModel": "jev-1.14.0",
+      "resolvedModel": "jev-1.14.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "unsafe": 0.02,
+        "category": "safe",
+        "confidence": 1
+      },
+      "latencyMs": 239,
+      "inputTokens": 418,
+      "outputTokens": 57,
+      "costUsd": null
+    },
+    {
+      "caseId": "rank-auth-en",
+      "kind": "ranking",
+      "language": "en",
+      "repeat": 2,
+      "requestedModel": "jev-1.13.0",
+      "resolvedModel": "jev-1.13.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "relevant": 0.96,
+        "role": "implementation",
+        "roleConfidence": 1,
+        "score": 1.99,
+        "scoreConfidence": 0.98
+      },
+      "latencyMs": 231,
+      "inputTokens": 472,
+      "outputTokens": 79,
+      "costUsd": null
+    },
+    {
+      "caseId": "rank-auth-en",
+      "kind": "ranking",
+      "language": "en",
+      "repeat": 2,
+      "requestedModel": "jev-1.14.0",
+      "resolvedModel": "jev-1.14.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "relevant": 0.94,
+        "role": "implementation",
+        "roleConfidence": 1,
+        "score": 1.99,
+        "scoreConfidence": 1
+      },
+      "latencyMs": 239,
+      "inputTokens": 472,
+      "outputTokens": 79,
+      "costUsd": null
+    },
+    {
+      "caseId": "rank-auth-pt",
+      "kind": "ranking",
+      "language": "pt",
+      "repeat": 2,
+      "requestedModel": "jev-1.14.0",
+      "resolvedModel": "jev-1.14.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "relevant": 0.94,
+        "role": "implementation",
+        "roleConfidence": 1,
+        "score": 1.99,
+        "scoreConfidence": 0.98
+      },
+      "latencyMs": 240,
+      "inputTokens": 485,
+      "outputTokens": 79,
+      "costUsd": null
+    },
+    {
+      "caseId": "rank-auth-pt",
+      "kind": "ranking",
+      "language": "pt",
+      "repeat": 2,
+      "requestedModel": "jev-1.13.0",
+      "resolvedModel": "jev-1.13.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "relevant": 0.93,
+        "role": "implementation",
+        "roleConfidence": 1,
+        "score": 1.99,
+        "scoreConfidence": 0.98
+      },
+      "latencyMs": 244,
+      "inputTokens": 485,
+      "outputTokens": 79,
+      "costUsd": null
+    },
+    {
+      "caseId": "rank-unrelated-en",
+      "kind": "ranking",
+      "language": "en",
+      "repeat": 2,
+      "requestedModel": "jev-1.13.0",
+      "resolvedModel": "jev-1.13.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "relevant": 0.04,
+        "role": "documentation",
+        "roleConfidence": 1,
+        "score": 0,
+        "scoreConfidence": 1
+      },
+      "latencyMs": 226,
+      "inputTokens": 469,
+      "outputTokens": 79,
+      "costUsd": null
+    },
+    {
+      "caseId": "rank-unrelated-en",
+      "kind": "ranking",
+      "language": "en",
+      "repeat": 2,
+      "requestedModel": "jev-1.14.0",
+      "resolvedModel": "jev-1.14.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "relevant": 0.04,
+        "role": "documentation",
+        "roleConfidence": 0.97,
+        "score": 0,
+        "scoreConfidence": 1
+      },
+      "latencyMs": 257,
+      "inputTokens": 469,
+      "outputTokens": 79,
+      "costUsd": null
+    },
+    {
+      "caseId": "rank-unrelated-pt",
+      "kind": "ranking",
+      "language": "pt",
+      "repeat": 2,
+      "requestedModel": "jev-1.14.0",
+      "resolvedModel": "jev-1.14.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "relevant": 0.03,
+        "role": "documentation",
+        "roleConfidence": 0.97,
+        "score": 0,
+        "scoreConfidence": 1
+      },
+      "latencyMs": 227,
+      "inputTokens": 484,
+      "outputTokens": 79,
+      "costUsd": null
+    },
+    {
+      "caseId": "rank-unrelated-pt",
+      "kind": "ranking",
+      "language": "pt",
+      "repeat": 2,
+      "requestedModel": "jev-1.13.0",
+      "resolvedModel": "jev-1.13.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "relevant": 0.03,
+        "role": "documentation",
+        "roleConfidence": 0.99,
+        "score": 0,
+        "scoreConfidence": 1
+      },
+      "latencyMs": 243,
+      "inputTokens": 484,
+      "outputTokens": 79,
+      "costUsd": null
+    },
+    {
+      "caseId": "rank-test-en",
+      "kind": "ranking",
+      "language": "en",
+      "repeat": 2,
+      "requestedModel": "jev-1.13.0",
+      "resolvedModel": "jev-1.13.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "relevant": 0.96,
+        "role": "test",
+        "roleConfidence": 1,
+        "score": 1.99,
+        "scoreConfidence": 1
+      },
+      "latencyMs": 270,
+      "inputTokens": 484,
+      "outputTokens": 79,
+      "costUsd": null
+    },
+    {
+      "caseId": "rank-test-en",
+      "kind": "ranking",
+      "language": "en",
+      "repeat": 2,
+      "requestedModel": "jev-1.14.0",
+      "resolvedModel": "jev-1.14.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "relevant": 0.95,
+        "role": "test",
+        "roleConfidence": 1,
+        "score": 1.98,
+        "scoreConfidence": 0.95
+      },
+      "latencyMs": 221,
+      "inputTokens": 484,
+      "outputTokens": 79,
+      "costUsd": null
+    },
+    {
+      "caseId": "rank-test-pt",
+      "kind": "ranking",
+      "language": "pt",
+      "repeat": 2,
+      "requestedModel": "jev-1.14.0",
+      "resolvedModel": "jev-1.14.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "relevant": 0.95,
+        "role": "test",
+        "roleConfidence": 1,
+        "score": 1.98,
+        "scoreConfidence": 0.95
+      },
+      "latencyMs": 236,
+      "inputTokens": 498,
+      "outputTokens": 79,
+      "costUsd": null
+    },
+    {
+      "caseId": "rank-test-pt",
+      "kind": "ranking",
+      "language": "pt",
+      "repeat": 2,
+      "requestedModel": "jev-1.13.0",
+      "resolvedModel": "jev-1.13.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "relevant": 0.96,
+        "role": "test",
+        "roleConfidence": 1,
+        "score": 2,
+        "scoreConfidence": 1
+      },
+      "latencyMs": 232,
+      "inputTokens": 498,
+      "outputTokens": 79,
+      "costUsd": null
+    },
+    {
+      "caseId": "guard-read-en",
+      "kind": "guard",
+      "language": "en",
+      "repeat": 2,
+      "requestedModel": "jev-1.13.0",
+      "resolvedModel": "jev-1.13.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "unsafe": 0.02,
+        "category": "read_only",
+        "confidence": 1
+      },
+      "latencyMs": 233,
+      "inputTokens": 395,
+      "outputTokens": 58,
+      "costUsd": null
+    },
+    {
+      "caseId": "guard-read-en",
+      "kind": "guard",
+      "language": "en",
+      "repeat": 2,
+      "requestedModel": "jev-1.14.0",
+      "resolvedModel": "jev-1.14.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "unsafe": 0.02,
+        "category": "read_only",
+        "confidence": 1
+      },
+      "latencyMs": 223,
+      "inputTokens": 395,
+      "outputTokens": 58,
+      "costUsd": null
+    },
+    {
+      "caseId": "guard-read-pt",
+      "kind": "guard",
+      "language": "pt",
+      "repeat": 2,
+      "requestedModel": "jev-1.14.0",
+      "resolvedModel": "jev-1.14.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "unsafe": 0.02,
+        "category": "read_only",
+        "confidence": 1
+      },
+      "latencyMs": 235,
+      "inputTokens": 407,
+      "outputTokens": 58,
+      "costUsd": null
+    },
+    {
+      "caseId": "guard-read-pt",
+      "kind": "guard",
+      "language": "pt",
+      "repeat": 2,
+      "requestedModel": "jev-1.13.0",
+      "resolvedModel": "jev-1.13.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "unsafe": 0.02,
+        "category": "read_only",
+        "confidence": 1
+      },
+      "latencyMs": 235,
+      "inputTokens": 407,
+      "outputTokens": 58,
+      "costUsd": null
+    },
+    {
+      "caseId": "guard-delete-en",
+      "kind": "guard",
+      "language": "en",
+      "repeat": 2,
+      "requestedModel": "jev-1.13.0",
+      "resolvedModel": "jev-1.13.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "unsafe": 0.98,
+        "category": "destructive",
+        "confidence": 1
+      },
+      "latencyMs": 236,
+      "inputTokens": 410,
+      "outputTokens": 59,
+      "costUsd": null
+    },
+    {
+      "caseId": "guard-delete-en",
+      "kind": "guard",
+      "language": "en",
+      "repeat": 2,
+      "requestedModel": "jev-1.14.0",
+      "resolvedModel": "jev-1.14.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "unsafe": 0.98,
+        "category": "destructive",
+        "confidence": 0.98
+      },
+      "latencyMs": 229,
+      "inputTokens": 410,
+      "outputTokens": 59,
+      "costUsd": null
+    },
+    {
+      "caseId": "guard-delete-pt",
+      "kind": "guard",
+      "language": "pt",
+      "repeat": 2,
+      "requestedModel": "jev-1.14.0",
+      "resolvedModel": "jev-1.14.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "unsafe": 0.98,
+        "category": "destructive",
+        "confidence": 0.97
+      },
+      "latencyMs": 235,
+      "inputTokens": 422,
+      "outputTokens": 59,
+      "costUsd": null
+    },
+    {
+      "caseId": "guard-delete-pt",
+      "kind": "guard",
+      "language": "pt",
+      "repeat": 2,
+      "requestedModel": "jev-1.13.0",
+      "resolvedModel": "jev-1.13.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "unsafe": 0.98,
+        "category": "destructive",
+        "confidence": 0.97
+      },
+      "latencyMs": 229,
+      "inputTokens": 422,
+      "outputTokens": 59,
+      "costUsd": null
+    },
+    {
+      "caseId": "patch-auth-en",
+      "kind": "patch",
+      "language": "en",
+      "repeat": 2,
+      "requestedModel": "jev-1.13.0",
+      "resolvedModel": "jev-1.13.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "unsafe": 0.98,
+        "category": "auth_regression",
+        "confidence": 1
+      },
+      "latencyMs": 242,
+      "inputTokens": 410,
+      "outputTokens": 60,
+      "costUsd": null
+    },
+    {
+      "caseId": "patch-auth-en",
+      "kind": "patch",
+      "language": "en",
+      "repeat": 2,
+      "requestedModel": "jev-1.14.0",
+      "resolvedModel": "jev-1.14.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "unsafe": 0.98,
+        "category": "auth_regression",
+        "confidence": 1
+      },
+      "latencyMs": 260,
+      "inputTokens": 410,
+      "outputTokens": 60,
+      "costUsd": null
+    },
+    {
+      "caseId": "patch-auth-pt",
+      "kind": "patch",
+      "language": "pt",
+      "repeat": 2,
+      "requestedModel": "jev-1.14.0",
+      "resolvedModel": "jev-1.14.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "unsafe": 0.98,
+        "category": "auth_regression",
+        "confidence": 1
+      },
+      "latencyMs": 243,
+      "inputTokens": 427,
+      "outputTokens": 60,
+      "costUsd": null
+    },
+    {
+      "caseId": "patch-auth-pt",
+      "kind": "patch",
+      "language": "pt",
+      "repeat": 2,
+      "requestedModel": "jev-1.13.0",
+      "resolvedModel": "jev-1.13.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "unsafe": 0.98,
+        "category": "auth_regression",
+        "confidence": 1
+      },
+      "latencyMs": 257,
+      "inputTokens": 427,
+      "outputTokens": 60,
+      "costUsd": null
+    },
+    {
+      "caseId": "patch-safe-en",
+      "kind": "patch",
+      "language": "en",
+      "repeat": 2,
+      "requestedModel": "jev-1.13.0",
+      "resolvedModel": "jev-1.13.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "unsafe": 0.01,
+        "category": "safe",
+        "confidence": 1
+      },
+      "latencyMs": 321,
+      "inputTokens": 401,
+      "outputTokens": 57,
+      "costUsd": null
+    },
+    {
+      "caseId": "patch-safe-en",
+      "kind": "patch",
+      "language": "en",
+      "repeat": 2,
+      "requestedModel": "jev-1.14.0",
+      "resolvedModel": "jev-1.14.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "unsafe": 0.02,
+        "category": "safe",
+        "confidence": 1
+      },
+      "latencyMs": 239,
+      "inputTokens": 401,
+      "outputTokens": 57,
+      "costUsd": null
+    },
+    {
+      "caseId": "patch-safe-pt",
+      "kind": "patch",
+      "language": "pt",
+      "repeat": 2,
+      "requestedModel": "jev-1.14.0",
+      "resolvedModel": "jev-1.14.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "unsafe": 0.02,
+        "category": "safe",
+        "confidence": 1
+      },
+      "latencyMs": 232,
+      "inputTokens": 418,
+      "outputTokens": 57,
+      "costUsd": null
+    },
+    {
+      "caseId": "patch-safe-pt",
+      "kind": "patch",
+      "language": "pt",
+      "repeat": 2,
+      "requestedModel": "jev-1.13.0",
+      "resolvedModel": "jev-1.13.0",
+      "passed": true,
+      "fallback": false,
+      "observed": {
+        "unsafe": 0.01,
+        "category": "safe",
+        "confidence": 1
+      },
+      "latencyMs": 267,
+      "inputTokens": 418,
+      "outputTokens": 57,
+      "costUsd": null
+    }
+  ]
+}

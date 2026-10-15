@@ -687,7 +687,7 @@
           const usageEl = document.getElementById('measuredUsage');
           const usage = summary.usage;
           if (usageEl) usageEl.innerText = usage
-            ? `${currentLang === 'pt' ? 'Uso reportado (ranking de contexto)' : 'Reported usage (context ranking)'}: ${usage.inputTokens}/${usage.outputTokens} tokens; ${usage.newModelCalls} calls; USD ${usage.reportedCostUsd ?? (currentLang === 'pt' ? 'não informado' : 'not informed')} (${usage.costedRequests}/${usage.newModelCalls} cost coverage); ${usage.eventsWithUsage}/${usage.eventsWithUsage + usage.eventsWithoutUsage} events with usage. Validated responses only; unreported retries/failures excluded.`
+            ? `${currentLang === 'pt' ? 'Uso reportado (ranking de contexto)' : 'Reported usage (context ranking)'}: ${usage.inputTokens ?? (currentLang === 'pt' ? 'não informado' : 'not informed')}/${usage.outputTokens ?? (currentLang === 'pt' ? 'não informado' : 'not informed')} tokens; ${usage.newModelCalls} calls; USD ${usage.reportedCostUsd ?? (currentLang === 'pt' ? 'não informado' : 'not informed')} (${usage.costedRequests}/${usage.newModelCalls} cost coverage); ${usage.eventsWithUsage}/${usage.eventsWithUsage + usage.eventsWithoutUsage} events with usage. Validated responses only; unreported retries/failures excluded.`
             : (currentLang === 'pt' ? 'Uso reportado: não informado.' : 'Reported usage: not informed.');
           const comparisonTitle = document.getElementById('comparisonTitle');
           if (comparisonTitle) comparisonTitle.innerText = currentLang === 'pt' ? 'Comparação medida por tarefa' : 'Measured task comparison';

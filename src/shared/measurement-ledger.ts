@@ -51,7 +51,7 @@ export function startUsageMeasurement(provider: string, model: string) {
   if (!runId) return undefined;
   const requestId = randomUUID();
   append(runId, { kind: "request_started", requestId, provider, model });
-  return (usage: { inputTokens: number; outputTokens: number; costUsd?: number } | null) => {
+  return (usage: { inputTokens: number | null; outputTokens: number | null; costUsd?: number } | null) => {
     append(runId, { kind: "request_completed", requestId, provider, model,
       usage, coverage: "validated_response_only; unreported retries excluded" });
   };

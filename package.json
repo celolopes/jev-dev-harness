@@ -1,6 +1,7 @@
 {
   "name": "jev-dev-harness",
-  "version": "0.2.11",
+  "version": "0.2.12",
+  "engines": { "node": ">=22" },
   "description": "Developer Harness with TypeSafe AI / Jev for AI Coding Agents",
   "type": "module",
   "bin": {
@@ -63,7 +64,9 @@
     "docs/RELEASING.md",
     "docs/jev/OPENROUTER-NATIVE.md",
     "docs/jev/MEASURED-USAGE.md",
-    "docs/jev/MULTI-HARNESS-USAGE.md"
+    "docs/jev/MULTI-HARNESS-USAGE.md",
+    "docs/jev/JEV-1.14-EVALUATION.md",
+    "docs/jev/evaluation-jev-1.14-2026-10-15.json"
   ],
   "publishConfig": {
     "registry": "https://registry.npmjs.org/",
@@ -81,6 +84,7 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "bench": "vitest run tests/benchmark/",
+    "eval:jev": "npm run build && node scripts/eval-jev-models.mjs",
     "typecheck": "tsc --noEmit"
   },
   "keywords": [
@@ -106,7 +110,7 @@
   "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.30.0",
-    "@typesafe-ai/sdk": "^0.6.0",
+    "@typesafe-ai/sdk": "0.7.0",
     "commander": "^13.1.0",
     "ignore": "^7.0.3"
   },

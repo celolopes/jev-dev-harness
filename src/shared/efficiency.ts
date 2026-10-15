@@ -11,7 +11,7 @@ export function buildContextEfficiencyReport(metrics: TelemetryMetrics) {
     "### ⚡ Eficiência Jev",
     `- Contexto: ${metrics.initialCandidates} entradas encontradas; ${metrics.filteredCandidates} após filtros; ${metrics.evaluatedCandidates ?? "não informado"} candidatos avaliados; ${metrics.selectedCount} arquivos selecionados.`,
     `- Modelo: ${metrics.provider ?? "não informado"}; ${(metrics.decisionModels ?? []).join(", ") || "não informado"}; cache ${metrics.cacheHits} hits / ${metrics.cacheMisses} misses; ${newModelCalls === 0 ? "nenhuma chamada nova ao modelo" : `${newModelCalls ?? "não informado"} chamadas novas ao modelo`}.`,
-    `- Uso novo reportado: ${metrics.tokensSent}/${metrics.tokensReceived} tokens de entrada/saída; custo ${reportedCostUsd === null ? "não informado" : `US$ ${reportedCostUsd}`} (${costedRequests}/${newModelCalls ?? "?"} chamadas com custo informado).`,
+    `- Uso novo reportado: ${metrics.tokensSent ?? "não informado"}/${metrics.tokensReceived ?? "não informado"} tokens de entrada/saída; custo ${reportedCostUsd === null ? "não informado" : `US$ ${reportedCostUsd}`} (${costedRequests}/${newModelCalls ?? "?"} chamadas com custo informado).`,
     `- Latência: ${metrics.latencyMs} ms; fallback: ${metrics.fallbackUsed}${metrics.fallbackReason ? ` (${metrics.fallbackReason})` : ""}. Auditoria de comandos/diffs: não executada por este ranking.`,
     "- Economia de tokens/dinheiro: não medida.",
   ].join("\n");
@@ -29,6 +29,8 @@ export function buildContextEfficiencyReport(metrics: TelemetryMetrics) {
     provider: metrics.provider ?? null,
     decisionModels: metrics.decisionModels ?? [],
     newTokens: { input: metrics.tokensSent, output: metrics.tokensReceived },
+    tokenCoverage: { inputTokenRequests: metrics.inputTokenRequests ?? null,
+      outputTokenRequests: metrics.outputTokenRequests ?? null, validatedResponses: metrics.validatedResponses ?? null },
     reportedCostUsd,
     costCoverage: { costedRequests, newModelCalls, scope: "validated_responses_only; excludes unreported retries and failures" },
     latencyMs: metrics.latencyMs,

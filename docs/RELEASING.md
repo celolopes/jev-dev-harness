@@ -1,5 +1,13 @@
 # Publishing a stable release
 
+## Next prepared version: 0.2.12
+
+The SDK 0.7 migration is prepared in a separate branch as 0.2.12, requiring Node.js
+22+. Use the validation procedure below on its eventual clean release commit;
+merge, tag and release are separate actions. npm publication remains manual.
+Keep native Jev pinned to 1.13.0. See `docs/jev/JEV-1.14-EVALUATION.md` for actual
+preview results, nullable usage migration and the decision not to promote 1.14.
+
 ## Current release: 0.2.11
 
 The multi-harness bridge is prepared as 0.2.11. Run `npm run release:dry-run`

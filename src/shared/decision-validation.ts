@@ -1,7 +1,7 @@
 import type { Questions, SystemOneResult } from "@typesafe-ai/sdk";
 
 export type DecisionResult<Q extends Questions> = SystemOneResult<Q> & {
-  usage: SystemOneResult<Q>["usage"] & { cost?: number };
+  usage: SystemOneResult<Q>["usage"] & { cost?: number | null };
   provider?: string;
 };
 
@@ -35,6 +35,10 @@ export function validateDecisionResult<Q extends Questions>(
       if (!between(answer.noul, 1)) invalid(`${name}.noul`);
       continue;
     }
+    if (question.type !== "choice" && question.type !== "score") {
+      invalid(`${name}.unsupported_question_type`);
+      continue;
+    }
     if (!between(answer.confidence, 1)) invalid(`${name}.confidence`);
     const labels = Object.keys(question.criteria);
     if (question.type === "choice") {
@@ -60,7 +64,7 @@ export function validateDecisionResult<Q extends Questions>(
   if (!record(result.usage)) invalid("usage");
   const usage = result.usage as Record<string, unknown>;
   for (const key of ["input_tokens", "output_tokens"]) {
-    if (!Number.isSafeInteger(usage[key]) || (usage[key] as number) < 0) invalid(`usage.${key}`);
+    if (usage[key] !== null && (!Number.isSafeInteger(usage[key]) || (usage[key] as number) < 0)) invalid(`usage.${key}`);
   }
-  if (usage.cost !== undefined && !between(usage.cost, Number.MAX_VALUE)) invalid("usage.cost");
+  if (usage.cost != null && !between(usage.cost, Number.MAX_VALUE)) invalid("usage.cost");
 }
