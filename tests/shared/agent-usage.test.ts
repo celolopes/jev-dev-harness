@@ -108,7 +108,8 @@ describe("Cross-harness import and comparison", () => {
   });
   it("exposes imports through CLI and MCP without prompt content", async () => {
     const file = write("input.json", run("base", "vscode-extension"));
-    vi.spyOn(updates, "checkForUpdates").mockResolvedValue({ currentVersion: "test", latestVersion: "test", updateAvailable: false });
+    vi.spyOn(updates, "checkForUpdates").mockResolvedValue({ ...updates.unavailableUpdate("test"), notice: null });
+    vi.spyOn(updates, "createUpdateNotifier").mockReturnValue(async () => null);
     const log = vi.spyOn(console, "log").mockImplementation(() => {});
     await createCli().parseAsync(["efficiency", "import", "--input", file], { from: "user" });
     expect(JSON.parse(log.mock.calls[0]![0]).usage.totalTokens).toBe(120);

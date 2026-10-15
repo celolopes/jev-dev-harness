@@ -18,7 +18,7 @@ import { startDashboardServer } from "./dashboard.js";
 import { runDoctorCommand } from "./doctor.js";
 import { runUninstallCommand } from "./uninstall.js";
 import { runVersionCommand } from "./version.js";
-import { checkForUpdates, printUpdateNotification, clearUpdateCache, compareSemver } from "../shared/update-checker.js";
+import { checkForUpdates, printUpdateNotification, clearUpdateCache } from "../shared/update-checker.js";
 import { recordTelemetryEvent } from "../shared/telemetry.js";
 import { getHarnessVersion } from "../shared/version.js";
 import { beginMeasurement, finishMeasurement } from "../shared/measurement-ledger.js";
@@ -584,8 +584,13 @@ export function createCli(): Command {
       console.log(`\n📦 Checking npm registry for updates (current: v${currentVersion})...\n`);
       try {
         const updateInfo = await checkForUpdates(currentVersion, true);
-        if (!options.force && !updateInfo.updateAvailable && compareSemver(currentVersion, updateInfo.latestVersion) >= 0) {
-          console.log(`✓ You are already on the latest version (v${currentVersion})!\n`);
+        if (updateInfo.status === "unavailable" || !updateInfo.latestVersion) {
+          console.error(updateInfo.notice);
+          process.exitCode = 1;
+          return;
+        }
+        if (!options.force && !updateInfo.updateAvailable) {
+          console.log(`✓ No newer stable release available (running v${currentVersion}; npm latest v${updateInfo.latestVersion}).\n`);
           return;
         }
 
@@ -594,6 +599,7 @@ export function createCli(): Command {
         execSync(`npm install -g ${target} --prefer-online`, { stdio: "inherit" });
         clearUpdateCache();
         console.log(`\n🎉 Successfully updated jev-dev-harness to v${updateInfo.latestVersion || "latest"}!\n`);
+        console.log("Restart the Jev MCP server in every connected harness and restart the dashboard to load the new version.");
       } catch (err) {
         console.error("\n❌ Failed to update automatically. Try running: npm install -g jev-dev-harness@latest\n");
       }
@@ -757,12 +763,13 @@ export function createCli(): Command {
       });
     });
 
-  // Non-blocking update notifier on CLI completion (excluding stdio mcp, version, and update commands)
+  // Bounded update check on completion; never add notices to machine-readable commands.
   program.hook("postAction", async (_thisCommand, actionCommand) => {
     if (
       actionCommand.name() !== "mcp" &&
       actionCommand.name() !== "update" &&
-      actionCommand.name() !== "version"
+      actionCommand.name() !== "version" &&
+      !actionCommand.optsWithGlobals().json
     ) {
       try {
         const update = await checkForUpdates(currentVersion);

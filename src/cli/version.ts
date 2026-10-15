@@ -1,5 +1,5 @@
 import { getHarnessPackageInfo } from "../shared/version.js";
-import { checkForUpdates, compareSemver } from "../shared/update-checker.js";
+import { checkForUpdates, compareSemver, unavailableUpdate, type UpdateInfo } from "../shared/update-checker.js";
 import { printJevBanner } from "./banner.js";
 
 export interface VersionOptions {
@@ -8,8 +8,9 @@ export interface VersionOptions {
 
 export interface VersionInfo {
   version: string;
-  latestVersion: string;
-  isLatest: boolean;
+  latestVersion: string | null;
+  isLatest: boolean | null;
+  update: UpdateInfo;
   location: string;
   nodeVersion: string;
   platform: string;
@@ -18,24 +19,25 @@ export interface VersionInfo {
 
 export async function runVersionCommand(options: VersionOptions = {}): Promise<VersionInfo> {
   const { version, location } = getHarnessPackageInfo();
-  let latestVersion = version;
+  let updateInfo = unavailableUpdate(version);
 
   try {
-    const updateInfo = await checkForUpdates(version, true);
-    latestVersion = updateInfo.latestVersion;
+    updateInfo = await checkForUpdates(version, true);
   } catch {
     // Non-critical fallback
   }
 
-  const comparison = compareSemver(version, latestVersion);
-  const isUpdateAvailable = comparison > 0;
+  const latestVersion = updateInfo.latestVersion;
+  const comparison = latestVersion ? compareSemver(version, latestVersion) : null;
+  const isUpdateAvailable = updateInfo.updateAvailable;
   const isUpToDate = comparison === 0;
-  const isLatest = !isUpdateAvailable;
+  const isLatest = updateInfo.status === "unavailable" ? null : !isUpdateAvailable;
 
   const info: VersionInfo = {
     version,
     latestVersion,
     isLatest,
+    update: updateInfo,
     location,
     nodeVersion: process.version,
     platform: process.platform,
@@ -49,14 +51,14 @@ export async function runVersionCommand(options: VersionOptions = {}): Promise<V
 
   printJevBanner(`VERSION INFO: v${version}`);
 
-  const statusLabel = isUpToDate
+  const statusLabel = comparison === null ? "(update status unknown)" : isUpToDate
     ? "(latest ✓)"
     : isUpdateAvailable
     ? `(update available: v${latestVersion} 🔔)`
     : "(latest dev build 🚀)";
 
   console.log(`  • Installed Version: v${version} ${statusLabel}`);
-  console.log(`  • Latest on npm:     v${latestVersion}`);
+  console.log(`  • Latest on npm:     ${latestVersion ? `v${latestVersion}` : "unknown (check unavailable)"}`);
   console.log(`  • Package Location:  ${location}`);
   console.log(`  • Node.js:           ${process.version} (${process.platform} ${process.arch})`);
 
@@ -71,10 +73,7 @@ export async function runVersionCommand(options: VersionOptions = {}): Promise<V
 
   console.log(`  • Installation Type: ${isGlobal ? "Global CLI" : "Local Workspace"}\n`);
 
-  if (isUpdateAvailable) {
-    console.log(`💡 A newer version (v${latestVersion}) is available on npm! Run:`);
-    console.log("   jev-dev update\n");
-  }
+  if (updateInfo.notice) console.log(updateInfo.notice);
 
   return info;
 }

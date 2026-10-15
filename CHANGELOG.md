@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.2.13 — 2026-10-15
+
+- Share npm release reasons, declared requirements, release links and restart guidance
+  across CLI, dashboard and MCP. Missing release metadata stays explicitly unknown.
+- Deduplicate CLI notices across invocations, MCP notices per connection/version and
+  dashboard dismissals per running/latest version. Long-lived surfaces check hourly.
+- Correct the update cache comparison and keep the timeout active through body reads.
+  Failed checks report unavailable, never a fabricated latest version.
+- Preserve machine-readable CLI output and the MCP tool's first content block.
+  `latestVersion` and version-command `isLatest` are nullable when verification fails.
+- Keep SDK 0.7.0, Node.js 22+ and native Jev 1.13.0 unchanged. npm publication remains manual.
+
 ## 0.2.12 — 2026-10-15
 
 - Upgrade TypeSafe SDK to 0.7.0 and require Node.js 22+. Preserve uncompressed

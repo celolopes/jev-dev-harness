@@ -1,4 +1,5 @@
-import { describe, it, expect, vi } from "vitest";
+import { beforeEach, afterEach, describe, it, expect, vi } from "vitest";
+import * as updates from "../../src/shared/update-checker.js";
 import * as contextRanker from "../../src/context-ranker/index.js";
 import { TelemetryCollector } from "../../src/shared/telemetry.js";
 import { createMcpServer, TOOLS } from "../../src/mcp/server.js";
@@ -8,6 +9,24 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 
 describe("MCP Server", () => {
+  beforeEach(() => { vi.spyOn(updates, "createUpdateNotifier").mockReturnValue(async () => null); });
+  afterEach(() => { vi.restoreAllMocks(); });
+  it("appends a single shared notice without altering tool errors or logging to stdout", async () => {
+    const notice = { ...updates.unavailableUpdate("0.2.12"), notice: "Shared update notice" };
+    const next = vi.fn().mockResolvedValueOnce(notice).mockResolvedValue(null);
+    vi.mocked(updates.createUpdateNotifier).mockReturnValue(next);
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    const server = createMcpServer();
+    // @ts-expect-error accessing internal request handler for testing
+    const handler = server._requestHandlers.get(CallToolRequestSchema.shape.method.value);
+    const request = { method: "tools/call", params: { name: "unknown", arguments: {} } };
+    const first = await handler(request), second = await handler(request);
+    expect(first.isError).toBe(true);
+    expect(first.content[0]).toEqual(second.content[0]);
+    expect(JSON.parse(first.content[1].text).updateNotice.notice).toBe("Shared update notice");
+    expect(second.content).toHaveLength(1);
+    expect(log).not.toHaveBeenCalled();
+  });
   it("rejects a missing comparison manifest without inventing savings", async () => {
     const server = createMcpServer();
     // @ts-expect-error accessing internal request handler for testing

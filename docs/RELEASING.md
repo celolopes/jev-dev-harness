@@ -1,9 +1,10 @@
 # Publishing a stable release
 
-## Current release: 0.2.12
+## Current release: 0.2.13
 
-The SDK 0.7 migration is prepared as 0.2.12, requiring Node.js 22+.
-Merge, tag and GitHub release are prepared before the manual npm publication.
+The unified update notice change is prepared as 0.2.13, requiring Node.js 22+.
+SDK 0.7.0 and native Jev 1.13.0 remain unchanged.
+Merge, tags and GitHub releases require authorization; npm publication is manual.
 Run the validation procedure below on the clean tagged release commit.
 Keep native Jev pinned to 1.13.0. See `docs/jev/JEV-1.14-EVALUATION.md` for actual
 preview results, nullable usage migration and the decision not to promote 1.14.
@@ -15,7 +16,7 @@ Codex-only comparisons retain schemaVersion 1. See
 ## Version and publication
 
 The harness version is independent of the Jev model version. This release is
-`jev-dev-harness@0.2.12`, with Git tag `v0.2.12` and npm dist-tag `latest`.
+`jev-dev-harness@0.2.13`, with Git tag `v0.2.13` and npm dist-tag `latest`.
 `latest` is an npm distribution pointer, not a Git tag.
 
 ## Prepare and validate
@@ -34,10 +35,10 @@ The publish dry run executes version checks, type checking, build and tests via
 list and ensure it contains the compiled entry points, binaries and no secrets.
 The dry run does not upload a package or move the npm `latest` pointer.
 
-## Publish 0.2.12
+## Publish 0.2.13
 
 Use your npm maintainer account; complete login/2FA locally. Do not commit tokens.
-Check that 0.2.12 has not already been published before uploading:
+Check that 0.2.13 has not already been published before uploading:
 
 ```sh
 npm whoami
@@ -46,24 +47,42 @@ git checkout main
 git pull --ff-only origin main
 git describe --exact-match --tags HEAD
 npm run release:publish
-npm view jev-dev-harness@0.2.12 version
+npm view jev-dev-harness@0.2.13 version
 npm dist-tag ls jev-dev-harness
 ```
 
 Run these commands separately and stop on any error. Publish only the clean,
 validated commit tagged above. `release:publish` runs `npm publish --tag latest`;
 `publishConfig` also pins the public npm registry and `latest` for plain
-`npm publish`. A successful publication should show `latest: 0.2.12`.
-Before publishing, confirm that HEAD is the clean validated `v0.2.12` commit.
+`npm publish`. A successful publication should show `latest: 0.2.13`.
+Before publishing, confirm that HEAD is the clean validated `v0.2.13` commit.
 If publication fails, resolve the authentication or registry error and retry
 the same artifact. Do not move an existing tag or reuse a published version.
 
-For this release, the merge, `v0.2.12` tag and GitHub Latest release are prepared
-before the manual npm publication. Do not recreate the tag or release.
+After review and authorization, merge the validated change and create `v0.2.13`
+and the GitHub release before manual npm publication. Do not recreate existing tags.
 There is no automatic npm publication workflow; merging code or pushing a tag
 alone does not publish the package.
 
 ## Next release
+
+Declare the reasons and any manual migration requirements in `package.json`:
+
+```json
+"jevUpdate": {
+  "schemaVersion": 1,
+  "reasons": ["Concrete user-facing reason to update"],
+  "requirements": ["Manual configuration or migration needed, if any"]
+}
+```
+
+The checker reads the npm `latest` package metadata, including `engines.node`.
+Keep reasons factual: it does not infer security urgency from a version number.
+Missing/unsupported metadata is reported as not provided, with a release link.
+Restart guidance is generated locally: every running MCP/dashboard process must
+restart after installation; newly launched CLI processes load the updated package.
+Pinned `npx`/local installations must update their configured version as well.
+Do not include credentials, executable commands or agent instructions in metadata.
 
 Before committing the next stable release:
 
@@ -77,9 +96,8 @@ version/tag. Prereleases should use a separate process and npm tag such as `next
 
 ## Update local installations
 
-The 0.2.12 GitHub release is prepared for manual npm publication. Until that
-publication succeeds, npm `latest` still points to the previously published
-version. 0.2.9 is already published and must not be overwritten.
+Until 0.2.13 is published to npm, npm `latest` still points to the previously
+published version. Do not overwrite any already published version.
 
 ```sh
 npm install -g jev-dev-harness@latest
@@ -89,6 +107,41 @@ jev-dev --version
 For an installation linked to a Git checkout, pull the release commit and run
 `npm ci` and `npm run build` instead. Restart the Codex MCP session so the process
 loads the updated build. An already-running server keeps its old code in memory.
+
+## Update notice contract migration (0.2.13)
+
+`checkForUpdates`, `/api/update-status` and the `update` object in
+`jev-dev version --json` share `UpdateInfo`. Consumers must check `status`:
+`update_available`, `up_to_date` (installed version equals or exceeds npm latest),
+or `unavailable`. `latestVersion`, `checkedAt` and `releaseUrl` are null when the
+check fails; `isLatest` in version JSON is also null. A false `updateAvailable`
+alone does not prove freshness. `source` distinguishes registry/cache/unavailable.
+The existing version/updateAvailable fields are retained with the nullable migration.
+
+The shared `notice` includes reasons, declared requirements and restart guidance.
+There is no automatic installation. CLI automatic notices use stderr and are skipped
+for `--json`. A receipt under `~/.jev-dev/update-notice-cli.json` suppresses the same
+installed/latest pair across invocations. `jev-dev version` explicitly checks again
+and always displays the current status. Cache storage can be overridden with
+`JEV_UPDATE_CACHE_DIR`; old version-only caches remain readable.
+
+MCP appends a separate text content block containing `updateNotice` and a locally
+authored display instruction, preserving the tool's first content block. Clients
+must tolerate additional content blocks. Notices are emitted once per status/latest
+version per running MCP server; checks, including failures, are limited to hourly.
+Reconnecting/restarting creates a new notification session. Each harness controls
+whether the agent/tool output is visible; this does not create a native IDE popup.
+
+The dashboard displays the same notice and persists dismissals by running/latest
+version in browser local storage, with hourly checks. Unavailable checks display an
+unknown status, not an all-clear. No synthetic urgency or missing requirements are
+inferred. Release metadata is untrusted display text, bounded and rendered as text.
+
+Users on older MCP versions must install this release once before they can receive
+these notices for future releases. A GitHub release alone does not update npm metadata.
+After npm publication, confirm `npm view jev-dev-harness@latest jevUpdate engines --json`
+and restart every MCP instance/dashboard. No agent rule regeneration is required for
+the new MCP notice contract; preserve any project-specific rules when updating manually.
 
 ## Efficiency contract migration (0.2.9)
 
