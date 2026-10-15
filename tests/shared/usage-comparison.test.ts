@@ -77,7 +77,8 @@ describe("Observed Codex usage comparison", () => {
   });
   it("exposes the same measured comparison through CLI and MCP without model calls", async () => {
     const { file } = fixture();
-    vi.spyOn(updates, "checkForUpdates").mockResolvedValue({ currentVersion: "test", latestVersion: "test", updateAvailable: false });
+    vi.spyOn(updates, "checkForUpdates").mockResolvedValue({ ...updates.unavailableUpdate("test"), notice: null });
+    vi.spyOn(updates, "createUpdateNotifier").mockReturnValue(async () => null);
     const log = vi.spyOn(console, "log").mockImplementation(() => {});
     await createCli().parseAsync(["efficiency", "compare", "--manifest", file, "--json", "--no-record"], { from: "user" });
     expect(JSON.parse(log.mock.calls[0]![0])).toMatchObject({ agentTokenDelta: 440, moneyDeltaUsd: null });

@@ -11,7 +11,7 @@ import {
   getTelemetryFilePath,
   TelemetryEvent,
 } from "../shared/telemetry.js";
-import { checkForUpdates } from "../shared/update-checker.js";
+import { checkForUpdates, unavailableUpdate } from "../shared/update-checker.js";
 import { getHarnessVersion } from "../shared/version.js";
 import { printJevBanner } from "./banner.js";
 
@@ -169,11 +169,7 @@ export async function startDashboardServer(options: DashboardOptions = {}): Prom
         .catch(() => {
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(
-            JSON.stringify({
-              currentVersion,
-              latestVersion: currentVersion,
-              updateAvailable: false,
-            })
+            JSON.stringify(unavailableUpdate(currentVersion))
           );
         });
       return;

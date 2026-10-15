@@ -1,7 +1,17 @@
 {
   "name": "jev-dev-harness",
-  "version": "0.2.12",
+  "version": "0.2.13",
   "engines": { "node": ">=22" },
+  "jevUpdate": {
+    "schemaVersion": 1,
+    "reasons": [
+      "Unified update notices in CLI, dashboard and MCP with release requirements and restart guidance",
+      "Failed update checks no longer claim that the installed version is latest"
+    ],
+    "requirements": [
+      "Update the package or pinned version configured by each harness; npm publication is required before npm installations can upgrade"
+    ]
+  },
   "description": "Developer Harness with TypeSafe AI / Jev for AI Coding Agents",
   "type": "module",
   "bin": {

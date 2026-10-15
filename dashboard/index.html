@@ -81,15 +81,11 @@
 
     <!-- Update Available Notification Banner -->
     <div id="updateBanner" class="hidden p-3.5 rounded-xl bg-gradient-to-r from-purple-950/60 to-blue-950/60 border border-purple-500/40 text-xs font-mono flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg shadow-purple-950/30">
-      <div class="flex items-center gap-2.5">
-        <span class="w-2.5 h-2.5 rounded-full bg-purple-400 animate-ping"></span>
-        <span class="text-slate-200">
-          🔔 <span data-i18n="update_new">New update available:</span> <strong id="updateCurrentVer" class="text-slate-400 font-semibold"></strong> ➔ <strong id="updateLatestVer" class="text-purple-300 font-bold"></strong>. Run <code class="bg-purple-900/40 border border-purple-700/50 px-1.5 py-0.5 rounded text-white font-mono">jev-dev update</code>
-        </span>
-      </div>
-      <a href="https://github.com/celolopes/jev-dev-harness/releases" target="_blank" class="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 active:scale-95 text-white font-bold transition-all text-center self-start sm:self-auto cursor-pointer" data-i18n="update_view">
+      <p id="updateNotice" role="status" class="text-slate-200 whitespace-pre-line"></p>
+      <a id="updateRelease" href="https://github.com/celolopes/jev-dev-harness/releases" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 active:scale-95 text-white font-bold transition-all text-center self-start sm:self-auto cursor-pointer" data-i18n="update_view">
         View Release
       </a>
+      <button id="dismissUpdate" type="button" aria-label="Dismiss update notice" class="text-slate-300 px-2 py-1">×</button>
     </div>
 
     <!-- ============================================================== -->
@@ -1073,19 +1069,36 @@
       document.getElementById('savingsYearVal').innerText = `$${savingsYear.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     }
 
+    let updateNoticeKey = null;
+    const dismissedUpdates = new Set();
+    document.getElementById('dismissUpdate').addEventListener('click', () => {
+      if (updateNoticeKey) {
+        dismissedUpdates.add(updateNoticeKey);
+        try { localStorage.setItem('jev_update_dismissed', updateNoticeKey); } catch { /* Storage may be disabled. */ }
+      }
+      document.getElementById('updateBanner').classList.add('hidden');
+    });
+    function renderUpdate(info) {
+      const banner = document.getElementById('updateBanner');
+      updateNoticeKey = `${info.currentVersion}:${info.status}:${info.latestVersion}`;
+      let dismissed = dismissedUpdates.has(updateNoticeKey);
+      try { dismissed ||= localStorage.getItem('jev_update_dismissed') === updateNoticeKey; } catch { /* Storage may be disabled. */ }
+      banner.classList.toggle('hidden', !info.notice || dismissed);
+      document.getElementById('updateNotice').textContent = info.notice || '';
+      const release = document.getElementById('updateRelease');
+      release.classList.toggle('hidden', !info.releaseUrl);
+      // Links are generated from validated versions by our server, never from release metadata.
+      release.href = info.releaseUrl || 'https://github.com/celolopes/jev-dev-harness/releases';
+    }
     async function checkUpdates() {
       try {
         const res = await fetch('/api/update-status');
         if (res.ok) {
           const info = await res.json();
-          if (info && info.updateAvailable) {
-            document.getElementById('updateBanner').classList.remove('hidden');
-            document.getElementById('updateCurrentVer').innerText = `v${info.currentVersion}`;
-            document.getElementById('updateLatestVer').innerText = `v${info.latestVersion}`;
-          }
-        }
+          renderUpdate(info);
+        } else throw new Error('Update status unavailable');
       } catch {
-        // Non-critical
+        renderUpdate({ status: 'unavailable', latestVersion: null, notice: "Jev update check unavailable. Run 'jev-dev version' to retry; update status is unknown." });
       }
     }
 
@@ -1103,6 +1116,7 @@
     refreshData();
     initLiveStream();
     checkUpdates();
+    setInterval(checkUpdates, 60 * 60 * 1000);
   </script>
 </body>
 </html>
