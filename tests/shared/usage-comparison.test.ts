@@ -62,6 +62,19 @@ function fixture() {
 }
 
 describe("Observed Codex usage comparison", () => {
+  it("preserves nullable Jev ledger usage and its cost without inventing net savings", () => {
+    const { file } = fixture();
+    write("pair.jsonl", [
+      { kind: "run_started", runId: "pair" },
+      { kind: "request_started", runId: "pair", requestId: "missing-tokens" },
+      { kind: "request_completed", runId: "pair", requestId: "missing-tokens", usage: { inputTokens: 100, outputTokens: null, costUsd: 0.001 } },
+      { kind: "run_finished", runId: "pair" },
+    ].map(row => JSON.stringify(row)).join("\n"));
+    const report = compareCodexRuns(file);
+    expect(report.agentTokenDelta).toBe(440);
+    expect(report.pipelineTokenDelta).toBeNull();
+    expect(report.withJev.harnessUsage).toMatchObject({ missingUsage: 1, inputTokens: 100, costedRequests: 1, reportedCostUsd: 0.001 });
+  });
   it("exposes the same measured comparison through CLI and MCP without model calls", async () => {
     const { file } = fixture();
     vi.spyOn(updates, "checkForUpdates").mockResolvedValue({ currentVersion: "test", latestVersion: "test", updateAvailable: false });

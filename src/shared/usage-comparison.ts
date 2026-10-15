@@ -211,8 +211,9 @@ function importHarnessUsage(file: string, runId: string) {
       completed.add(requestId);
       if (row.usage === null) { missingUsage++; continue; }
       const value = object(row.usage, "Jev usage");
-      inputTokens += count(value.inputTokens, "Jev input tokens");
-      outputTokens += count(value.outputTokens, "Jev output tokens");
+      if (value.inputTokens === null || value.outputTokens === null) missingUsage++;
+      if (value.inputTokens !== null) inputTokens += count(value.inputTokens, "Jev input tokens");
+      if (value.outputTokens !== null) outputTokens += count(value.outputTokens, "Jev output tokens");
       if (value.costUsd !== undefined) {
         if (typeof value.costUsd !== "number" || !Number.isFinite(value.costUsd) || value.costUsd < 0) throw new Error("Invalid Jev reported cost");
         reportedCostUsd = (reportedCostUsd ?? 0) + value.costUsd;

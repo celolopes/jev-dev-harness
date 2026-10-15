@@ -107,8 +107,8 @@ export interface TelemetrySummary {
     eventsWithoutUsage: number;
     newModelCalls: number;
     validatedResponses: number;
-    inputTokens: number;
-    outputTokens: number;
+    inputTokens: number | null;
+    outputTokens: number | null;
     reportedCostUsd: number | null;
     costedRequests: number;
   };
@@ -163,8 +163,10 @@ export interface TelemetryMetrics {
   initialCandidates: number;
   filteredCandidates: number;
   evaluatedByJev: number;
-  tokensSent: number;
-  tokensReceived: number;
+  tokensSent: number | null;
+  tokensReceived: number | null;
+  inputTokenRequests?: number;
+  outputTokenRequests?: number;
   latencyMs: number;
   selectedCount: number;
   confidence: number;
@@ -190,8 +192,10 @@ export class TelemetryCollector {
   initialCandidates = 0;
   filteredCandidates = 0;
   evaluatedByJev = 0;
-  tokensSent = 0;
-  tokensReceived = 0;
+  tokensSent: number | null = 0;
+  tokensReceived: number | null = 0;
+  inputTokenRequests = 0;
+  outputTokenRequests = 0;
   selectedCount = 0;
   confidences: number[] = [];
   cacheHits = 0;
@@ -216,9 +220,11 @@ export class TelemetryCollector {
     }
   }
 
-  addTokens(inputTokens = 0, outputTokens = 0): void {
-    this.tokensSent += inputTokens;
-    this.tokensReceived += outputTokens;
+  addTokens(inputTokens: number | null = 0, outputTokens: number | null = 0): void {
+    if (inputTokens !== null) this.inputTokenRequests++;
+    if (outputTokens !== null) this.outputTokenRequests++;
+    this.tokensSent = this.tokensSent === null || inputTokens === null ? null : this.tokensSent + inputTokens;
+    this.tokensReceived = this.tokensReceived === null || outputTokens === null ? null : this.tokensReceived + outputTokens;
   }
 
   setFallback(used: boolean, reason?: string): void {
@@ -259,6 +265,8 @@ export class TelemetryCollector {
       evaluatedByJev: this.evaluatedByJev,
       tokensSent: this.tokensSent,
       tokensReceived: this.tokensReceived,
+      inputTokenRequests: this.inputTokenRequests,
+      outputTokenRequests: this.outputTokenRequests,
       latencyMs,
       selectedCount: this.selectedCount,
       confidence: Math.round(avgConfidence * 10000) / 10000,
@@ -588,8 +596,8 @@ export function getTelemetrySummary(): TelemetrySummary {
         usage.eventsWithUsage++;
         usage.newModelCalls += metrics.newModelCalls;
         usage.validatedResponses += metrics.validatedResponses ?? 0;
-        usage.inputTokens += metrics.tokensSent;
-        usage.outputTokens += metrics.tokensReceived;
+        usage.inputTokens = usage.inputTokens === null || metrics.tokensSent === null ? null : usage.inputTokens + metrics.tokensSent;
+        usage.outputTokens = usage.outputTokens === null || metrics.tokensReceived === null ? null : usage.outputTokens + metrics.tokensReceived;
         if ((metrics.costedRequests ?? 0) > 0 && metrics.reportedCostUsd !== undefined) {
           usage.reportedCostUsd = (usage.reportedCostUsd ?? 0) + metrics.reportedCostUsd;
           usage.costedRequests += metrics.costedRequests!;

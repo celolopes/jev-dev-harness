@@ -193,7 +193,7 @@ export function createCli(): Command {
         console.log(`  New logical model calls: ${result.metrics.newModelCalls === 0 ? "none" : result.metrics.newModelCalls}`);
         console.log(`  LLM emulation:     ${result.metrics.evaluatedByLlm ?? 0}`);
         console.log(`  Reported cost USD: ${result.metrics.reportedCostUsd ?? "unavailable"} (${result.metrics.costedRequests ?? 0} priced responses)`);
-        console.log(`  Tokens (in/out):   ${result.metrics.tokensSent} / ${result.metrics.tokensReceived}`);
+        console.log(`  Tokens (in/out):   ${result.metrics.tokensSent ?? "not informed"} / ${result.metrics.tokensReceived ?? "not informed"}`);
         console.log(`  Cache hits/misses: ${result.metrics.cacheHits} / ${result.metrics.cacheMisses}`);
         console.log(`  Total latency:     ${result.metrics.latencyMs}ms`);
         console.log("=======================================================\n");
