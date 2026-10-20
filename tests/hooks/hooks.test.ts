@@ -23,16 +23,27 @@ function safeRmDir(dir: string): void {
 
 function findSh(): string | null {
   const candidates = [
-    "sh",
-    "bash",
     "C:\\Program Files\\Git\\bin\\sh.exe",
     "C:\\Program Files\\Git\\usr\\bin\\sh.exe",
     "C:\\Program Files (x86)\\Git\\bin\\sh.exe",
+    "sh",
+    "bash",
   ];
+  const paths = (process.env.PATH || "").split(path.delimiter);
+  const exts = process.platform === "win32" ? [".exe", ""] : [""];
+
   for (const candidate of candidates) {
     try {
-      const check = spawnSync(candidate, ["-c", "exit 0"]);
-      if (check.status === 0) return candidate;
+      if (path.isAbsolute(candidate)) {
+        if (fs.existsSync(candidate)) return candidate;
+      } else {
+        for (const p of paths) {
+          for (const ext of exts) {
+            const full = path.join(p, candidate + ext);
+            if (fs.existsSync(full)) return full;
+          }
+        }
+      }
     } catch {
       // continue searching
     }
