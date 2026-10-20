@@ -1,5 +1,32 @@
 # Changelog
 
+## 0.2.15 — 2026-10-20
+
+### Security
+
+- Enforce conservative confirmation requirement for unknown commands when semantic
+  evaluation is unavailable or returns an evaluator fallback. Synthetic fallback scores
+  never silently allow unknown commands.
+- Preserve meaningful, secret-redacted fallbackReason in guard responses and ensure
+  offline evaluation (`useJev: false`) remains consistently protected.
+- Known deterministic safe commands (read-only, local modification) and known destructive
+  or production-sensitive commands retain their established protections regardless of
+  remote provider availability.
+
+### Fixed
+
+- Support explicit failure policies (`fail-open` default for backward compatibility;
+  `fail-closed` for strict security environments) in Git pre-commit hooks, with runtime
+  override support via `JEV_HOOK_FAILURE_POLICY`.
+- Ensure Git pre-commit hook rejects commits on reviewer execution errors under `fail-closed`
+  while retaining blocking exit status 2 under all policies.
+- Safeguard pre-commit hook installation and uninstallation: preserve existing user-managed
+  hooks unless `--force` is specified, support Git worktrees, and resolve `core.hooksPath`
+  safely.
+- Isolate test fixtures across test suites to operating system temporary directories,
+  resolving intermittent Windows `EBUSY` file-locking issues during Git directory cleanup.
+- Prevent assertions from being swallowed in temporary repository gitignore tests.
+
 ## 0.2.14 — 2026-10-20
 
 ### Fixed

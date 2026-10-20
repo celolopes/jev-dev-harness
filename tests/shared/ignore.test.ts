@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import path from "node:path";
 import fs from "node:fs";
+import os from "node:os";
 import { execSync } from "node:child_process";
 import {
   IgnoreFilter,
@@ -10,21 +11,34 @@ import {
   untrackJevCacheIfTracked,
 } from "../../src/shared/ignore.js";
 
+function safeRmDir(dir: string): void {
+  if (!fs.existsSync(dir)) return;
+  try {
+    fs.rmSync(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 });
+  } catch {
+    for (let i = 0; i < 5; i++) {
+      try {
+        fs.rmSync(dir, { recursive: true, force: true });
+        break;
+      } catch {
+        const end = Date.now() + 50;
+        while (Date.now() < end) {}
+      }
+    }
+  }
+}
+
 describe("IgnoreFilter Module", () => {
-  const dummyRepo = path.resolve("tests/fixtures/dummy-ignore-repo");
+  let dummyRepo: string;
 
   beforeAll(() => {
-    if (!fs.existsSync(dummyRepo)) {
-      fs.mkdirSync(dummyRepo, { recursive: true });
-      fs.writeFileSync(path.join(dummyRepo, ".gitignore"), "ignored-dir/\n*.custom-ignore\n");
-      fs.writeFileSync(path.join(dummyRepo, ".jevignore"), "jev-only/\n");
-    }
+    dummyRepo = fs.mkdtempSync(path.join(os.tmpdir(), "jev-dummy-ignore-"));
+    fs.writeFileSync(path.join(dummyRepo, ".gitignore"), "ignored-dir/\n*.custom-ignore\n");
+    fs.writeFileSync(path.join(dummyRepo, ".jevignore"), "jev-only/\n");
   });
 
   afterAll(() => {
-    if (fs.existsSync(dummyRepo)) {
-      fs.rmSync(dummyRepo, { recursive: true, force: true });
-    }
+    safeRmDir(dummyRepo);
   });
 
   it("ignores default patterns (node_modules, dist, .git)", () => {
@@ -65,19 +79,14 @@ describe("IgnoreFilter Module", () => {
 });
 
 describe("Gitignore .jev-cache.json Helpers", () => {
-  const tempDir = path.resolve("tests/fixtures/dummy-cache-ignore-repo");
+  let tempDir: string;
 
   beforeAll(() => {
-    if (fs.existsSync(tempDir)) {
-      fs.rmSync(tempDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
-    }
-    fs.mkdirSync(tempDir, { recursive: true });
+    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "jev-cache-ignore-"));
   });
 
   afterAll(() => {
-    if (fs.existsSync(tempDir)) {
-      fs.rmSync(tempDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
-    }
+    safeRmDir(tempDir);
   });
 
   it("detects when .gitignore does not exist", () => {
@@ -158,36 +167,42 @@ describe("Gitignore .jev-cache.json Helpers", () => {
     const gitRepoDir = path.join(tempDir, "tracked-git-repo");
     fs.mkdirSync(gitRepoDir, { recursive: true });
 
-    // Initialize temporary git repo
+    let gitAvailable = false;
     try {
-      execSync("git init", { cwd: gitRepoDir, stdio: "ignore" });
-      execSync("git config user.email 'test@example.com'", { cwd: gitRepoDir, stdio: "ignore" });
-      execSync("git config user.name 'Test User'", { cwd: gitRepoDir, stdio: "ignore" });
-
-      // Create .jev-cache.json and stage it
-      const cachePath = path.join(gitRepoDir, ".jev-cache.json");
-      fs.writeFileSync(cachePath, '{"test": true}', "utf8");
-      execSync("git add .jev-cache.json", { cwd: gitRepoDir, stdio: "ignore" });
-
-      // Should be tracked by git
-      expect(isJevCacheTrackedByGit(gitRepoDir)).toBe(true);
-
-      // Running ensureGitignoreJevCache should add to .gitignore AND untrack from git
-      const res = ensureGitignoreJevCache(gitRepoDir);
-      expect(res.untracked).toBe(true);
-      expect(res.ignored).toBe(true);
-
-      // Verify it is no longer tracked by git
-      expect(isJevCacheTrackedByGit(gitRepoDir)).toBe(false);
-
-      // Verify physical file was NOT deleted
-      expect(fs.existsSync(cachePath)).toBe(true);
-      const content = fs.readFileSync(cachePath, "utf8");
-      expect(content).toBe('{"test": true}');
+      execSync("git --version", { stdio: "ignore" });
+      gitAvailable = true;
     } catch {
-      // If git is not in PATH during testing, test degrades gracefully
+      gitAvailable = false;
     }
+
+    if (!gitAvailable) {
+      // Degrade gracefully if git binary is not installed in the test environment
+      return;
+    }
+
+    execSync("git init", { cwd: gitRepoDir, stdio: "ignore" });
+    execSync("git config user.email 'test@example.com'", { cwd: gitRepoDir, stdio: "ignore" });
+    execSync("git config user.name 'Test User'", { cwd: gitRepoDir, stdio: "ignore" });
+
+    // Create .jev-cache.json and stage it
+    const cachePath = path.join(gitRepoDir, ".jev-cache.json");
+    fs.writeFileSync(cachePath, '{"test": true}', "utf8");
+    execSync("git add .jev-cache.json", { cwd: gitRepoDir, stdio: "ignore" });
+
+    // Should be tracked by git
+    expect(isJevCacheTrackedByGit(gitRepoDir)).toBe(true);
+
+    // Running ensureGitignoreJevCache should add to .gitignore AND untrack from git
+    const res = ensureGitignoreJevCache(gitRepoDir);
+    expect(res.untracked).toBe(true);
+    expect(res.ignored).toBe(true);
+
+    // Verify it is no longer tracked by git
+    expect(isJevCacheTrackedByGit(gitRepoDir)).toBe(false);
+
+    // Verify physical file was NOT deleted
+    expect(fs.existsSync(cachePath)).toBe(true);
+    const content = fs.readFileSync(cachePath, "utf8");
+    expect(content).toBe('{"test": true}');
   });
 });
-
-

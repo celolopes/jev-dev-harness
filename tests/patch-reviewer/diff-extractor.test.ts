@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import path from "node:path";
 import fs from "node:fs";
+import os from "node:os";
 import { extractDiff } from "../../src/patch-reviewer/diff-extractor.js";
 
 describe("Patch Reviewer: diff-extractor", () => {
@@ -27,7 +28,7 @@ index ccccccc..ddddddd 100644
 @@ -5,2 +5,4 @@ describe("JWT", () => {
 +  it("validates token", () => {});
  });
-`;
+ `;
 
   it("extracts diff, calculates changes, and filters out lockfiles", async () => {
     const data = await extractDiff({
@@ -58,8 +59,8 @@ index ccccccc..ddddddd 100644
   });
 
   it("reads diff from a file path", async () => {
-    const tempFile = path.resolve("tests/fixtures/test-patch.diff");
-    fs.mkdirSync(path.dirname(tempFile), { recursive: true });
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "jev-diff-test-"));
+    const tempFile = path.join(tempDir, "test-patch.diff");
     fs.writeFileSync(tempFile, sampleDiff, "utf-8");
 
     try {
@@ -74,6 +75,9 @@ index ccccccc..ddddddd 100644
       if (fs.existsSync(tempFile)) {
         fs.unlinkSync(tempFile);
       }
+      try {
+        fs.rmSync(tempDir, { recursive: true, force: true });
+      } catch {}
     }
   });
 

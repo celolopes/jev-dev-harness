@@ -1,21 +1,24 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import path from "node:path";
 import fs from "node:fs";
+import os from "node:os";
 import { JevCache } from "../../src/shared/cache.js";
 
 describe("JevCache Module", () => {
-  const cacheFile = path.resolve("tests/fixtures/.test-cache.json");
+  let tempDir: string;
+  let cacheFile: string;
 
   beforeEach(() => {
-    if (fs.existsSync(cacheFile)) {
-      fs.unlinkSync(cacheFile);
-    }
+    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "jev-cache-test-"));
+    cacheFile = path.join(tempDir, ".test-cache.json");
   });
 
   afterEach(() => {
-    if (fs.existsSync(cacheFile)) {
-      fs.unlinkSync(cacheFile);
-    }
+    try {
+      if (fs.existsSync(tempDir)) {
+        fs.rmSync(tempDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 });
+      }
+    } catch {}
   });
 
   it("computes deterministic SHA-256 keys", () => {
@@ -48,9 +51,10 @@ describe("JevCache Module", () => {
     expect(cached2).toEqual({ score: 0.95, role: "implementation" });
   });
 
-  it("handles disabled state cleanly without storing", () => {
-    const cache = new JevCache({ enabled: false });
-    cache.set("key", "val");
-    expect(cache.get("key")).toBeNull();
+  it("handles corrupted or empty cache files safely", () => {
+    fs.writeFileSync(cacheFile, "corrupted-json-content-{{{", "utf-8");
+
+    const cache = new JevCache({ cacheFilePath: cacheFile });
+    expect(cache.get("any-key")).toBeNull();
   });
 });

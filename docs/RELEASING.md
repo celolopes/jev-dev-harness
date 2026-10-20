@@ -1,9 +1,9 @@
 # Publishing a stable release
 
-## Current release: 0.2.14
+## Current release: 0.2.15
 
-The Git revision boundary and JSON exit-status maintenance fixes are prepared as
-0.2.14, requiring Node.js 22+.
+The Tool Call Guard fallback security hardening, Git hook reliability failure policies,
+and Windows test fixture stability fixes are prepared as 0.2.15, requiring Node.js 22+.
 SDK 0.7.0 and native Jev 1.13.0 remain unchanged.
 Merge, tags and GitHub releases require authorization; npm publication is manual.
 Run the validation procedure below on the clean tagged release commit.
@@ -17,7 +17,7 @@ Codex-only comparisons retain schemaVersion 1. See
 ## Version and publication
 
 The harness version is independent of the Jev model version. This release is
-`jev-dev-harness@0.2.14`, with Git tag `v0.2.14` and npm dist-tag `latest`.
+`jev-dev-harness@0.2.15`, with Git tag `v0.2.15` and npm dist-tag `latest`.
 `latest` is an npm distribution pointer, not a Git tag.
 
 ## Prepare and validate
@@ -36,10 +36,10 @@ The publish dry run executes version checks, type checking, build and tests via
 list and ensure it contains the compiled entry points, binaries and no secrets.
 The dry run does not upload a package or move the npm `latest` pointer.
 
-## Publish 0.2.14
+## Publish 0.2.15
 
 Use your npm maintainer account; complete login/2FA locally. Do not commit tokens.
-Check that 0.2.14 has not already been published before uploading:
+Check that 0.2.15 has not already been published before uploading:
 
 ```sh
 npm whoami
@@ -48,19 +48,19 @@ git checkout main
 git pull --ff-only origin main
 git describe --exact-match --tags HEAD
 npm run release:publish
-npm view jev-dev-harness@0.2.14 version
+npm view jev-dev-harness@0.2.15 version
 npm dist-tag ls jev-dev-harness
 ```
 
 Run these commands separately and stop on any error. Publish only the clean,
 validated commit tagged above. `release:publish` runs `npm publish --tag latest`;
 `publishConfig` also pins the public npm registry and `latest` for plain
-`npm publish`. A successful publication should show `latest: 0.2.14`.
-Before publishing, confirm that HEAD is the clean validated `v0.2.14` commit.
+`npm publish`. A successful publication should show `latest: 0.2.15`.
+Before publishing, confirm that HEAD is the clean validated `v0.2.15` commit.
 If publication fails, resolve the authentication or registry error and retry
 the same artifact. Do not move an existing tag or reuse a published version.
 
-After review and authorization, merge the validated change and create `v0.2.14`
+After review and authorization, merge the validated change and create `v0.2.15`
 and the GitHub release before manual npm publication. Do not recreate existing tags.
 There is no automatic npm publication workflow; merging code or pushing a tag
 alone does not publish the package.
@@ -97,7 +97,7 @@ version/tag. Prereleases should use a separate process and npm tag such as `next
 
 ## Update local installations
 
-Until 0.2.14 is published to npm, npm `latest` still points to the previously
+Until 0.2.15 is published to npm, npm `latest` still points to the previously
 published version. Do not overwrite any already published version.
 
 ```sh
@@ -108,6 +108,33 @@ jev-dev --version
 For an installation linked to a Git checkout, pull the release commit and run
 `npm ci` and `npm run build` instead. Restart the Codex MCP session so the process
 loads the updated build. An already-running server keeps its old code in memory.
+
+## Security Hardening & Stability Maintenance (0.2.15)
+
+### Tool Call Guard Fallback Hardening
+When deterministic classification returns `unknown` and the external semantic provider
+is unavailable, offline, or returns an evaluator fallback, Tool Call Guard now strictly
+requires human confirmation (`allowed: false`, `requiresConfirmation: true`, `riskLevel: 'medium'`).
+Synthetic fallback scores never establish safety or grant automatic permission. Meaningful
+fallback reasons are preserved while any detected credentials or tokens are redacted.
+Known deterministic safe operations (read-only, local modification) and destructive or
+production-sensitive operations retain their established boundaries.
+
+### Git Hook Reliability & Failure Policies
+The Git pre-commit safety hook supports explicit failure policies:
+- `fail-open` (default for backward compatibility): when the CLI or reviewer cannot execute,
+  logs a clear warning to stderr and permits the commit.
+- `fail-closed`: strictly rejects commits when verification cannot execute. Configurable via
+  `jev-dev hooks install --policy fail-closed` or dynamically via `JEV_HOOK_FAILURE_POLICY=fail-closed`.
+- Critical findings (`BLOCK_HUMAN_REQUIRED`, exit code 2) remain unconditionally blocking under both policies.
+- The installer safely resolves Git hooks in Git worktrees and repositories with `core.hooksPath`,
+  and refuses to overwrite existing user-managed hooks without `--force`.
+
+### Windows Test Isolation & Fixture Stability
+Temporary Git repositories and cache test fixtures are isolated under operating system
+temporary directories (`os.tmpdir()`) rather than fixed paths inside `tests/fixtures`.
+This eliminates Windows `EBUSY` file-locking contention with workspace file indexers.
+Broad catch blocks in gitignore tests were corrected so assertions are never swallowed.
 
 ## CLI and Git revision maintenance (0.2.14)
 
