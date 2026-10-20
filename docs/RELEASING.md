@@ -1,8 +1,9 @@
 # Publishing a stable release
 
-## Current release: 0.2.13
+## Current release: 0.2.14
 
-The unified update notice change is prepared as 0.2.13, requiring Node.js 22+.
+The Git revision boundary and JSON exit-status maintenance fixes are prepared as
+0.2.14, requiring Node.js 22+.
 SDK 0.7.0 and native Jev 1.13.0 remain unchanged.
 Merge, tags and GitHub releases require authorization; npm publication is manual.
 Run the validation procedure below on the clean tagged release commit.
@@ -16,7 +17,7 @@ Codex-only comparisons retain schemaVersion 1. See
 ## Version and publication
 
 The harness version is independent of the Jev model version. This release is
-`jev-dev-harness@0.2.13`, with Git tag `v0.2.13` and npm dist-tag `latest`.
+`jev-dev-harness@0.2.14`, with Git tag `v0.2.14` and npm dist-tag `latest`.
 `latest` is an npm distribution pointer, not a Git tag.
 
 ## Prepare and validate
@@ -35,10 +36,10 @@ The publish dry run executes version checks, type checking, build and tests via
 list and ensure it contains the compiled entry points, binaries and no secrets.
 The dry run does not upload a package or move the npm `latest` pointer.
 
-## Publish 0.2.13
+## Publish 0.2.14
 
 Use your npm maintainer account; complete login/2FA locally. Do not commit tokens.
-Check that 0.2.13 has not already been published before uploading:
+Check that 0.2.14 has not already been published before uploading:
 
 ```sh
 npm whoami
@@ -47,19 +48,19 @@ git checkout main
 git pull --ff-only origin main
 git describe --exact-match --tags HEAD
 npm run release:publish
-npm view jev-dev-harness@0.2.13 version
+npm view jev-dev-harness@0.2.14 version
 npm dist-tag ls jev-dev-harness
 ```
 
 Run these commands separately and stop on any error. Publish only the clean,
 validated commit tagged above. `release:publish` runs `npm publish --tag latest`;
 `publishConfig` also pins the public npm registry and `latest` for plain
-`npm publish`. A successful publication should show `latest: 0.2.13`.
-Before publishing, confirm that HEAD is the clean validated `v0.2.13` commit.
+`npm publish`. A successful publication should show `latest: 0.2.14`.
+Before publishing, confirm that HEAD is the clean validated `v0.2.14` commit.
 If publication fails, resolve the authentication or registry error and retry
 the same artifact. Do not move an existing tag or reuse a published version.
 
-After review and authorization, merge the validated change and create `v0.2.13`
+After review and authorization, merge the validated change and create `v0.2.14`
 and the GitHub release before manual npm publication. Do not recreate existing tags.
 There is no automatic npm publication workflow; merging code or pushing a tag
 alone does not publish the package.
@@ -96,7 +97,7 @@ version/tag. Prereleases should use a separate process and npm tag such as `next
 
 ## Update local installations
 
-Until 0.2.13 is published to npm, npm `latest` still points to the previously
+Until 0.2.14 is published to npm, npm `latest` still points to the previously
 published version. Do not overwrite any already published version.
 
 ```sh
@@ -107,6 +108,26 @@ jev-dev --version
 For an installation linked to a Git checkout, pull the release commit and run
 `npm ci` and `npm run build` instead. Restart the Codex MCP session so the process
 loads the updated build. An already-running server keeps its old code in memory.
+
+## CLI and Git revision maintenance (0.2.14)
+
+JSON output now preserves the existing text-mode failure criteria: patch review returns
+2 only for BLOCK_HUMAN_REQUIRED; guard returns 1 when denied and confirmation is required;
+semantic lint returns 1 for failed checks unless advisory mode is requested. Escalated
+patch review and advisory lint retain exit 0. Execution/argument errors remain exit 1.
+JSON bodies remain unchanged on stdout; diagnostics remain on stderr. Automation that
+previously assumed JSON always exits successfully must handle the corrected statuses.
+
+Shared diff extraction invokes Git directly without a shell. commitRange remains an
+optional string containing one opaque revision expression, including standard two-dot,
+three-dot and reflog forms. Empty/control-character/option-shaped values are rejected.
+Previously undocumented multiple-token values such as two revisions separated by a space
+are no longer treated as shell arguments; use a standard range expression. A trailing
+revision/path separator prevents a missing revision from becoming a path filter.
+Direct diff, diff-file and staged precedence is preserved. Existing trusted Git config,
+including configured diff drivers, remains outside this parameter-injection boundary.
+No new API signatures, configuration keys, dependencies, SDK/model upgrades or agent rule
+regeneration are required. The separately pinned premium project is not updated by this release.
 
 ## Update notice contract migration (0.2.13)
 

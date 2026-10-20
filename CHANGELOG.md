@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.2.14 — 2026-10-20
+
+### Fixed
+
+- Preserve the existing text-mode exit status in JSON patch review, guard checks
+  and semantic lint. Successful and advisory results retain their existing codes.
+- Preserve Git revision expressions, including reflog selectors with spaces, as
+  a single argument and reject empty, control-character or option-shaped revisions.
+
+### Security
+
+- Remove shell interpolation from shared Git diff extraction used by patch review
+  and semantic lint through CLI, MCP and public APIs. Git executes directly with
+  argument arrays and an explicit revision/path boundary.
+- Keep public API signatures, Node.js 22+, SDK/model dependencies and MIT licensing
+  unchanged. See docs/RELEASING.md for JSON automation and revision-input guidance.
+
 ## 0.2.13 — 2026-10-15
 
 - Share npm release reasons, declared requirements, release links and restart guidance

@@ -1,15 +1,16 @@
 {
   "name": "jev-dev-harness",
-  "version": "0.2.13",
+  "version": "0.2.14",
   "engines": { "node": ">=22" },
   "jevUpdate": {
     "schemaVersion": 1,
     "reasons": [
-      "Unified update notices in CLI, dashboard and MCP with release requirements and restart guidance",
-      "Failed update checks no longer claim that the installed version is latest"
+      "Use shell-free Git revision extraction and reject option-shaped revision inputs",
+      "Match patch review, guard and semantic lint JSON exit codes to their existing text-mode results"
     ],
     "requirements": [
-      "Update the package or pinned version configured by each harness; npm publication is required before npm installations can upgrade"
+      "Automation must handle nonzero JSON exit codes for blocked patches, denied guards and failed non-advisory lint",
+      "Commit-range inputs accept one Git revision expression; use a standard two-dot or three-dot range rather than multiple shell tokens"
     ]
   },
   "description": "Developer Harness with TypeSafe AI / Jev for AI Coding Agents",

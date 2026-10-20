@@ -250,6 +250,7 @@ export function createCli(): Command {
 
         if (options.json) {
           console.log(JSON.stringify(result, null, 2));
+          if (result.status === "BLOCK_HUMAN_REQUIRED") process.exitCode = 2;
           return;
         }
 
@@ -347,6 +348,7 @@ export function createCli(): Command {
 
         if (options.json) {
           console.log(JSON.stringify(result, null, 2));
+          if (!result.allowed && result.requiresConfirmation) process.exitCode = 1;
           return;
         }
 
@@ -429,6 +431,7 @@ export function createCli(): Command {
 
         if (options.json) {
           console.log(JSON.stringify(result, null, 2));
+          if (!result.passed && !options.advisory) process.exitCode = 1;
           return;
         }
 
