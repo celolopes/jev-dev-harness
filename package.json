@@ -1,16 +1,15 @@
 {
   "name": "jev-dev-harness",
-  "version": "0.2.14",
+  "version": "0.2.15",
   "engines": { "node": ">=22" },
   "jevUpdate": {
     "schemaVersion": 1,
     "reasons": [
-      "Use shell-free Git revision extraction and reject option-shaped revision inputs",
-      "Match patch review, guard and semantic lint JSON exit codes to their existing text-mode results"
+      "Harden unknown-command tool guard fallback to require human confirmation when semantic evaluation is unavailable",
+      "Add explicit fail-open/fail-closed Git hook failure policies and safe worktree resolution"
     ],
     "requirements": [
-      "Automation must handle nonzero JSON exit codes for blocked patches, denied guards and failed non-advisory lint",
-      "Commit-range inputs accept one Git revision expression; use a standard two-dot or three-dot range rather than multiple shell tokens"
+      "Repositories requiring strict Git hook enforcement can configure --policy fail-closed or JEV_HOOK_FAILURE_POLICY=fail-closed"
     ]
   },
   "description": "Developer Harness with TypeSafe AI / Jev for AI Coding Agents",

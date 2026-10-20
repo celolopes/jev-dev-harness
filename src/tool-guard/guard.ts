@@ -1,6 +1,11 @@
+import { redactSecrets } from "../shared/redaction.js";
 import type { ClassifierResult } from "./classifier.js";
 import type { EvaluatorResult } from "./evaluator.js";
 import type { GuardCategory, GuardCheckOptions, GuardResult, RiskLevel } from "./types.js";
+
+function sanitizeReason(text: string): string {
+  return redactSecrets(text).redactedText;
+}
 
 /**
  * Merges deterministic classification with optional Jev semantic evaluation
@@ -11,9 +16,9 @@ export function checkCommand(
   evaluatorResult: EvaluatorResult | null,
   options: GuardCheckOptions
 ): GuardResult {
-  // 1. Determine effective category
+  // 1. Determine effective category (only genuine, non-fallback evaluation can classify)
   let category: GuardCategory = classifierResult.category;
-  if (category === "unknown" && evaluatorResult && evaluatorResult.category !== "unknown") {
+  if (category === "unknown" && evaluatorResult && !evaluatorResult.fallbackUsed && evaluatorResult.category !== "unknown") {
     category = evaluatorResult.category;
   }
 
@@ -90,24 +95,45 @@ export function checkCommand(
 
     case "unknown":
     default:
-      if (evaluatorResult) {
-        if (evaluatorResult.destructivePotential >= 3.0 || evaluatorResult.requiresHumanConfirmation > 0.6) {
+      if (evaluatorResult && !evaluatorResult.fallbackUsed) {
+        const isDestructive =
+          typeof evaluatorResult.destructivePotential === "number" &&
+          evaluatorResult.destructivePotential >= 3.0;
+        const needsConfirm =
+          typeof evaluatorResult.requiresHumanConfirmation === "number" &&
+          evaluatorResult.requiresHumanConfirmation > 0.6;
+
+        if (isDestructive || needsConfirm) {
           allowed = false;
           requiresConfirmation = true;
           riskLevel = evaluatorResult.destructivePotential >= 3.5 ? "critical" : "high";
           reason = `Jev flagged unknown command as high-risk (destructive score: ${evaluatorResult.destructivePotential.toFixed(1)}/4, human confirmation prob: ${(evaluatorResult.requiresHumanConfirmation * 100).toFixed(0)}%).`;
-        } else {
+        } else if (
+          typeof evaluatorResult.destructivePotential === "number" &&
+          typeof evaluatorResult.requiresHumanConfirmation === "number"
+        ) {
           allowed = true;
           requiresConfirmation = false;
           riskLevel = "low";
           reason = `Jev classified unknown command as benign (destructive score: ${evaluatorResult.destructivePotential.toFixed(1)}/4).`;
+        } else {
+          // Malformed evaluator response: fall back safely
+          allowed = false;
+          requiresConfirmation = true;
+          riskLevel = "medium";
+          reason = "Unrecognized command and semantic evaluation returned malformed result. Requires human confirmation before execution.";
         }
       } else {
-        // No evaluator available, conservative default
+        // No evaluator available, offline mode, or fallback evaluator result: conservative default
         allowed = false;
         requiresConfirmation = true;
         riskLevel = "medium";
-        reason = "Unrecognized command and semantic evaluation unavailable. Requires human confirmation before execution.";
+        const sanitizedReason = evaluatorResult?.fallbackReason
+          ? sanitizeReason(evaluatorResult.fallbackReason)
+          : undefined;
+        reason = sanitizedReason
+          ? `Unrecognized command and semantic evaluation unavailable (${sanitizedReason}). Requires human confirmation before execution.`
+          : "Unrecognized command and semantic evaluation unavailable. Requires human confirmation before execution.";
       }
       break;
   }
@@ -127,6 +153,10 @@ export function checkCommand(
     }
   }
 
+  const sanitizedFallbackReason = evaluatorResult?.fallbackReason
+    ? sanitizeReason(evaluatorResult.fallbackReason)
+    : undefined;
+
   return {
     command: options.command,
     allowed,
@@ -136,7 +166,7 @@ export function checkCommand(
     reason,
     matchedRule: classifierResult.matchedRule,
     fallbackUsed: evaluatorResult ? evaluatorResult.fallbackUsed : false,
-    fallbackReason: evaluatorResult?.fallbackReason,
+    fallbackReason: sanitizedFallbackReason,
     latencyMs: evaluatorResult ? evaluatorResult.latencyMs : 0,
     provider: evaluatorResult?.provider,
   };

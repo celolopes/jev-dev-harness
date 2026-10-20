@@ -87,10 +87,10 @@ describe("CLI JSON and text exit-code parity", () => {
     const r = cli(["guard", "check", "--json"]);
     expect(r.status).toBe(1); expect(r.stdout).toBe(""); expect(r.stderr).toContain("required option");
   });
-  it("missing provider credentials preserve the existing evaluator fallback policy", () => {
+  it("missing provider credentials enforce conservative fallback policy requiring confirmation", () => {
     const r = cli(["guard", "check", "--command", "unknown-fixture-operation", "--json"]);
-    expect(r.status).toBe(0); expect(r.stderr).toBe("");
-    expect(JSON.parse(r.stdout)).toMatchObject({ allowed: true, requiresConfirmation: false, fallbackUsed: true });
+    expect(r.status).toBe(1); expect(r.stderr).toBe("");
+    expect(JSON.parse(r.stdout)).toMatchObject({ allowed: false, requiresConfirmation: true, category: "unknown", riskLevel: "medium", fallbackUsed: true });
   });
   it("unexpected internal errors stay on stderr with failure status", async () => {
     vi.spyOn(reviewer, "reviewPatchPipeline").mockRejectedValue(new Error("Synthetic internal failure"));

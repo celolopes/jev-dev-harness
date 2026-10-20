@@ -335,13 +335,21 @@ Diff Stats:  2 file(s), +24 / -3 lines
 Protect your repository automatically on every `git commit`:
 
 ```bash
+# Default installation (fail-open: warns and permits commit if CLI is unavailable)
 jev-dev hooks install
+
+# Strict security installation (fail-closed: rejects commit if CLI fails to execute)
+jev-dev hooks install --policy fail-closed
+
+# Force overwrite existing hook
+jev-dev hooks install --force
 ```
 
 Whenever you run `git commit`, the hook evaluates your staged diff:
 * If secrets, private keys, or catastrophic regressions are detected, **the commit is aborted** (`exit 1`).
 * If clean, the commit proceeds instantly.
-* To uninstall: `jev-dev hooks uninstall`.
+* **Failure Policies**: Defaults to `fail-open` for backward compatibility. Use `--policy fail-closed` or set `JEV_HOOK_FAILURE_POLICY=fail-closed` for strict environments.
+* To uninstall: `jev-dev hooks uninstall` (preserves non-Jev user hooks unless `--force` is passed).
 
 ---
 

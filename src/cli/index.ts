@@ -478,9 +478,12 @@ export function createCli(): Command {
     .command("install")
     .description("Install pre-commit safety hook in target repository")
     .option("-p, --path <path>", "Repository path", ".")
+    .option("--policy <policy>", "Failure policy when CLI fails: 'fail-open' (default) or 'fail-closed'", "fail-open")
+    .option("-f, --force", "Overwrite existing hook if present", false)
     .action((options) => {
       try {
-        const res = installGitHook(options.path);
+        const policy = options.policy === "fail-closed" ? "fail-closed" : "fail-open";
+        const res = installGitHook(options.path, { policy, force: options.force });
         console.log(`[Jev Hook] ${res.message}`);
       } catch (err) {
         console.error("[Jev Hook Error]:", (err as Error).message);
@@ -492,15 +495,17 @@ export function createCli(): Command {
     .command("uninstall")
     .description("Remove pre-commit safety hook from target repository")
     .option("-p, --path <path>", "Repository path", ".")
+    .option("-f, --force", "Force removal even if not installed by Jev", false)
     .action((options) => {
       try {
-        const res = uninstallGitHook(options.path);
+        const res = uninstallGitHook(options.path, { force: options.force });
         console.log(`[Jev Hook] ${res.message}`);
       } catch (err) {
         console.error("[Jev Hook Error]:", (err as Error).message);
         process.exit(1);
       }
     });
+
   // ==========================================
   // COMMAND: mcp (Model Context Protocol Server)
   // ==========================================
