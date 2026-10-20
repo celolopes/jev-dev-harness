@@ -356,6 +356,20 @@ jev-dev lint semantic --staged
 jev-dev lint semantic --commit-range origin/main...HEAD --advisory
 ```
 
+CLI exit codes are identical with and without `--json`:
+
+| Command | Exit status |
+|---|---|
+| `patch review` | `2` for `BLOCK_HUMAN_REQUIRED`; `0` for approved or escalated review |
+| `guard check` | `1` when denied and confirmation is required; otherwise `0` |
+| `lint semantic` | `1` for failed checks; `--advisory` findings retain `0` |
+
+Execution and argument errors return `1` with diagnostics on stderr. JSON result bodies
+remain on stdout. From 0.2.14, scripts must handle these nonzero JSON statuses rather than
+assuming that parseable JSON implies success. `--commit-range` accepts one Git revision
+expression (for example `HEAD~1`, `main..feature` or `origin/main...HEAD`), not Git options
+or multiple shell-separated revisions.
+
 #### GitHub Actions Workflow
 Add `.github/workflows/jev-lint.yml` to your repository:
 

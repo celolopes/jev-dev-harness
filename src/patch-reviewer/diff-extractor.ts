@@ -1,4 +1,4 @@
-import { execSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { redactSecrets } from "../shared/redaction.js";
@@ -112,21 +112,27 @@ export async function extractDiff(options: PatchReviewOptions): Promise<DiffData
     rawDiff = fs.readFileSync(fullPath, "utf-8");
   } else {
     // Run git diff command
-    let gitArgs = "diff";
+    const gitArgs = ["diff"];
     if (options.staged) {
-      gitArgs = "diff --staged";
-    } else if (options.commitRange) {
-      gitArgs = `diff ${options.commitRange}`;
+      gitArgs.push("--staged");
+    } else if (options.commitRange !== undefined) {
+      const revision = options.commitRange;
+      if (typeof revision !== "string" || !revision.trim() || /^\s*-/.test(revision) || /[\x00-\x1f\x7f]/.test(revision)) {
+        throw new Error("Invalid commit range: expected a nonempty Git revision or range, not options or control characters.");
+      }
+      gitArgs.push(revision);
     }
+    // Keep revision data out of both shell parsing and Git path interpretation.
+    gitArgs.push("--");
 
     try {
-      rawDiff = execSync(`git ${gitArgs}`, {
+      rawDiff = execFileSync("git", gitArgs, {
         cwd: repoPath,
         encoding: "utf-8",
         maxBuffer: 10 * 1024 * 1024,
       });
     } catch (err) {
-      throw new Error(`Failed to execute 'git ${gitArgs}' in ${repoPath}: ${(err as Error).message}`);
+      throw new Error(`Failed to execute 'git ${gitArgs.join(" ")}' in ${repoPath}: ${(err as Error).message}`);
     }
   }
 
