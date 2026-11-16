@@ -633,6 +633,17 @@ Create a `.env` file or export environment variables:
 
 ## 🧪 Testing
 
+GitHub Actions runs release metadata checks, typechecking, build, tests and
+deterministic semantic lint automatically on pushes and pull requests. These jobs
+do not receive provider API secrets; semantic lint uses `--no-jev --advisory`.
+The lint findings remain advisory, while build/typecheck/test failures fail CI.
+
+Online Jev evaluation is separate: in **Actions → Jev CI → Run workflow**, select
+`main` and explicitly enable `run_online`. It evaluates the last commit only after
+the offline checks pass and may consume TypeSafe/OpenRouter API credits. The
+option defaults to off; dispatching another branch cannot run the online job.
+No workflow publishes to npm.
+
 The repository features comprehensive integration and unit test suites:
 
 ```bash

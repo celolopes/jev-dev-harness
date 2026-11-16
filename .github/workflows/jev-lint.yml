@@ -1,38 +1,84 @@
-name: Jev Semantic Linter
+name: Jev CI
 
 on:
   pull_request:
     branches: [main, master]
   push:
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      run_online:
+        description: 'Run Jev online on main (may consume provider API credits)'
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
 
 jobs:
-  semantic-lint:
-    name: Semantic Lint & Architectural Drift Audit
+  offline-checks:
+    name: Build, typecheck, tests & offline lint
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
+          persist-credentials: false
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
-
-      - name: Install dependencies & build
-        run: |
-          npm ci
-          npm run build
-
-      - name: Run Jev Semantic Linter (CI Mode)
+      - name: Install dependencies
+        run: npm ci
+      - name: Validate release metadata
+        run: node scripts/check-release.mjs
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Build
+        run: npm run build
+      - name: Tests
+        run: npm test -- --maxWorkers=2
+      - name: Offline semantic lint (advisory)
         env:
-          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-          TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
         run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            node dist/cli/index.js lint semantic --commit-range "origin/${{ github.base_ref }}...HEAD" --advisory
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            range="origin/${BASE_REF}...HEAD"
           else
-            node dist/cli/index.js lint semantic --commit-range "HEAD~1" --advisory
+            range="HEAD~1"
           fi
+          node dist/cli/index.js lint semantic --commit-range "$range" --no-jev --advisory
+
+  online-evaluation:
+    name: Manual Jev online evaluation (API credits)
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_online == true && github.ref == 'refs/heads/main' }}
+    needs: offline-checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout trusted dispatched main commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies and build without API credentials
+        run: npm ci && npm run build
+      - name: Evaluate last commit online (advisory)
+        env:
+          TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: |
+          if [ -z "$TYPESAFE_API_KEY" ] && [ -z "$OPENROUTER_API_KEY" ]; then
+            echo 'Online evaluation requires a configured provider API key.' >&2
+            exit 1
+          fi
+          node dist/cli/index.js lint semantic --commit-range 'HEAD~1' --advisory
