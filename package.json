@@ -1,19 +1,18 @@
 {
   "name": "jev-dev-harness",
-  "version": "0.2.16",
+  "version": "0.2.17",
   "engines": {
     "node": ">=22"
   },
   "jevUpdate": {
     "schemaVersion": 1,
     "reasons": [
-      "Default unpinned new configurations to Jev 1.14 using provider-specific canonical model identifiers",
-      "Preserve explicit model pins and provider-scoped saved models, including legacy TypeSafe aliases",
-      "Add explicit command-only offline delegation review with bounded JSON envelopes and non-authorizing receipts"
+      "Refresh MCP SDK and transitive dependency security fixes",
+      "Update the development test toolchain to patched Vitest 4 while retaining the Node 22 runtime baseline"
     ],
     "requirements": [
-      "Existing explicit model settings are retained; change them deliberately to opt into Jev 1.14",
-      "Safety Pro Engine RC3 accepts only harness 0.2.14 and 0.2.15; keep its trusted runtime separate"
+      "Development and tests require a supported Node 22 LTS or Node 24+ runtime; existing model pins and offline delegation behavior remain unchanged",
+      "Safety Pro Engine RC3 accepts harness 0.2.14 and 0.2.15 only; keep its trusted runtime separate"
     ]
   },
   "description": "Developer Harness with TypeSafe AI / Jev for AI Coding Agents",
@@ -125,7 +124,7 @@
   "author": "celolopes",
   "license": "MIT",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.30.0",
+    "@modelcontextprotocol/sdk": "^1.32.2",
     "@typesafe-ai/sdk": "0.7.0",
     "commander": "^13.1.0",
     "ignore": "^7.0.3"
@@ -134,6 +133,7 @@
     "@types/node": "^22.13.9",
     "tsx": "^4.19.3",
     "typescript": "^5.8.2",
-    "vitest": "^3.0.8"
+    "vitest": "^4.1.12",
+    "vite": "^6.4.6"
   }
 }
