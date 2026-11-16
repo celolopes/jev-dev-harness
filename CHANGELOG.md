@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.17 - 2026-11-16
+
+- Raise the minimum MCP SDK dependency to 1.32.2 and refresh the lockfile for
+  patched transitive dependencies, without using an automatic audit-fix rewrite.
+- Move development tests to Vitest 4.1.12 and Vite 6.4.6, retaining the Node 22
+  runtime baseline rather than requiring the newer Vite 7/8 minimum.
+- Preserve TypeSafe SDK 0.7.0, Jev 1.14 defaults, explicit older model pins and
+  the offline, non-authorizing delegated-review bridge from 0.2.16.
+- Security audit results describe the resolved dependency graph at validation
+  time; they are not a guarantee against all vulnerabilities or reachability.
+
 ## 0.2.16 - 2026-11-16
 
 - Add `delegate review`: explicit command-only offline JSON envelopes/receipts for
