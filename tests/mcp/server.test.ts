@@ -56,6 +56,22 @@ describe("MCP Server", () => {
       expect(report.instructionForAgent).not.toContain("Comandos e diffs auditados");
     } finally { rank.mockRestore(); }
   });
+  it("passes the scan budget and exposes partial scan coverage", async () => {
+    const collector = new TelemetryCollector();
+    Object.assign(collector, { scanPartial: true, scanBudgetMs: 25, scanElapsedMs: 26 });
+    const rank = vi.spyOn(contextRanker, "rankContext").mockResolvedValue({
+      task: "test", repoPath: "/repo", selected: [], metrics: collector.getMetrics(),
+      fallbackUsed: false, timestamp: new Date().toISOString(),
+    });
+    const server = createMcpServer();
+    // @ts-expect-error accessing internal request handler for testing
+    const handler = server._requestHandlers.get(CallToolRequestSchema.shape.method.value);
+    const response = await handler({ method: "tools/call", params: { name: "jev_rank_context", arguments: { task: "test", scanBudgetMs: 25 } } });
+    expect(rank).toHaveBeenCalledWith(expect.objectContaining({ scanBudgetMs: 25 }));
+    const result = JSON.parse(response.content[0].text);
+    expect(result.metrics.scanPartial).toBe(true);
+    expect(result.efficiencyReport.summaryMessage).toContain("arquivos relevantes podem não ter sido visitados");
+  });
   it("exposes ranking, checks and measured usage comparison in TOOLS list", () => {
     const toolNames = TOOLS.map((t) => t.name);
     expect(toolNames).toContain("jev_rank_context");

@@ -2,7 +2,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import readline from "node:readline";
-import { SafeJevClient, noul } from "../shared/typesafe-client.js";
+import { SafeJevClient, noul, DEFAULT_JEV_MODELS, normalizeTypeSafeModel } from "../shared/typesafe-client.js";
 import { getAgentRuleContent } from "./doctor.js";
 import { ensureGitignoreJevCache } from "../shared/ignore.js";
 
@@ -78,7 +78,7 @@ export async function runSetupWizard(options: SetupOptions = {}): Promise<void> 
       console.log("      🔗 Generate key: https://typesafe.ai (Dashboard: https://typesafe.ai/dashboard)");
       console.log("  [2] Vercel AI Gateway (Free Tier credits — access TypeSafe Jev via Vercel)");
       console.log("      🔗 Generate key: https://vercel.com/d/ai-gateway (Dashboard: https://vercel.com/dashboard)");
-      console.log("  [3] OpenRouter (Native Jev 1.13; optional explicit LLM emulation)");
+      console.log("  [3] OpenRouter (Native Jev 1.14; optional explicit LLM emulation)");
       console.log("      🔗 Generate key: https://openrouter.ai/keys (or https://openrouter.ai)");
       console.log("  [4] Offline / Deterministic Only (Heuristics & regex — no API key needed)\n");
 
@@ -197,16 +197,23 @@ export async function runSetupWizard(options: SetupOptions = {}): Promise<void> 
       }
 
       if (!model && !options.nonInteractive) {
-        const defaultModel = process.env.OPENROUTER_MODEL || existingEnvVars["OPENROUTER_MODEL"] || (existingGlobal.provider === "openrouter" ? existingGlobal.model : undefined) || "typesafe/jev-1.13";
+        const defaultModel = process.env.OPENROUTER_MODEL || existingEnvVars["OPENROUTER_MODEL"] || process.env.TYPESAFE_DEFAULT_MODEL || existingEnvVars["TYPESAFE_DEFAULT_MODEL"] || (existingGlobal.provider === "openrouter" ? existingGlobal.model : undefined) || "typesafe/jev-1.14";
         console.log(`\n🤖 Target Model for System One judgments (default: ${defaultModel})`);
-        console.log("   Native: typesafe/jev-1.13. Other model IDs explicitly enable uncalibrated LLM emulation.");
+        console.log("   Native: typesafe/jev-1.14. Other model IDs explicitly enable uncalibrated LLM emulation.");
         const modelInput = (
           await ask(rl, `Enter model slug (default: ${defaultModel}): `)
         ).trim();
         model = modelInput || defaultModel;
       } else if (!model) {
-        model = process.env.OPENROUTER_MODEL || existingEnvVars["OPENROUTER_MODEL"] || (existingGlobal.provider === "openrouter" ? existingGlobal.model : undefined) || "typesafe/jev-1.13";
+        model = process.env.OPENROUTER_MODEL || existingEnvVars["OPENROUTER_MODEL"] || process.env.TYPESAFE_DEFAULT_MODEL || existingEnvVars["TYPESAFE_DEFAULT_MODEL"] || (existingGlobal.provider === "openrouter" ? existingGlobal.model : undefined) || "typesafe/jev-1.14";
       }
+    }
+
+    // Preserve explicit model options/environment and only reuse matching-provider pins.
+    if (provider === "typesafe") {
+      model = normalizeTypeSafeModel(model || process.env.TYPESAFE_DEFAULT_MODEL || existingEnvVars["TYPESAFE_DEFAULT_MODEL"] || (existingGlobal.provider === provider ? existingGlobal.model : undefined) || DEFAULT_JEV_MODELS.typesafe);
+    } else if (provider === "vercel") {
+      model = model || process.env.VERCEL_MODEL || existingEnvVars["VERCEL_MODEL"] || process.env.TYPESAFE_DEFAULT_MODEL || existingEnvVars["TYPESAFE_DEFAULT_MODEL"] || (existingGlobal.provider === provider ? existingGlobal.model : undefined) || DEFAULT_JEV_MODELS.vercel;
     }
 
     // Save configurations
@@ -222,6 +229,9 @@ export async function runSetupWizard(options: SetupOptions = {}): Promise<void> 
       existingEnvVars["OPENROUTER_API_KEY"] = apiKey;
       if (model) existingEnvVars["OPENROUTER_MODEL"] = model;
     }
+
+    if (provider === "typesafe" && model) existingEnvVars["TYPESAFE_DEFAULT_MODEL"] = model;
+    if (provider === "vercel" && model) existingEnvVars["VERCEL_MODEL"] = model;
 
     const envLines: string[] = [];
     for (const [k, v] of Object.entries(existingEnvVars)) {
@@ -244,7 +254,7 @@ export async function runSetupWizard(options: SetupOptions = {}): Promise<void> 
     const globalData = {
       provider,
       apiKey: apiKey || keysMap[provider] || undefined,
-      model: model || existingGlobal.model || undefined,
+      model: model || (existingGlobal.provider === provider ? existingGlobal.model : undefined),
       keys: keysMap,
       updatedAt: new Date().toISOString(),
     };
@@ -267,6 +277,9 @@ export async function runSetupWizard(options: SetupOptions = {}): Promise<void> 
       mcpEnv["TYPESAFE_API_KEY"] = apiKey;
     }
 
+    if (provider === "typesafe" && model) mcpEnv["TYPESAFE_DEFAULT_MODEL"] = model;
+    if (provider === "vercel" && model) mcpEnv["VERCEL_MODEL"] = model;
+
     // Agent A: Codex Desktop (~/.codex/config.toml)
     const codexConfigPath = path.join(os.homedir(), ".codex", "config.toml");
     if (fs.existsSync(codexConfigPath)) {
@@ -275,10 +288,10 @@ export async function runSetupWizard(options: SetupOptions = {}): Promise<void> 
         if (!codexContent.includes("[mcp_servers.jev_dev]")) {
           const tomlSnippet = `\n[mcp_servers.jev_dev]\ncommand = "npx"\nargs = ["-y", "jev-dev-harness"]\nstartup_timeout_sec = 60.0\n\n[mcp_servers.jev_dev.env]\nJEV_CLIENT_PLATFORM = "Codex"\n${
             provider === "vercel"
-              ? `JEV_PROVIDER = "vercel"\nAI_GATEWAY_API_KEY = "${apiKey || ""}"`
+              ? `JEV_PROVIDER = "vercel"\nAI_GATEWAY_API_KEY = "${apiKey || ""}"\nVERCEL_MODEL = "${model || DEFAULT_JEV_MODELS.vercel}"`
               : provider === "openrouter"
-              ? `JEV_PROVIDER = "openrouter"\nOPENROUTER_API_KEY = "${apiKey || ""}"\nOPENROUTER_MODEL = "${model || "typesafe/jev-1.13"}"`
-              : `JEV_PROVIDER = "typesafe"\nTYPESAFE_API_KEY = "${apiKey || ""}"`
+              ? `JEV_PROVIDER = "openrouter"\nOPENROUTER_API_KEY = "${apiKey || ""}"\nOPENROUTER_MODEL = "${model || "typesafe/jev-1.14"}"`
+              : `JEV_PROVIDER = "typesafe"\nTYPESAFE_API_KEY = "${apiKey || ""}"\nTYPESAFE_DEFAULT_MODEL = "${model || DEFAULT_JEV_MODELS.typesafe}"`
           }\n\n[mcp_servers.jev_dev.tools.jev_rank_context]\napproval_mode = "approve"\n\n[mcp_servers.jev_dev.tools.jev_guard_check]\napproval_mode = "approve"\n\n[mcp_servers.jev_dev.tools.jev_review_patch]\napproval_mode = "approve"\n\n[mcp_servers.jev_dev.tools.jev_lint_semantic]\napproval_mode = "approve"\n`;
           fs.appendFileSync(codexConfigPath, tomlSnippet, "utf8");
           console.log(`  ✓ Configured Codex Desktop at ${codexConfigPath}`);
@@ -408,6 +421,7 @@ export async function runSetupWizard(options: SetupOptions = {}): Promise<void> 
         const testClient = new SafeJevClient({
           provider: provider as any,
           apiKey,
+          defaultModel: model,
           timeoutMs: 5000,
         });
 

@@ -29,6 +29,25 @@ describe("Factual efficiency reports", () => {
       reportedCostUsd: 0, costCoverage: { costedRequests: 1, newModelCalls: 2 },
       newTokens: { input: 720, output: 95 } });
   });
+  it("reports partial usage coverage and fallback without implying complete usage", () => {
+    const collector = new TelemetryCollector();
+    Object.assign(collector, { newModelCalls: 3, validatedResponses: 2, errors: 1 });
+    collector.addTokens(100, null);
+    collector.recordFallback("STAGE_C_DEADLINE");
+    const report = buildContextEfficiencyReport(collector.getMetrics());
+    expect(report.summaryMessage).toContain("cobertura 1/0 de 2 respostas");
+    expect(report.summaryMessage).toContain("Retries e falhas sem uso reportado não estão incluídos");
+    expect(report.summaryMessage).toContain("fallback: sim (STAGE_C_DEADLINE); erros: 1");
+    expect(report.instructionForAgent).toContain("sem inventar contagens ou causa");
+    expect(report.savingsStatus).toBe("not_measured");
+  });
+  it("warns when scan coverage is partial", () => {
+    const collector = new TelemetryCollector();
+    Object.assign(collector, { scanPartial: true, scanBudgetMs: 3000, scanElapsedMs: 3004 });
+    const report = buildContextEfficiencyReport(collector.getMetrics());
+    expect(report).toMatchObject({ scanPartial: true, scanBudgetMs: 3000, scanElapsedMs: 3004 });
+    expect(report.summaryMessage).toContain("arquivos relevantes podem não ter sido visitados");
+  });
   it("does not infer new calls from old metrics or cache misses", () => {
     const { newModelCalls, ...legacy } = new TelemetryCollector().getMetrics();
     legacy.cacheMisses = 15;

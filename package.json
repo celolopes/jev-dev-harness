@@ -1,15 +1,19 @@
 {
   "name": "jev-dev-harness",
-  "version": "0.2.15",
-  "engines": { "node": ">=22" },
+  "version": "0.2.16",
+  "engines": {
+    "node": ">=22"
+  },
   "jevUpdate": {
     "schemaVersion": 1,
     "reasons": [
-      "Harden unknown-command tool guard fallback to require human confirmation when semantic evaluation is unavailable",
-      "Add explicit fail-open/fail-closed Git hook failure policies and safe worktree resolution"
+      "Default unpinned new configurations to Jev 1.14 using provider-specific canonical model identifiers",
+      "Preserve explicit model pins and provider-scoped saved models, including legacy TypeSafe aliases",
+      "Add explicit command-only offline delegation review with bounded JSON envelopes and non-authorizing receipts"
     ],
     "requirements": [
-      "Repositories requiring strict Git hook enforcement can configure --policy fail-closed or JEV_HOOK_FAILURE_POLICY=fail-closed"
+      "Existing explicit model settings are retained; change them deliberately to opt into Jev 1.14",
+      "Safety Pro Engine RC3 accepts only harness 0.2.14 and 0.2.15; keep its trusted runtime separate"
     ]
   },
   "description": "Developer Harness with TypeSafe AI / Jev for AI Coding Agents",
@@ -76,7 +80,9 @@
     "docs/jev/MEASURED-USAGE.md",
     "docs/jev/MULTI-HARNESS-USAGE.md",
     "docs/jev/JEV-1.14-EVALUATION.md",
-    "docs/jev/evaluation-jev-1.14-2026-10-15.json"
+    "docs/jev/evaluation-jev-1.14-2026-10-15.json",
+    "docs/jev/JEV-0.2.16-DEFAULTS.md",
+    "docs/jev/DELEGATED-REVIEW.md"
   ],
   "publishConfig": {
     "registry": "https://registry.npmjs.org/",

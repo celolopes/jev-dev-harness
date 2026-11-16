@@ -12,6 +12,8 @@ function scanDirectory(
   repoRoot: string,
   ignoreFilter: IgnoreFilter,
   results: CandidateFile[],
+  telemetry: TelemetryCollector,
+  deadline: number,
   maxDepth = 15,
   currentDepth = 0
 ): void {
@@ -25,10 +27,15 @@ function scanDirectory(
   }
 
   for (const entry of entries) {
+    if (Date.now() >= deadline) {
+      telemetry.scanPartial = true;
+      return;
+    }
     const fullPath = path.join(dir, entry.name);
     const relPath = ignoreFilter.normalizeRelativePath(fullPath);
 
-    if (ignoreFilter.shouldIgnore(relPath)) {
+    if (!entry.isDirectory()) telemetry.initialCandidates++;
+    if (ignoreFilter.shouldIgnore(entry.isDirectory() ? `${relPath}/` : relPath)) {
       continue;
     }
 
@@ -38,9 +45,12 @@ function scanDirectory(
         repoRoot,
         ignoreFilter,
         results,
+        telemetry,
+        deadline,
         maxDepth,
         currentDepth + 1
       );
+      if (telemetry.scanPartial) return;
     } else if (entry.isFile()) {
       const diskCheck = ignoreFilter.isIgnoredOnDisk(fullPath);
       if (!diskCheck.ignored) {
@@ -68,6 +78,13 @@ export function executeStageA(
   options: RankContextOptions,
   telemetry: TelemetryCollector
 ): CandidateFile[] {
+  const scanBudgetMs = options.scanBudgetMs ?? Number(process.env.JEV_SCAN_BUDGET_MS ?? 3000);
+  if (!Number.isFinite(scanBudgetMs) || scanBudgetMs <= 0) {
+    throw new Error("scanBudgetMs must be a positive number");
+  }
+  const started = Date.now();
+  const deadline = started + scanBudgetMs;
+  telemetry.scanBudgetMs = scanBudgetMs;
   const repoRoot = path.resolve(options.repoPath);
   const ignoreFilter = new IgnoreFilter(repoRoot, {
     customPatterns: options.customIgnorePatterns,
@@ -78,9 +95,12 @@ export function executeStageA(
 
   if (options.candidates && options.candidates.length > 0) {
     // Explicit list of candidates provided
-    telemetry.initialCandidates = options.candidates.length;
-
     for (const rawCandidate of options.candidates) {
+      if (Date.now() >= deadline) {
+        telemetry.scanPartial = true;
+        break;
+      }
+      telemetry.initialCandidates++;
       const absPath = path.isAbsolute(rawCandidate)
         ? rawCandidate
         : path.join(repoRoot, rawCandidate);
@@ -112,31 +132,11 @@ export function executeStageA(
       }
     }
   } else {
-    // Scan repository on disk
-    let rawTotal = 0;
-    const countTotalFiles = (d: string, depth = 0) => {
-      if (depth > 15) return;
-      try {
-        const list = fs.readdirSync(d, { withFileTypes: true });
-        for (const item of list) {
-          if (item.name === ".git") continue;
-          if (item.isDirectory()) {
-            countTotalFiles(path.join(d, item.name), depth + 1);
-          } else {
-            rawTotal++;
-          }
-        }
-      } catch {
-        // Skip
-      }
-    };
-
-    countTotalFiles(repoRoot);
-    telemetry.initialCandidates = rawTotal;
-
-    scanDirectory(repoRoot, repoRoot, ignoreFilter, candidates);
+    // Count entries encountered while scanning; ignored directories are not traversed.
+    scanDirectory(repoRoot, repoRoot, ignoreFilter, candidates, telemetry, deadline);
   }
 
   telemetry.filteredCandidates = candidates.length;
+  telemetry.scanElapsedMs = Date.now() - started;
   return candidates;
 }

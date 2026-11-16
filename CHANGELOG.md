@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.2.16 - 2026-11-16
+
+- Add `delegate review`: explicit command-only offline JSON envelopes/receipts for
+  delegated coding tasks, with bounded inputs and no execution, authorization,
+  remote model call, update lookup or automatic integration.
+
+- Default unpinned TypeSafe, OpenRouter and Vercel configurations to Jev 1.14
+  using their provider-specific model IDs. This is an owner-selected default,
+  not a claim of superior accuracy from the prior synthetic benchmark.
+- Preserve options/environment and same-provider model pins, normalize known
+  legacy TypeSafe Jev aliases without advancing their version, and prevent a
+  saved model from another provider becoming the selected provider's default.
+- Persist TypeSafe/Vercel model choices consistently in setup-generated settings.
+  No existing configuration is migrated automatically.
+- Keep provider/base URL/model identity in decision caches and retain explicit
+  legacy gateway aliases. Historical 1.13/1.14 evaluation records are unchanged.
+- Safety Pro Engine RC3 remains independently pinned to harness 0.2.14/0.2.15;
+  this release does not update or claim compatibility with its exact gate.
+
 ## 0.2.15 — 2026-10-20
 
 ### Security

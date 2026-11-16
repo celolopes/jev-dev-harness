@@ -59,16 +59,16 @@ describe("SDK 0.7 text decision compatibility", () => {
     vi.stubGlobal("fetch", fetch);
     await new SafeJevClient({ provider: "typesafe", apiKey: "test-key" }).systemOne({}, { relevant: noul("Relevant?") });
     const init = fetch.mock.calls[0]![1]!;
-    expect(JSON.parse(init.body as string).model).toBe("jev-1.13.0");
+    expect(JSON.parse(init.body as string).model).toBe("jev-1.14.0");
     const headers = new Headers(init.headers);
     expect([...headers.keys()].some(key => key.toLowerCase().includes("danger-zone"))).toBe(false);
     expect(headers.has("content-encoding")).toBe(false);
   });
   it("pins the native default while retaining explicit evaluation and provider configuration", () => {
-    expect(new SafeJevClient({ provider: "typesafe", apiKey: "test-key" }).modelName).toBe("jev-1.13.0");
+    expect(new SafeJevClient({ provider: "typesafe", apiKey: "test-key" }).modelName).toBe("jev-1.14.0");
     expect(new SafeJevClient({ provider: "typesafe", apiKey: "test-key", defaultModel: "jev-1.14.0" }).modelName).toBe("jev-1.14.0");
-    expect(new SafeJevClient({ provider: "openrouter", apiKey: "test-key" }).modelName).toBe("typesafe/jev-1.13");
-    expect(new SafeJevClient({ provider: "vercel", apiKey: "test-key" }).modelName).toBe("typesafe-ai/jev");
+    expect(new SafeJevClient({ provider: "openrouter", apiKey: "test-key" }).modelName).toBe("typesafe/jev-1.14");
+    expect(new SafeJevClient({ provider: "vercel", apiKey: "test-key" }).modelName).toBe("typesafe-ai/jev-1.14.0");
   });
   it("keeps mixed unknown totals unknown and reports per-direction coverage", () => {
     const collector = new TelemetryCollector();

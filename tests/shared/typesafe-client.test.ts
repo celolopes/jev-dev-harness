@@ -213,7 +213,7 @@ describe("SafeJevClient Module", () => {
 
       const client = new SafeJevClient();
       expect(client.provider).toBe("typesafe");
-      expect(client.modelName).toBe("jev-1.13.0");
+      expect(client.modelName).toBe("jev-1.14.0");
     } finally {
       if (origTypeSafe) process.env.TYPESAFE_API_KEY = origTypeSafe;
       else delete process.env.TYPESAFE_API_KEY;
@@ -236,7 +236,7 @@ describe("SafeJevClient Module", () => {
       const client = new SafeJevClient();
       expect(client.provider).toBe("vercel");
       expect(client.isConfigured).toBe(true);
-      expect(client.modelName).toBe("typesafe-ai/jev");
+      expect(client.modelName).toBe("typesafe-ai/jev-1.14.0");
       expect(client.getReason()).toContain("Vercel AI Gateway");
     } finally {
       if (origVercel) process.env.AI_GATEWAY_API_KEY = origVercel;

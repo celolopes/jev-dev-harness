@@ -1,14 +1,19 @@
 # Publishing a stable release
 
-## Current release: 0.2.15
+## Current release: 0.2.16
 
-The Tool Call Guard fallback security hardening, Git hook reliability failure policies,
-and Windows test fixture stability fixes are prepared as 0.2.15, requiring Node.js 22+.
-SDK 0.7.0 and native Jev 1.13.0 remain unchanged.
-Merge, tags and GitHub releases require authorization; npm publication is manual.
+Harness 0.2.16 requires Node.js 22+ and retains SDK 0.7.0. New unpinned
+configurations default to Jev 1.14 using provider-specific IDs; explicit pins remain.
+The new `delegate review` bridge uses only the existing offline lexical guard and
+never invokes a model or grants execution permission. See
+`docs/jev/JEV-0.2.16-DEFAULTS.md` and `docs/jev/DELEGATED-REVIEW.md`.
+Merge, tags, GitHub releases and npm publication require their applicable approvals.
 Run the validation procedure below on the clean tagged release commit.
-Keep native Jev pinned to 1.13.0. See `docs/jev/JEV-1.14-EVALUATION.md` for actual
-preview results, nullable usage migration and the decision not to promote 1.14.
+
+Historical note: 0.2.15 retained the native 1.13.0 pin following the earlier limited
+1.14 evaluation. `docs/jev/JEV-1.14-EVALUATION.md` and its recorded results remain
+unchanged historical evidence, not a claim that this later owner-selected default
+was demonstrated superior. Engine RC3 still supports only harness 0.2.14/0.2.15.
 
 General usage comparisons use schemaVersion 2 with nullable counters/deltas;
 Codex-only comparisons retain schemaVersion 1. See
@@ -17,15 +22,15 @@ Codex-only comparisons retain schemaVersion 1. See
 ## Version and publication
 
 The harness version is independent of the Jev model version. This release is
-`jev-dev-harness@0.2.15`, with Git tag `v0.2.15` and npm dist-tag `latest`.
+`jev-dev-harness@0.2.16`, with Git tag `v0.2.16` and npm dist-tag `latest`.
 `latest` is an npm distribution pointer, not a Git tag.
 
 ## Prepare and validate
 
-From a clean checkout of `main` with Node.js 22 or newer:
+For this owner-authorized 0.2.16 release, use the reviewed release branch `release/0.2.16-jev-1.14-local` with Node.js 22 or newer. Keep `main` unchanged; do not merge or open a PR as part of this release path. This avoids unintentionally triggering online semantic workflows. Do not change CI to bypass checks.
 
 ```sh
-git pull --ff-only origin main
+git status --short
 npm ci
 npm run release:dry-run
 npm pack --dry-run
@@ -36,32 +41,31 @@ The publish dry run executes version checks, type checking, build and tests via
 list and ensure it contains the compiled entry points, binaries and no secrets.
 The dry run does not upload a package or move the npm `latest` pointer.
 
-## Publish 0.2.15
+## Publish 0.2.16
 
 Use your npm maintainer account; complete login/2FA locally. Do not commit tokens.
-Check that 0.2.15 has not already been published before uploading:
+Check that 0.2.16 has not already been published before uploading:
 
 ```sh
 npm whoami
 npm view jev-dev-harness versions --json
-git checkout main
-git pull --ff-only origin main
+git checkout release/0.2.16-jev-1.14-local
+git status --short
 git describe --exact-match --tags HEAD
 npm run release:publish
-npm view jev-dev-harness@0.2.15 version
+npm view jev-dev-harness@0.2.16 version
 npm dist-tag ls jev-dev-harness
 ```
 
 Run these commands separately and stop on any error. Publish only the clean,
 validated commit tagged above. `release:publish` runs `npm publish --tag latest`;
 `publishConfig` also pins the public npm registry and `latest` for plain
-`npm publish`. A successful publication should show `latest: 0.2.15`.
-Before publishing, confirm that HEAD is the clean validated `v0.2.15` commit.
+`npm publish`. A successful publication should show `latest: 0.2.16`.
+Before publishing, confirm that HEAD is the clean validated `v0.2.16` commit.
 If publication fails, resolve the authentication or registry error and retry
 the same artifact. Do not move an existing tag or reuse a published version.
 
-After review and authorization, merge the validated change and create `v0.2.15`
-and the GitHub release before manual npm publication. Do not recreate existing tags.
+After review and authorization, commit the validated state on the release branch and create `v0.2.16` and the GitHub release from that exact reviewed commit, without merging `main`. Push only the explicitly approved branch/tag/release. Do not recreate existing tags. If npm authentication fails, stop and report npm publication as pending; a GitHub release does not mean npm publication succeeded.
 There is no automatic npm publication workflow; merging code or pushing a tag
 alone does not publish the package.
 
@@ -97,7 +101,7 @@ version/tag. Prereleases should use a separate process and npm tag such as `next
 
 ## Update local installations
 
-Until 0.2.15 is published to npm, npm `latest` still points to the previously
+Until 0.2.16 is published to npm, npm `latest` still points to the previously
 published version. Do not overwrite any already published version.
 
 ```sh
@@ -109,7 +113,7 @@ For an installation linked to a Git checkout, pull the release commit and run
 `npm ci` and `npm run build` instead. Restart the Codex MCP session so the process
 loads the updated build. An already-running server keeps its old code in memory.
 
-## Security Hardening & Stability Maintenance (0.2.15)
+## Security Hardening & Stability Maintenance (0.2.16)
 
 ### Tool Call Guard Fallback Hardening
 When deterministic classification returns `unknown` and the external semantic provider

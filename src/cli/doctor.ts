@@ -110,9 +110,9 @@ Ao concluir qualquer tarefa de código, análise ou modificação em qualquer ID
 
 \`\`\`markdown
 ### ⚡ Eficiência Jev
-- **Contexto:** entradas encontradas; candidatos após filtros; candidatos avaliados; arquivos selecionados (somente valores retornados).
-- **Modelo e uso:** provider/modelo; decisões em cache; chamadas novas; tokens novos; custo reportado e cobertura. Ausente: não informado. Sem chamadas novas: nenhuma chamada nova ao modelo.
-- **Execução:** latência medida; fallback; verificações/auditorias efetivamente executadas e seu escopo. Cache e heurística não são inferência nova.
+- **Contexto:** entradas visitadas, excluindo o conteúdo de diretórios ignorados; candidatos após filtros e avaliados; arquivos selecionados. Se a varredura for parcial, informe que arquivos relevantes podem não ter sido visitados e complemente a busca quando necessário. Se a chamada falhar ou expirar, informe isso sem inventar contagens ou causa.
+- **Modelo e uso:** provider/modelo, cache, chamadas novas, tokens e custo reportados com cobertura. O uso abrange respostas validadas e pode excluir retries e falhas. Ausente: não informado.
+- **Execução:** latência medida; fallback e motivo quando retornados; verificações executadas com escopo e resultado. Cache e heurística não são inferência nova.
 - **Economia de tokens/dinheiro:** não medida sem comparação válida com baseline.
 \`\`\`
 `;

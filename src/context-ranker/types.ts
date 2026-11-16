@@ -60,6 +60,7 @@ export interface RankContextOptions {
   cacheFilePath?: string;
   decisionBudgetMs?: number; // Total Stage C deadline, including queued candidates
   decisionConcurrency?: number; // Maximum in-flight requests (default: 4)
+  scanBudgetMs?: number; // Cooperative Stage A deadline (default: 3000 ms)
 }
 
 export interface RankContextResult {

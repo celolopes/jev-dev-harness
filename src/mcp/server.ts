@@ -59,6 +59,11 @@ export const TOOLS: Tool[] = [
           type: "number",
           description: "Minimum relevance score threshold between 0.0 and 1.0 (default: 0.15).",
         },
+        scanBudgetMs: {
+          type: "number",
+          exclusiveMinimum: 0,
+          description: "Cooperative filesystem scan budget in milliseconds (default: 3000); partial results may omit relevant files.",
+        },
       },
       required: ["task"],
     },
@@ -246,6 +251,7 @@ export function createMcpServer(): Server {
             repoPath,
             top,
             threshold,
+            scanBudgetMs: args.scanBudgetMs === undefined ? undefined : Number(args.scanBudgetMs),
           });
 
           const initialCandidates = result.metrics.initialCandidates;

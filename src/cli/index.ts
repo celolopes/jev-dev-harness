@@ -12,6 +12,7 @@ import { rankTools } from "../tool-ranker/index.js";
 import { startProxyServer } from "../proxy/index.js";
 import { startMcpServer } from "../mcp/index.js";
 import { printTerminalComparison } from "./compare.js";
+import { runDelegateReview } from "./delegate.js";
 import { runSetupWizard } from "./setup.js";
 import { runProviderCommand } from "./provider.js";
 import { startDashboardServer } from "./dashboard.js";
@@ -33,6 +34,14 @@ export function createCli(): Command {
     .name("jev-dev")
     .description("Developer Harness with TypeSafe AI / Jev for AI Coding Agents")
     .version(currentVersion);
+
+  // Explicit delegation bridge: JSON-only, offline-only, no execution or update lookup.
+  program.command("delegate").description("Explicit advisory handoff for delegated coding tasks")
+    .command("review")
+    .description("Review a bounded command envelope offline; never executes or authorizes its content")
+    .option("--input <path>", "Explicit JSON file or - for stdin", "-")
+    .option("--json", "JSON receipts are always emitted", true)
+    .action(runDelegateReview);
 
   // ==========================================
   // COMMAND: context rank (Phase 2)
@@ -115,6 +124,7 @@ export function createCli(): Command {
     .option("-p, --path <path>", "Repository path", ".")
     .option("--top <number>", "Maximum number of files to select", (val) => parseInt(val, 10), 10)
     .option("--threshold <number>", "Minimum score threshold", (val) => parseFloat(val), 0.15)
+    .option("--scan-budget-ms <number>", "Cooperative scan budget in milliseconds (default: 3000)", Number)
     .option("--json", "Output machine-readable stable JSON format", false)
     .option("--no-cache", "Disable caching")
     .option("--no-jev", "Disable Jev semantic evaluation (force deterministic fallback)")
@@ -128,6 +138,7 @@ export function createCli(): Command {
           repoPath,
           top: options.top,
           threshold: options.threshold,
+          scanBudgetMs: options.scanBudgetMs,
           useCache: options.cache !== false,
           useJev: options.jev !== false,
         });
@@ -169,9 +180,14 @@ export function createCli(): Command {
           }`
         );
         console.log(`Selected:    ${result.selected.length} file(s)\n`);
+        if (result.metrics.scanPartial) {
+          console.log(`WARNING: Partial scan (budget ${result.metrics.scanBudgetMs}ms, elapsed ${result.metrics.scanElapsedMs}ms); relevant files may be missing.\n`);
+        }
 
         if (result.selected.length === 0) {
-          console.log("  No matching files exceeded the relevance threshold.\n");
+          console.log(result.metrics.scanPartial
+            ? "  No matching files found in the partial scan.\n"
+            : "  No matching files exceeded the relevance threshold.\n");
         } else {
           console.log("--- RANKED CONTEXT FILES ---");
           result.selected.forEach((item, index) => {
@@ -186,7 +202,7 @@ export function createCli(): Command {
         }
 
         console.log("--- METRICS & TELEMETRY ---");
-        console.log(`  Initial files:     ${result.metrics.initialCandidates}`);
+        console.log(`  Entries visited:   ${result.metrics.initialCandidates} (excluding contents of ignored directories)`);
         console.log(`  Filtered files:    ${result.metrics.filteredCandidates}`);
         console.log(`  Candidates evaluated: ${result.metrics.evaluatedCandidates}`);
         console.log(`  Jev decisions (incl. cache): ${result.metrics.evaluatedByJev}`);
@@ -774,6 +790,7 @@ export function createCli(): Command {
   // Bounded update check on completion; never add notices to machine-readable commands.
   program.hook("postAction", async (_thisCommand, actionCommand) => {
     if (
+      actionCommand.parent?.name() !== "delegate" &&
       actionCommand.name() !== "mcp" &&
       actionCommand.name() !== "update" &&
       actionCommand.name() !== "version" &&

@@ -162,6 +162,9 @@ export interface TelemetryMetrics {
   costedRequests?: number;
   initialCandidates: number;
   filteredCandidates: number;
+  scanPartial?: boolean;
+  scanBudgetMs?: number;
+  scanElapsedMs?: number;
   evaluatedByJev: number;
   tokensSent: number | null;
   tokensReceived: number | null;
@@ -191,6 +194,9 @@ export class TelemetryCollector {
 
   initialCandidates = 0;
   filteredCandidates = 0;
+  scanPartial = false;
+  scanBudgetMs?: number;
+  scanElapsedMs?: number;
   evaluatedByJev = 0;
   tokensSent: number | null = 0;
   tokensReceived: number | null = 0;
@@ -257,6 +263,9 @@ export class TelemetryCollector {
       newModelCalls: this.newModelCalls,
       validatedResponses: this.validatedResponses,
       initialCandidates: this.initialCandidates,
+      scanPartial: this.scanPartial,
+      scanBudgetMs: this.scanBudgetMs,
+      scanElapsedMs: this.scanElapsedMs,
       evaluatedByLlm: this.evaluatedByLlm,
       decisionModels: [...this.decisionModels].sort(),
       reportedCostUsd: this.costedRequests > 0 ? this.reportedCostUsd : undefined,

@@ -33,14 +33,14 @@ describe("Native OpenRouter decisions", () => {
     const fetch = vi.fn(async () => json(responseBody()));
     vi.stubGlobal("fetch", fetch);
     const c = client();
-    expect(c.modelName).toBe("typesafe/jev-1.13");
+    expect(c.modelName).toBe("typesafe/jev-1.14");
     const secret = "Bearer " + "a".repeat(24);
     const result = await c.systemOne({ snippet: "Authorization: " + secret, task: "auth" }, questions);
     expect(result.ok).toBe(true);
     expect(fetch.mock.calls[0]?.[0]).toBe("https://openrouter.ai/api/v1/systemone");
     const init = (fetch.mock.calls[0] as unknown as [string, RequestInit])[1];
     const payload = JSON.parse(init.body as string);
-    expect(payload.model).toBe("typesafe/jev-1.13");
+    expect(payload.model).toBe("typesafe/jev-1.14");
     expect(payload.provider).toEqual({ allow_fallbacks: false, data_collection: "deny" });
     expect(init.body).not.toContain(secret);
     if (result.ok) {
@@ -71,7 +71,7 @@ describe("Native OpenRouter decisions", () => {
     expect(fetch).toHaveBeenCalledTimes(2);
     for (const [url, init] of fetch.mock.calls) {
       expect(url).toBe("https://openrouter.ai/api/v1/systemone");
-      expect(JSON.parse(init.body).model).toBe("typesafe/jev-1.13");
+      expect(JSON.parse(init.body).model).toBe("typesafe/jev-1.14");
     }
   });
 

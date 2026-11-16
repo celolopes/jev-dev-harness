@@ -62,6 +62,19 @@ export type {
 
 export type JevProvider = "typesafe" | "openrouter" | "vercel";
 
+export const DEFAULT_JEV_MODELS: Record<JevProvider, string> = {
+  typesafe: "jev-1.14.0",
+  openrouter: "typesafe/jev-1.14",
+  vercel: "typesafe-ai/jev-1.14.0",
+};
+
+// Preserve explicitly pinned legacy Jev versions while using the native API slug.
+export function normalizeTypeSafeModel(model: string): string {
+  const trimmed = model.trim();
+  const legacy = /^(?:typesafe\/)?jev-(1\.(?:13|14))(?:\.0)?$/.exec(trimmed);
+  return legacy ? `jev-${legacy[1]}.0` : trimmed;
+}
+
 export interface SafeJevClientOptions {
   apiKey?: string;
   baseURL?: string;
@@ -224,7 +237,7 @@ export class SafeJevClient {
         options.apiKey ||
         process.env.TYPESAFE_API_KEY ||
         process.env.JEV_API_KEY ||
-        globalConfig.apiKey;
+        (globalConfig.provider === "typesafe" ? globalConfig.apiKey : undefined);
     }
     this.apiKey = effectiveKey;
 
@@ -233,8 +246,8 @@ export class SafeJevClient {
         options.defaultModel ||
         process.env.OPENROUTER_MODEL ||
         process.env.TYPESAFE_DEFAULT_MODEL ||
-        globalConfig.model ||
-        "typesafe/jev-1.13";
+        (globalConfig.provider === "openrouter" ? globalConfig.model : undefined) ||
+        DEFAULT_JEV_MODELS.openrouter;
 
       // Normalize user-friendly DeepSeek slugs (e.g. deepseek-4-flash -> deepseek/deepseek-v4-flash)
       this.modelName = normalizeOpenRouterModel(rawModel);
@@ -243,13 +256,15 @@ export class SafeJevClient {
         options.defaultModel ||
         process.env.VERCEL_MODEL ||
         process.env.TYPESAFE_DEFAULT_MODEL ||
-        globalConfig.model ||
-        "typesafe-ai/jev";
+        (globalConfig.provider === "vercel" ? globalConfig.model : undefined) ||
+        DEFAULT_JEV_MODELS.vercel;
     } else {
-      this.modelName =
+      this.modelName = normalizeTypeSafeModel(
         options.defaultModel ||
         process.env.TYPESAFE_DEFAULT_MODEL ||
-        "jev-1.13.0";
+        (globalConfig.provider === "typesafe" ? globalConfig.model : undefined) ||
+        DEFAULT_JEV_MODELS.typesafe
+      );
     }
 
     if (this.disabled) {

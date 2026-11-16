@@ -122,7 +122,7 @@ Git release tags and publishing to npm `latest`. Release notes are in
    * 👉 **Generate API Key:** [https://vercel.com/d/ai-gateway](https://vercel.com/d/ai-gateway) (Vercel Dashboard → AI Gateway → API Keys)
    * Automatically activated when `AI_GATEWAY_API_KEY` (or `VERCEL_AI_GATEWAY_KEY` / `VERCEL_OIDC_TOKEN`) is configured.
 3. **OpenRouter (Native Jev & Explicit LLM Emulation)**:
-   * Defaults to `typesafe/jev-1.13` through `/api/v1/systemone`, with runtime validation and a bounded deadline. Existing explicit model settings are preserved.
+   * Defaults to `typesafe/jev-1.14` through `/api/v1/systemone`, with runtime validation and a bounded deadline. Existing explicit model settings are preserved.
    * Other explicitly selected models use chat emulation and are labeled separately. Jev failures return deterministic fallback, never a silent model switch.
    * See [native OpenRouter setup, cache, metrics and evaluation](docs/jev/OPENROUTER-NATIVE.md).
    * 👉 **Generate API Key:** [https://openrouter.ai/keys](https://openrouter.ai/keys)
@@ -544,15 +544,22 @@ jev-dev doctor --init-rules
 
 ### ⚡ Post-Task Savings & Efficiency Telemetry
 
+Context scans use a cooperative 3000 ms filesystem budget by default. Set
+`JEV_SCAN_BUDGET_MS`, pass `--scan-budget-ms` to the CLI, or `scanBudgetMs`
+to the MCP tool to change it. `scanPartial` marks a deadline-limited scan;
+relevant files may be missing, so supplement it with targeted searches. The
+deadline is checked between synchronous filesystem operations, and cannot
+interrupt a blocked operation; scoring and model calls have separate timing.
+
 When an AI coding agent (such as **Codex**, **Antigravity**, **Claude Code**, **Cline**, or **Cursor**) invokes `jev_rank_context`, `jev_guard_check`, or `jev_review_patch`, the MCP server automatically returns real-time efficiency metrics (`efficiencyReport`) along with agent instructions. 
 
 Agents report observed counts and usage, distinguishing unknown savings from measured execution:
 
 ```markdown
 ### ⚡ Eficiência Jev
-- **Contexto:** entradas encontradas; candidatos após filtros; candidatos avaliados; arquivos selecionados.
-- **Modelo e uso:** provider/modelo, cache, chamadas novas, tokens reportados e custo com cobertura; custo ausente: não informado.
-- **Execução:** latência e fallback; auditorias apenas quando executadas, com seu escopo.
+- **Contexto:** entradas visitadas, excluindo o conteúdo de diretórios ignorados; candidatos após filtros e avaliados; arquivos selecionados. Entradas não são necessariamente arquivos. Em falha ou timeout, relate o ocorrido sem inventar contagens ou causa.
+- **Modelo e uso:** provider/modelo, cache, chamadas novas, tokens reportados e custo com cobertura; uso limitado a respostas validadas, podendo excluir retries e falhas; custo ausente: não informado.
+- **Execução:** latência, fallback e motivo quando retornados; verificações executadas com escopo e resultado.
 - **Economia de tokens/dinheiro:** não medida sem baseline válido.
 ```
 
@@ -662,3 +669,19 @@ jev-dev uninstall --purge --global --rules
 ## 📄 License
 
 This project is licensed under the [MIT License](LICENSE).
+
+
+### Jev 1.14 defaults in 0.2.16
+
+New unpinned configurations use `jev-1.14.0` (TypeSafe), `typesafe/jev-1.14`
+(OpenRouter), or `typesafe-ai/jev-1.14.0` (Vercel). Existing explicit model settings
+are retained. The change is an owner-selected default, not a benchmark superiority
+claim. See [model defaults, pins and compatibility](docs/jev/JEV-0.2.16-DEFAULTS.md).
+
+
+### Explicit Dot / delegated-task review
+
+A delegated coding task can invoke `jev-dev delegate review --input request.json`
+(or stdin) for a bounded, command-only offline advisory receipt. It never executes
+or authorizes the operation, calls a remote model, or installs automatic interception.
+See [the versioned envelope and handoff contract](docs/jev/DELEGATED-REVIEW.md).
