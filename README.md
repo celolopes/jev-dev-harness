@@ -10,7 +10,6 @@
 
 <p align="center">
   <a href="https://www.npmjs.com/package/jev-dev-harness"><img src="https://img.shields.io/npm/v/jev-dev-harness.svg?color=cb3837" alt="npm version" /></a>
-  <img src="https://img.shields.io/badge/tests-142%20passing-brightgreen.svg" alt="Tests" />
   <img src="https://img.shields.io/badge/TypeScript-5.8-blue.svg" alt="TypeScript" />
   <img src="https://img.shields.io/badge/Node.js-22+-green.svg" alt="Node" />
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT" /></a>
@@ -86,7 +85,9 @@ npx -y jev-dev compare
 
 Maintainers: see [the release guide](docs/RELEASING.md) for version checks,
 Git release tags and publishing to npm `latest`. Release notes are in
-[CHANGELOG.md](CHANGELOG.md).
+[CHANGELOG.md](CHANGELOG.md). The npm badge above reflects the version published
+to the npm registry, not the version on `main` or in a GitHub release. A GitHub
+release does not by itself publish a package to npm.
 
 | Module / Command | Purpose |
 | :--- | :--- |
@@ -580,7 +581,9 @@ the MCP connection alone cannot measure private client inference.
 
 For the SDK 0.7 migration, nullable token contract and the controlled Jev 1.14
 smoke evaluation, see [model evaluation](docs/jev/JEV-1.14-EVALUATION.md).
-The native default remains pinned to Jev 1.13.0; this update does not promote 1.14.
+That evaluation records the earlier 1.13 default decision. Since harness 0.2.16,
+new unpinned configurations default to Jev 1.14; existing explicit model pins
+are preserved. See [current model defaults and compatibility](docs/jev/JEV-0.2.16-DEFAULTS.md).
 
 Inspect observed usage, cache reuse and recorded operations. Token/money savings have no measured baseline.
 
@@ -621,9 +624,9 @@ Create a `.env` file or export environment variables:
 | :--- | :--- |
 | `TYPESAFE_API_KEY` or `JEV_API_KEY` | Official TypeSafe AI API key (enables native Jev System One). |
 | `AI_GATEWAY_API_KEY` | Vercel AI Gateway API key (enables TypeSafe Jev via Vercel AI Gateway). |
-| `OPENROUTER_API_KEY` | OpenRouter API key (enables LLM emulation mode, e.g. `deepseek/deepseek-v4-flash`). |
+| `OPENROUTER_API_KEY` | OpenRouter API key (native Jev by default; other explicitly selected models use LLM emulation). |
 | `JEV_PROVIDER` | Force provider: `typesafe`, `vercel`, or `openrouter`. |
-| `OPENROUTER_MODEL` | Custom OpenRouter model slug (default: `deepseek/deepseek-v4-flash`). |
+| `OPENROUTER_MODEL` | Custom OpenRouter model slug (unpinned default: `typesafe/jev-1.14`). |
 | `OPENROUTER_EFFORT` | Reasoning effort for supported models (`low`, `medium`, `high`). |
 
 ---
@@ -633,7 +636,7 @@ Create a `.env` file or export environment variables:
 The repository features comprehensive integration and unit test suites:
 
 ```bash
-# Run full Vitest test suite (142 tests across 22 test suites)
+# Run the full Vitest test suite (reports the current test count and results)
 npm test
 
 # Run benchmark suite (precision, recall, file selection counts)
