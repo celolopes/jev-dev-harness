@@ -72,7 +72,7 @@ The following legacy comparison values are hypothetical assumptions, not measure
 Run the hypothetical simulation anytime in your terminal with zero install:
 
 ```bash
-npx -y jev-dev compare
+npx -y --package=jev-dev-harness jev-dev compare
 ```
 
 <p align="center">
@@ -141,7 +141,7 @@ Configure your API keys (TypeSafe AI or OpenRouter) and automatically register t
 
 ```bash
 # Zero-install interactive wizard:
-npx -y jev-dev setup
+npx -y --package=jev-dev-harness jev-dev setup
 
 # Or if installed globally:
 npm install -g jev-dev-harness
@@ -168,39 +168,41 @@ You can inspect or switch your active provider at any time without losing your s
 
 ```bash
 # Check current active provider & live latency:
-npx -y jev-dev provider
+npx -y --package=jev-dev-harness jev-dev provider
 
 # Switch instantly to Vercel AI Gateway (Free Tier):
-npx -y jev-dev provider vercel
+npx -y --package=jev-dev-harness jev-dev provider vercel
 
 # Switch back to native TypeSafe AI:
-npx -y jev-dev provider typesafe
+npx -y --package=jev-dev-harness jev-dev provider typesafe
 
 # Switch to OpenRouter or Offline:
-npx -y jev-dev provider openrouter
-npx -y jev-dev provider offline
+npx -y --package=jev-dev-harness jev-dev provider openrouter
+npx -y --package=jev-dev-harness jev-dev provider offline
 
 # Or run the full interactive wizard:
-npx -y jev-dev setup
+npx -y --package=jev-dev-harness jev-dev setup
 ```
 
 ---
 
-### Option 1: Run instantly with npx (No install needed)
+### Option 1: Run with npx (No global install)
+
+`npx` downloads `jev-dev-harness` into the npm cache when needed. `--package` selects the npm package, and `jev-dev` is its CLI executable.
 
 ```bash
 # Interactive setup wizard
-npx -y jev-dev setup
+npx -y --package=jev-dev-harness jev-dev setup
 
 # Open real-time Live Telemetry web dashboard
-npx -y jev-dev dashboard
+npx -y --package=jev-dev-harness jev-dev dashboard
 
 # Live ROI & benchmark comparison
-npx -y jev-dev compare
+npx -y --package=jev-dev-harness jev-dev compare
 
 # Run CLI commands directly
-npx -y jev-dev context rank --task "My task"
-npx -y jev-dev guard check --command "git status"
+npx -y --package=jev-dev-harness jev-dev context rank --task "My task"
+npx -y --package=jev-dev-harness jev-dev guard check --command "git status"
 
 # Run stdio MCP server directly for agents
 npx -y jev-dev-harness
@@ -380,7 +382,8 @@ expression (for example `HEAD~1`, `main..feature` or `origin/main...HEAD`), not 
 or multiple shell-separated revisions.
 
 #### GitHub Actions Workflow
-Add `.github/workflows/jev-lint.yml` to your repository:
+Install `jev-dev-harness` as a development dependency (`npm install -D jev-dev-harness`) and commit the updated `package.json` and `package-lock.json` so `npm ci` makes the `jev-dev` binary available.
+Then add `.github/workflows/jev-lint.yml` to your repository:
 
 ```yaml
 name: Jev Semantic Linter
@@ -591,13 +594,13 @@ Launch the live telemetry web dashboard anytime:
 
 ```bash
 # Launch live dashboard on http://localhost:3741:
-npx -y jev-dev dashboard
+npx -y --package=jev-dev-harness jev-dev dashboard
 
 # Or specify a custom port / headless mode:
-npx -y jev-dev dashboard --port 8790 --no-open
+npx -y --package=jev-dev-harness jev-dev dashboard --port 8790 --no-open
 
 # Output aggregated metrics to JSON (for CI or telemetry tracking):
-npx -y jev-dev dashboard --json
+npx -y --package=jev-dev-harness jev-dev dashboard --json
 ```
 
 <p align="center">
