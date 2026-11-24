@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { createHash } from "node:crypto";
 import { importAgentUsage, addAgentUsage, zeroAgentUsage } from "./agent-usage.js";
+import { roundUsd } from "./efficiency.js";
 
 type JsonObject = Record<string, unknown>;
 const object = (value: unknown, label: string): JsonObject => {
@@ -216,7 +217,7 @@ function importHarnessUsage(file: string, runId: string) {
       if (value.outputTokens !== null) outputTokens += count(value.outputTokens, "Jev output tokens");
       if (value.costUsd !== undefined) {
         if (typeof value.costUsd !== "number" || !Number.isFinite(value.costUsd) || value.costUsd < 0) throw new Error("Invalid Jev reported cost");
-        reportedCostUsd = (reportedCostUsd ?? 0) + value.costUsd;
+        reportedCostUsd = roundUsd((reportedCostUsd ?? 0) + value.costUsd);
         costedRequests++;
       }
     } else throw new Error("Unknown Jev ledger event");
@@ -304,15 +305,18 @@ export function compareUsageRuns(manifestFile: string) {
   if (withJev.runs.some(run => "events" in run && run.events.some(event => baselineRequests.has(`${event.provider}:${event.requestId}`)))) {
     throw new Error("Cannot compare the same provider request across runs");
   }
-  if (baseline.runs[0]!.harness !== withJev.runs[0]!.harness
-      || baseline.runs[0]!.model !== withJev.runs[0]!.model || baseline.runs[0]!.effort !== withJev.runs[0]!.effort
-      || baseline.validation.criterionId !== withJev.validation.criterionId) throw new Error("Model, reasoning effort or validation criteria differ");
+  const reference = baseline.runs[0]!;
+  if (baseline.runs.concat(withJev.runs).some(run =>
+      run.harness !== reference.harness || run.model !== reference.model || run.effort !== reference.effort)
+      || baseline.validation.criterionId !== withJev.validation.criterionId) {
+    throw new Error("Model, reasoning effort or validation criteria differ");
+  }
   const agentTokenDelta = baseline.agentUsage.totalTokens === null || withJev.agentUsage.totalTokens === null
     ? null : baseline.agentUsage.totalTokens - withJev.agentUsage.totalTokens;
   const harness = withJev.harnessUsage;
   const pipelineTokenDelta = agentTokenDelta !== null && harness && harness.missingUsage === 0 && withJev.harnessCoverageDeclared
     ? agentTokenDelta - harness.totalTokens : null;
-  const moneyDeltaUsd = baseline.cost && withJev.cost ? baseline.cost.usd - withJev.cost.usd : null;
+  const moneyDeltaUsd = baseline.cost && withJev.cost ? roundUsd(baseline.cost.usd - withJev.cost.usd) : null;
   const comparisonId = hash(JSON.stringify([taskId, environmentId, baseline.fingerprint, withJev.fingerprint]));
   const summaryMessage = [
     "### ⚡ Eficiência Jev",

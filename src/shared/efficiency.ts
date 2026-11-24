@@ -2,11 +2,18 @@ import type { TelemetryMetrics } from "./telemetry.js";
 
 export const FACTUAL_EFFICIENCY_INSTRUCTION = "Apresente um bloco '### ⚡ Eficiência Jev' conciso e pertinente à tarefa, usando somente resultados observados. Para ranking concluído, informe entradas, candidatos filtrados e avaliados, arquivos selecionados, uso reportado e latência; entradas não são necessariamente arquivos. Se scanPartial for true, informe que a varredura foi parcial e arquivos relevantes podem não ter sido visitados; complemente a busca quando necessário. Se a chamada falhar ou expirar, informe o ocorrido sem inventar contagens ou causa. Indique fallback e motivo quando retornados. Tokens e custos cobrem somente respostas validadas; informe cobertura e dados ausentes. Economia de tokens/dinheiro: não medida sem comparação válida com baseline. Cache e heurística não são chamadas novas ao modelo. Só afirme verificação de comandos, auditoria de diff ou lint quando executada; informe escopo e resultado.";
 
+/** Normalize IEEE-754 decimal drift in USD sums and differences without fabricating precision. */
+export function roundUsd(value: number): number {
+  if (!Number.isFinite(value)) return value;
+  const rounded = Math.abs(value) < 1e12 ? Number(value.toFixed(10)) : value;
+  return Object.is(rounded, -0) ? 0 : rounded;
+}
+
 /** Usage covers validated responses, not unreported retries or failed requests. */
 export function buildContextEfficiencyReport(metrics: TelemetryMetrics) {
   const newModelCalls = metrics.newModelCalls ?? null;
   const costedRequests = metrics.costedRequests ?? 0;
-  const reportedCostUsd = costedRequests > 0 ? metrics.reportedCostUsd ?? null : null;
+  const reportedCostUsd = costedRequests > 0 && metrics.reportedCostUsd !== undefined ? roundUsd(metrics.reportedCostUsd) : null;
   const summaryMessage = [
     "### ⚡ Eficiência Jev",
     `- Contexto: ${metrics.initialCandidates} entradas visitadas (sem conteúdo de diretórios ignorados); ${metrics.filteredCandidates} após filtros; ${metrics.evaluatedCandidates ?? "não informado"} candidatos avaliados; ${metrics.selectedCount} arquivos selecionados.`,

@@ -5,6 +5,7 @@ import {
   type SafeJevClient,
 } from "../shared/typesafe-client.js";
 import { JevCache } from "../shared/cache.js";
+import { roundUsd } from "../shared/efficiency.js";
 import type { TelemetryCollector } from "../shared/telemetry.js";
 import type {
   CandidateRole,
@@ -145,7 +146,7 @@ export async function executeStageC(
       telemetry.validatedResponses++;
       telemetry.addTokens(response.inputTokens, response.outputTokens);
       if (response.costUsd !== undefined) {
-        telemetry.reportedCostUsd += response.costUsd;
+        telemetry.reportedCostUsd = roundUsd(telemetry.reportedCostUsd + response.costUsd);
         telemetry.costedRequests++;
       }
 

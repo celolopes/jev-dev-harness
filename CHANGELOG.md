@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.18 - 2026-11-24
+
+- Normalize IEEE-754 floating-point drift (`roundUsd`) across reported USD sums
+  and paired billing comparisons in efficiency reports, telemetry summaries,
+  Context Ranker Stage C, agent usage imports, and Jev measurement ledgers.
+- Validate `harness`, `model`, and `effort` equivalence across all rollouts in
+  multi-rollout `compareUsageRuns` runs rather than checking only the first rollout.
+- Preserve TypeSafe SDK 0.7.0, Node.js 22+, Jev 1.14 defaults, conservative
+  unknown-usage accounting, and offline delegated review from 0.2.17.
+
 ## 0.2.17 - 2026-11-16
 
 - Raise the minimum MCP SDK dependency to 1.32.2 and refresh the lockfile for

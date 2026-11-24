@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildContextEfficiencyReport } from "../../src/shared/efficiency.js";
+import { buildContextEfficiencyReport, roundUsd } from "../../src/shared/efficiency.js";
 import { TelemetryCollector } from "../../src/shared/telemetry.js";
 import { getAgentRuleContent } from "../../src/cli/doctor.js";
 
@@ -56,5 +56,15 @@ describe("Factual efficiency reports", () => {
   it("installs factual agent rules", () => {
     expect(getAgentRuleContent()).toContain("não medida sem comparação válida");
     expect(getAgentRuleContent()).not.toMatch(/Economia Estimada|Comandos e diffs auditados|<1s/);
+  });
+  it("normalizes IEEE-754 decimal drift and negative zero in reported USD", () => {
+    expect(roundUsd(0.0001 + 0.0002)).toBe(0.0003);
+    expect(Object.is(roundUsd(-0), 0)).toBe(true);
+    const collector = new TelemetryCollector();
+    collector.newModelCalls = 2;
+    collector.validatedResponses = 2;
+    collector.costedRequests = 2;
+    collector.reportedCostUsd = 0.0001 + 0.0002;
+    expect(buildContextEfficiencyReport(collector.getMetrics()).reportedCostUsd).toBe(0.0003);
   });
 });

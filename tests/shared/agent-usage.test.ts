@@ -87,6 +87,14 @@ describe("Cross-harness import and comparison", () => {
     expect(result.usage.reasoningOutputTokens).toBeNull();
     expect(result.reportedCostUsd).toBeNull();
   });
+  it("normalizes IEEE-754 drift when summing reported request costs", () => {
+    const raw = run();
+    raw.events = [
+      { ...raw.events[0]!, requestId: "r1", costUsd: 0.0001 } as any,
+      { ...raw.events[0]!, requestId: "r2", costUsd: 0.0002 } as any,
+    ];
+    expect(parseAgentUsage(raw).reportedCostUsd).toBe(0.0003);
+  });
   it("rejects duplicate streamed snapshots and reuse of provider requests", () => {
     const raw = run(); raw.events.push(raw.events[0]!);
     expect(() => parseAgentUsage(raw)).toThrow("Duplicate");

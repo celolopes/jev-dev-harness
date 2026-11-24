@@ -1,13 +1,15 @@
 # Publishing a stable release
 
-## Current release: 0.2.17
+## Current release: 0.2.18
 
-Harness 0.2.17 requires Node.js 22+ and retains TypeSafe SDK 0.7.0.
-MCP SDK is updated to the patched 1.32.2 line; development uses Vitest 4.1.12
+Harness 0.2.18 requires Node.js 22+ and retains TypeSafe SDK 0.7.0.
+MCP SDK is on the patched 1.32.2 line; development uses Vitest 4.1.12
 and Vite 6.4.6 to retain the Node 22 baseline. Use supported Node 22 LTS or Node 24+
 for development; the test toolchain excludes the end-of-life Node 23 release. New unpinned
 configurations default to Jev 1.14 using provider-specific IDs; explicit pins remain.
-The new `delegate review` bridge uses only the existing offline lexical guard and
+Reported USD sums/deltas normalize IEEE-754 decimal drift via `roundUsd`, and
+multi-rollout usage comparisons validate every rollout against the baseline reference.
+The `delegate review` bridge uses only the existing offline lexical guard and
 never invokes a model or grants execution permission. See
 `docs/jev/JEV-0.2.16-DEFAULTS.md` and `docs/jev/DELEGATED-REVIEW.md`.
 Merge, tags, GitHub releases and npm publication require their applicable approvals.
@@ -25,15 +27,15 @@ Codex-only comparisons retain schemaVersion 1. See
 ## Version and publication
 
 The harness version is independent of the Jev model version. This release is
-`jev-dev-harness@0.2.17`, with Git tag `v0.2.17` and npm dist-tag `latest`.
+`jev-dev-harness@0.2.18`, with Git tag `v0.2.18` and npm dist-tag `latest`.
 `latest` is an npm distribution pointer, not a Git tag.
 
 ## Prepare and validate
 
-For this owner-authorized 0.2.17 release, use the reviewed release branch `release/0.2.17-dependency-hardening` with Node.js 22 or newer. Keep `main` unchanged; do not merge or open a PR as part of this release path. This avoids unintentionally triggering online semantic workflows. Do not change CI to bypass checks.
+From a clean checkout of `main` with Node.js 22 or newer:
 
 ```sh
-git status --short
+git pull --ff-only origin main
 npm ci
 npm run release:dry-run
 npm pack --dry-run
@@ -44,31 +46,35 @@ The publish dry run executes version checks, type checking, build and tests via
 list and ensure it contains the compiled entry points, binaries and no secrets.
 The dry run does not upload a package or move the npm `latest` pointer.
 
-## Publish 0.2.17
+## Publish 0.2.18
 
 Use your npm maintainer account; complete login/2FA locally. Do not commit tokens.
-Check that 0.2.17 has not already been published before uploading:
+Check that 0.2.18 has not already been published before uploading:
 
 ```sh
 npm whoami
 npm view jev-dev-harness versions --json
-git checkout release/0.2.17-dependency-hardening
-git status --short
+git checkout main
+git pull --ff-only origin main
 git describe --exact-match --tags HEAD
 npm run release:publish
-npm view jev-dev-harness@0.2.17 version
+npm view jev-dev-harness@0.2.18 version
 npm dist-tag ls jev-dev-harness
 ```
 
 Run these commands separately and stop on any error. Publish only the clean,
 validated commit tagged above. `release:publish` runs `npm publish --tag latest`;
 `publishConfig` also pins the public npm registry and `latest` for plain
-`npm publish`. A successful publication should show `latest: 0.2.17`.
-Before publishing, confirm that HEAD is the clean validated `v0.2.17` commit.
+`npm publish`. A successful publication should show `latest: 0.2.18`.
+Before publishing, confirm that HEAD is the clean validated `v0.2.18` commit.
 If publication fails, resolve the authentication or registry error and retry
 the same artifact. Do not move an existing tag or reuse a published version.
 
-After review and authorization, commit the validated state on the release branch and create `v0.2.17` and the GitHub release from that exact reviewed commit, without merging `main`. Push only the explicitly approved branch/tag/release. Do not recreate existing tags. If npm authentication fails, stop and report npm publication as pending; a GitHub release does not mean npm publication succeeded.
+After review and authorization, commit the validated state on `main`, create `v0.2.18`,
+and create the GitHub release from that exact reviewed commit before manual npm
+publication. Push only the explicitly approved branch/tag/release. Do not recreate
+existing tags. If npm authentication fails, stop and report npm publication as pending;
+a GitHub release does not mean npm publication succeeded.
 There is no automatic npm publication workflow; merging code or pushing a tag
 alone does not publish the package.
 

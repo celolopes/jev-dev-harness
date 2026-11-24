@@ -1,17 +1,17 @@
 {
   "name": "jev-dev-harness",
-  "version": "0.2.17",
+  "version": "0.2.18",
   "engines": {
     "node": ">=22"
   },
   "jevUpdate": {
     "schemaVersion": 1,
     "reasons": [
-      "Refresh MCP SDK and transitive dependency security fixes",
-      "Update the development test toolchain to patched Vitest 4 while retaining the Node 22 runtime baseline"
+      "Normalize IEEE-754 floating-point drift in reported USD sums and paired comparison cost deltas",
+      "Validate harness, model and reasoning effort across all rollouts in multi-rollout usage comparisons"
     ],
     "requirements": [
-      "Development and tests require a supported Node 22 LTS or Node 24+ runtime; existing model pins and offline delegation behavior remain unchanged",
+      "Restart running MCP and dashboard processes after updating; no configuration or rule file migration is required",
       "Safety Pro Engine RC3 accepts harness 0.2.14 and 0.2.15 only; keep its trusted runtime separate"
     ]
   },

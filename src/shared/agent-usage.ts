@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import { createHash } from "node:crypto";
+import { roundUsd } from "./efficiency.js";
 
 export type AgentUsageFormat = "normalized" | "openai-chat" | "openai-responses" | "anthropic" | "gemini" | "cursor-event";
 export interface AgentTokenUsage {
@@ -151,7 +152,7 @@ export function parseAgentUsage(value: unknown) {
     const reported = format === "cursor-event" && event.usage !== null && obj(event.usage).chargedCents !== undefined
       ? cost(obj(event.usage).chargedCents)! / 100 : cost(event.costUsd);
     if (reported !== null) {
-      reportedCostUsd = (reportedCostUsd ?? 0) + reported;
+      reportedCostUsd = roundUsd((reportedCostUsd ?? 0) + reported);
       if (!Number.isFinite(reportedCostUsd)) throw new Error("Reported cost overflow");
       costedRequests++;
     }

@@ -177,6 +177,41 @@ describe("Observed Codex usage comparison", () => {
     expect(() => compareCodexRuns(file)).toThrow(/billing/);
   });
 
+  it("normalizes IEEE-754 drift in moneyDeltaUsd and Jev ledger cost sums", () => {
+    const { file, manifest } = fixture();
+    write("pair.jsonl", [
+      { kind: "run_started", runId: "pair" },
+      { kind: "request_started", runId: "pair", requestId: "r1" },
+      { kind: "request_completed", runId: "pair", requestId: "r1", usage: { inputTokens: 10, outputTokens: 2, costUsd: 0.0001 } },
+      { kind: "request_started", runId: "pair", requestId: "r2" },
+      { kind: "request_completed", runId: "pair", requestId: "r2", usage: { inputTokens: 10, outputTokens: 2, costUsd: 0.0002 } },
+      { kind: "run_finished", runId: "pair" },
+    ].map(row => JSON.stringify(row)).join("\n"));
+    const initial = compareCodexRuns(file);
+    expect(initial.withJev.harnessUsage?.reportedCostUsd).toBe(0.0003);
+    const receipt = (fingerprint: string, amount: number) => ({ runFingerprint: fingerprint,
+      currency: "USD", amount, coverage: "all_agent_and_jev_costs", sourceReference: "provider billing export" });
+    write("baseline-billing.json", receipt(initial.baseline.fingerprint, 0.3));
+    write("jev-billing.json", receipt(initial.withJev.fingerprint, 0.1));
+    write("comparison.json", { ...manifest, baseline: { ...manifest.baseline, billingReceipt: "baseline-billing.json" },
+      withJev: { ...manifest.withJev, billingReceipt: "jev-billing.json" } });
+    const report = compareCodexRuns(file);
+    expect(report.moneyDeltaUsd).toBe(0.2);
+    expect(report.summaryMessage).toContain("US$ 0.2 conforme recibos importados");
+  });
+
+  it("rejects secondary rollouts with mismatched model or effort in multi-rollout runs", () => {
+    const { file, manifest } = fixture();
+    write("jev-worker.jsonl", rollout("jev-worker", 100, 10, { model: "other-model" }));
+    write("jev-validation.json", { taskId: "fix-auth", criterionId: "same-tests", passed: true,
+      runIds: ["jev:turn", "jev-worker:turn"], evidenceReference: "test report artifact" });
+    write("comparison.json", {
+      ...manifest,
+      withJev: { ...manifest.withJev, rollouts: [{ path: "jev.jsonl" }, { path: "jev-worker.jsonl" }] },
+    });
+    expect(() => compareCodexRuns(file)).toThrow(/Model/);
+  });
+
   it("rejects reset counters and malformed logs without exposing their contents", () => {
     const { file } = fixture();
     const rows = rollout("jev", 600, 60).split("\n");

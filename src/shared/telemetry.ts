@@ -3,6 +3,7 @@ import * as path from "path";
 import * as os from "os";
 import { EventEmitter } from "events";
 import type { compareCodexRuns } from "./usage-comparison.js";
+import { roundUsd } from "./efficiency.js";
 
 export type TelemetryEventType =
   | "context_rank"
@@ -268,7 +269,7 @@ export class TelemetryCollector {
       scanElapsedMs: this.scanElapsedMs,
       evaluatedByLlm: this.evaluatedByLlm,
       decisionModels: [...this.decisionModels].sort(),
-      reportedCostUsd: this.costedRequests > 0 ? this.reportedCostUsd : undefined,
+      reportedCostUsd: this.costedRequests > 0 ? roundUsd(this.reportedCostUsd) : undefined,
       costedRequests: this.costedRequests,
       filteredCandidates: this.filteredCandidates,
       evaluatedByJev: this.evaluatedByJev,
@@ -608,7 +609,7 @@ export function getTelemetrySummary(): TelemetrySummary {
         usage.inputTokens = usage.inputTokens === null || metrics.tokensSent === null ? null : usage.inputTokens + metrics.tokensSent;
         usage.outputTokens = usage.outputTokens === null || metrics.tokensReceived === null ? null : usage.outputTokens + metrics.tokensReceived;
         if ((metrics.costedRequests ?? 0) > 0 && metrics.reportedCostUsd !== undefined) {
-          usage.reportedCostUsd = (usage.reportedCostUsd ?? 0) + metrics.reportedCostUsd;
+          usage.reportedCostUsd = roundUsd((usage.reportedCostUsd ?? 0) + metrics.reportedCostUsd);
           usage.costedRequests += metrics.costedRequests!;
         }
       } else usage.eventsWithoutUsage++;
