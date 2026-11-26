@@ -2,6 +2,7 @@ import { Command } from "commander";
 import path from "node:path";
 import os from "node:os";
 import fs from "node:fs";
+import { fileURLToPath } from "node:url";
 import { execSync } from "node:child_process";
 import { rankContext } from "../context-ranker/index.js";
 import { installGitHook, uninstallGitHook } from "../hooks/index.js";
@@ -808,14 +809,18 @@ export function createCli(): Command {
   return program;
 }
 
-// When run directly as a script
-const normalizedScript = (process.argv[1] || "").replace(/\\/g, "/");
-if (
-  normalizedScript.endsWith("cli/index.js") ||
-  normalizedScript.endsWith("cli/index.ts") ||
-  normalizedScript.endsWith("bin/jev-dev.js") ||
-  normalizedScript.endsWith("jev-dev.js")
-) {
-  const cli = createCli();
-  cli.parse(process.argv);
+// Keep direct source/compiled invocation working without starting the CLI on import.
+// The npm binary owns its own invocation, regardless of the name of its symlink.
+function isDirectInvocation(): boolean {
+  const entry = process.argv[1];
+  if (!entry) return false;
+  try {
+    return fs.realpathSync(entry) === fs.realpathSync(fileURLToPath(import.meta.url));
+  } catch {
+    return false;
+  }
+}
+
+if (isDirectInvocation()) {
+  createCli().parse(process.argv);
 }
