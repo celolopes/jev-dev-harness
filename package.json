@@ -1,17 +1,16 @@
 {
   "name": "jev-dev-harness",
-  "version": "0.2.18",
+  "version": "0.2.19",
   "engines": {
     "node": ">=22"
   },
   "jevUpdate": {
     "schemaVersion": 1,
     "reasons": [
-      "Normalize IEEE-754 floating-point drift in reported USD sums and paired comparison cost deltas",
-      "Validate harness, model and reasoning effort across all rollouts in multi-rollout usage comparisons"
+      "Restore CLI startup through extensionless npm executable links on Linux, including npm exec"
     ],
     "requirements": [
-      "Restart running MCP and dashboard processes after updating; no configuration or rule file migration is required",
+      "No configuration or rule file migration is required",
       "Safety Pro Engine RC3 accepts harness 0.2.14 and 0.2.15 only; keep its trusted runtime separate"
     ]
   },

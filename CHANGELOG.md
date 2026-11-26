@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.19 - 2026-11-26
+
+- Fix silent CLI startup through extensionless npm executable links on Linux.
+- Preserve direct invocation and keep imports free of CLI startup side effects.
+- No dependency, configuration, or rule file migration is required.
+
 ## 0.2.18 - 2026-11-24
 
 - Normalize IEEE-754 floating-point drift (`roundUsd`) across reported USD sums

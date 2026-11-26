@@ -1,14 +1,15 @@
 # Publishing a stable release
 
-## Current release: 0.2.18
+## Current release: 0.2.19
 
-Harness 0.2.18 requires Node.js 22+ and retains TypeSafe SDK 0.7.0.
+Harness 0.2.19 requires Node.js 22+ and retains TypeSafe SDK 0.7.0.
 MCP SDK is on the patched 1.32.2 line; development uses Vitest 4.1.12
 and Vite 6.4.6 to retain the Node 22 baseline. Use supported Node 22 LTS or Node 24+
 for development; the test toolchain excludes the end-of-life Node 23 release. New unpinned
 configurations default to Jev 1.14 using provider-specific IDs; explicit pins remain.
 Reported USD sums/deltas normalize IEEE-754 decimal drift via `roundUsd`, and
 multi-rollout usage comparisons validate every rollout against the baseline reference.
+The npm CLI starts correctly when invoked through an extensionless executable link.
 The `delegate review` bridge uses only the existing offline lexical guard and
 never invokes a model or grants execution permission. See
 `docs/jev/JEV-0.2.16-DEFAULTS.md` and `docs/jev/DELEGATED-REVIEW.md`.
@@ -27,7 +28,7 @@ Codex-only comparisons retain schemaVersion 1. See
 ## Version and publication
 
 The harness version is independent of the Jev model version. This release is
-`jev-dev-harness@0.2.18`, with Git tag `v0.2.18` and npm dist-tag `latest`.
+`jev-dev-harness@0.2.19`, with Git tag `v0.2.19` and npm dist-tag `latest`.
 `latest` is an npm distribution pointer, not a Git tag.
 
 ## Prepare and validate
@@ -46,10 +47,10 @@ The publish dry run executes version checks, type checking, build and tests via
 list and ensure it contains the compiled entry points, binaries and no secrets.
 The dry run does not upload a package or move the npm `latest` pointer.
 
-## Publish 0.2.18
+## Publish 0.2.19
 
 Use your npm maintainer account; complete login/2FA locally. Do not commit tokens.
-Check that 0.2.18 has not already been published before uploading:
+Check that 0.2.19 has not already been published before uploading:
 
 ```sh
 npm whoami
@@ -58,19 +59,19 @@ git checkout main
 git pull --ff-only origin main
 git describe --exact-match --tags HEAD
 npm run release:publish
-npm view jev-dev-harness@0.2.18 version
+npm view jev-dev-harness@0.2.19 version
 npm dist-tag ls jev-dev-harness
 ```
 
 Run these commands separately and stop on any error. Publish only the clean,
 validated commit tagged above. `release:publish` runs `npm publish --tag latest`;
 `publishConfig` also pins the public npm registry and `latest` for plain
-`npm publish`. A successful publication should show `latest: 0.2.18`.
-Before publishing, confirm that HEAD is the clean validated `v0.2.18` commit.
+`npm publish`. A successful publication should show `latest: 0.2.19`.
+Before publishing, confirm that HEAD is the clean validated `v0.2.19` commit.
 If publication fails, resolve the authentication or registry error and retry
 the same artifact. Do not move an existing tag or reuse a published version.
 
-After review and authorization, commit the validated state on `main`, create `v0.2.18`,
+After review and authorization, commit the validated state on `main`, create `v0.2.19`,
 and create the GitHub release from that exact reviewed commit before manual npm
 publication. Push only the explicitly approved branch/tag/release. Do not recreate
 existing tags. If npm authentication fails, stop and report npm publication as pending;
@@ -110,8 +111,8 @@ version/tag. Prereleases should use a separate process and npm tag such as `next
 
 ## Update local installations
 
-Until 0.2.17 is published to npm, npm `latest` still points to the previously
-published version. Do not overwrite any already published version.
+Until the tagged version is published to npm, `latest` still points to the
+previously published version. Do not overwrite any already published version.
 
 ```sh
 npm install -g jev-dev-harness@latest
