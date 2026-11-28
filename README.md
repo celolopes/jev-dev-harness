@@ -702,3 +702,7 @@ A delegated coding task can invoke `jev-dev delegate review --input request.json
 (or stdin) for a bounded, command-only offline advisory receipt. It never executes
 or authorizes the operation, calls a remote model, or installs automatic interception.
 See [the versioned envelope and handoff contract](docs/jev/DELEGATED-REVIEW.md).
+
+### Experimental Codex handoff pilot
+
+See the [synthetic Antigravity → Codex pilot](docs/jev/CODEX-ORCHESTRATION-PILOT.md). It is opt-in, requires separate terminal approval, and does not change the standard JEV MCP server.
