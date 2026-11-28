@@ -80,7 +80,8 @@
     "docs/jev/JEV-1.14-EVALUATION.md",
     "docs/jev/evaluation-jev-1.14-2026-10-15.json",
     "docs/jev/JEV-0.2.16-DEFAULTS.md",
-    "docs/jev/DELEGATED-REVIEW.md"
+    "docs/jev/DELEGATED-REVIEW.md",
+    "docs/jev/CODEX-ORCHESTRATION-PILOT.md"
   ],
   "publishConfig": {
     "registry": "https://registry.npmjs.org/",
